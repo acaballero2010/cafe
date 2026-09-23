@@ -11,108 +11,113 @@ export function Header({
   globalMarginPct = 78.4
 }) {
   const venues = [
-    { id: 'coffee', label: 'Coffee Lab', icon: '☕' },
-    { id: 'boba', label: 'Boba & Tea', icon: '🧋' },
-    { id: 'cocktail', label: 'Craft Lounge', icon: '🍸' }
+    { id: 'coffee', label: 'Coffee' },
+    { id: 'boba', label: 'Boba & Tea' },
+    { id: 'cocktail', label: 'Cocktail' }
   ]
 
   const navTabs = [
-    { id: 'recipe-lab', label: 'Recipe Costing Lab', icon: Layers },
-    { id: 'sub-recipes', label: 'Batch Preps & Yields', icon: ChefHat },
-    { id: 'ai-studio', label: 'AI Visual Studio', icon: Sparkles },
-    { id: 'marketplace', label: 'B2B Supply & Group Buy', icon: ShoppingBag },
-    { id: 'menu-matrix', label: 'Menu Engineering', icon: BarChart3 }
+    { id: 'builder', label: 'Drink Studio', icon: Layers },
+    { id: 'sub-recipes', label: 'Batch Preps', icon: ChefHat },
+    { id: 'marketplace', label: 'Marketplace', icon: ShoppingBag },
+    { id: 'menu-matrix', label: 'Engineering', icon: BarChart3 }
   ]
 
   return (
-    <header className="app-header">
-      <div className="header-container">
+    <header className="app-top-nav">
+      <div className="top-nav-inner">
         {/* Brand */}
-        <div className="brand-badge">
-          <div className="brand-logo-icon">
-            <Coffee size={20} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>PourCraft</span>
-              <span className="badge badge-warning" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>OS PRO</span>
-            </div>
-            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-              Specialty Beverage Costing & AI Studio
-            </p>
-          </div>
-        </div>
-
-        {/* Venue Switcher */}
-        <div className="venue-selector">
-          {venues.map(v => (
-            <button
-              key={v.id}
-              className={`venue-btn ${activeVenue === v.id ? 'active' : ''}`}
-              onClick={() => setActiveVenue(v.id)}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '10px',
+                background: '#111827',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff'
+              }}
             >
-              <span>{v.icon}</span>
-              <span>{v.label}</span>
-            </button>
-          ))}
+              <Coffee size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}>
+                PourCraft
+              </div>
+            </div>
+          </div>
+
+          {/* Venue Segmented Control */}
+          <div className="pill-group">
+            {venues.map(v => (
+              <button
+                key={v.id}
+                className={`pill-btn ${activeVenue === v.id ? 'active' : ''}`}
+                onClick={() => setActiveVenue(v.id)}
+              >
+                {v.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Action Shortcuts */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Primary Tabs (Studio / Batches / Marketplace / Matrix) */}
+        <div className="pill-group">
+          {navTabs.map(tab => {
+            const Icon = tab.icon
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                className={`pill-btn ${isActive ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Right Tools & Margin Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn-clean btn-clean-secondary btn-clean-sm"
             onClick={onOpenOcr}
-            title="Snap Invoice OCR"
           >
-            <Receipt size={14} style={{ color: '#38bdf8' }} />
-            <span style={{ display: 'none', md: 'inline' }}>Snap Invoice</span>
+            <Receipt size={14} color="#0284c7" />
+            <span>Snap Invoice</span>
           </button>
 
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn-clean btn-clean-secondary btn-clean-sm"
             onClick={onOpenBaristaCard}
-            title="Barista SOP Card"
           >
-            <BookOpen size={14} style={{ color: '#a855f7' }} />
-            <span style={{ display: 'none', md: 'inline' }}>SOP Card</span>
+            <BookOpen size={14} color="#7c3aed" />
+            <span>Quick SOP</span>
           </button>
 
           <div
-            className="glass-panel"
             style={{
-              padding: '4px 10px',
+              background: 'var(--margin-green-bg)',
+              border: '1px solid var(--margin-green-border)',
+              borderRadius: 'var(--radius-full)',
+              padding: '4px 12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(16, 185, 129, 0.3)'
+              gap: '6px'
             }}
           >
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Avg GM</span>
-            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#34d399', fontFamily: 'var(--font-mono)' }}>
-              {globalMarginPct.toFixed(1)}%
+            <span style={{ fontSize: '0.72rem', color: '#047857', fontWeight: 600 }}>Margin</span>
+            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+              {globalMarginPct.toFixed(0)}%
             </span>
           </div>
         </div>
       </div>
-
-      {/* Primary Navigation Tabs */}
-      <nav className="nav-tabs" style={{ marginTop: '8px', padding: '4px 0 0 0', border: 'none' }}>
-        {navTabs.map(tab => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              className={`nav-tab-btn ${isActive ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <Icon size={16} />
-              <span>{tab.label}</span>
-            </button>
-          )
-        })}
-      </nav>
     </header>
   )
 }

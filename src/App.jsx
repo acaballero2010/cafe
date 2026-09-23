@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Header } from './components/Header'
-import { DrinkVisualizer } from './components/DrinkVisualizer'
-import { CostingEngine } from './components/CostingEngine'
+import { BuildRecipePanel } from './components/BuildRecipePanel'
+import { RealTimeCanvas } from './components/RealTimeCanvas'
+import { ProfitSpecsPanel } from './components/ProfitSpecsPanel'
+import { SpecSheetView } from './components/SpecSheetView'
 import { SubRecipeManager } from './components/SubRecipeManager'
-import { AiRenderStudio } from './components/AiRenderStudio'
 import { Marketplace } from './components/Marketplace'
 import { MenuMatrix } from './components/MenuMatrix'
 import { BaristaCardModal } from './components/BaristaCardModal'
 import { InvoiceOcrModal } from './components/InvoiceOcrModal'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
-import { DEFAULT_SUB_RECIPES, calculateSubRecipeMetrics } from './data/defaultSubRecipes'
+import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
 import { calculateDrinkMetrics } from './types/physics'
 import { Layers, Sparkles, ShoppingBag, BarChart3, Receipt, BookOpen, ChefHat } from 'lucide-react'
 
 export function App() {
   const [activeVenue, setActiveVenue] = useState('coffee')
-  const [activeTab, setActiveTab] = useState('recipe-lab')
+  const [activeTab, setActiveTab] = useState('builder') // 'builder' | 'sub-recipes' | 'marketplace' | 'menu-matrix'
+  const [isSpecSheetMode, setIsSpecSheetMode] = useState(false)
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG)
   const [subRecipes, setSubRecipes] = useState(DEFAULT_SUB_RECIPES)
   const [currentRecipe, setCurrentRecipe] = useState(PRESET_RECIPES[0])
@@ -26,7 +28,7 @@ export function App() {
   const [isOcrOpen, setIsOcrOpen] = useState(false)
   const [isBaristaCardOpen, setIsBaristaCardOpen] = useState(false)
 
-  // Update recipe when venue changes
+  // Sync preset when venue changes
   useEffect(() => {
     const venueRecipe = PRESET_RECIPES.find(r => r.venue === activeVenue)
     if (venueRecipe) {
@@ -34,7 +36,7 @@ export function App() {
     }
   }, [activeVenue])
 
-  // Get active packaging items
+  // Active packaging items
   const activePackagingItems = useMemo(() => {
     return PACKAGING_ITEMS.map(pkg => ({
       ...pkg,
@@ -42,7 +44,7 @@ export function App() {
     }))
   }, [currentRecipe.packagingIds])
 
-  // Compute live physics, displacement, and true COGS metrics
+  // Compute live physics & economics
   const metrics = useMemo(() => {
     return calculateDrinkMetrics({
       vesselId: currentRecipe.vesselId,
@@ -55,7 +57,6 @@ export function App() {
     })
   }, [currentRecipe, activePackagingItems, includeScrap])
 
-  // Preset quick picker
   const handleLoadPreset = () => {
     const venuePresets = PRESET_RECIPES.filter(r => r.venue === activeVenue)
     const currentIndex = venuePresets.findIndex(r => r.id === currentRecipe.id)
@@ -63,185 +64,134 @@ export function App() {
     setCurrentRecipe(nextPreset)
   }
 
-  // Handle OCR price sync
   const handleApplyPriceUpdates = (updatedItems) => {
-    // 1. Update Catalog
     setCatalog(prevCatalog => {
       return prevCatalog.map(catItem => {
-        const foundUpdate = updatedItems.find(u => u.skuId === catItem.id)
-        if (foundUpdate) {
-          return {
-            ...catItem,
-            unitCostPerMl: foundUpdate.newUnitCost,
-            packPrice: foundUpdate.newPrice
-          }
-        }
-        return catItem
+        const found = updatedItems.find(u => u.skuId === catItem.id)
+        return found ? { ...catItem, unitCostPerMl: found.newUnitCost, packPrice: found.newPrice } : catItem
       })
     })
 
-    // 2. Update current recipe if affected
-    setCurrentRecipe(prevRecipe => {
-      const updatedLayers = prevRecipe.layers.map(layer => {
-        const foundUpdate = updatedItems.find(u => u.skuId === layer.ingredientId)
-        if (foundUpdate) {
-          return {
-            ...layer,
-            unitCostPerMl: foundUpdate.newUnitCost
-          }
-        }
-        return layer
+    setCurrentRecipe(prev => {
+      const updatedLayers = prev.layers.map(layer => {
+        const found = updatedItems.find(u => u.skuId === layer.ingredientId)
+        return found ? { ...layer, unitCostPerMl: found.newUnitCost } : layer
       })
-      return {
-        ...prevRecipe,
-        layers: updatedLayers
-      }
+      return { ...prev, layers: updatedLayers }
     })
   }
 
   return (
-    <div className="app-viewport" data-venue={activeVenue}>
-      {/* Top Global Header */}
+    <div className="app-container">
+      {/* Top Header */}
       <Header
         activeVenue={activeVenue}
         setActiveVenue={setActiveVenue}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => {
+          setActiveTab(tab)
+          setIsSpecSheetMode(false)
+        }}
         onOpenOcr={() => setIsOcrOpen(true)}
         onOpenBaristaCard={() => setIsBaristaCardOpen(true)}
         globalMarginPct={metrics.grossMarginPct}
       />
 
-      {/* Main Workspace Layout */}
-      <main className="workspace-grid">
-        {/* Left Column: Live Visualizer Stage */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <DrinkVisualizer
-            metrics={metrics}
-            recipe={currentRecipe}
-            onEditLayer={(idx) => {}}
-          />
-
-          {/* Preset Selector Widget */}
-          <div className="glass-panel" style={{ padding: '16px' }}>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', marginBottom: '8px' }}>
-              Signature Drink Library
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {PRESET_RECIPES.map(p => {
-                const isSelected = p.id === currentRecipe.id
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => {
-                      setActiveVenue(p.venue)
-                      setCurrentRecipe(p)
-                    }}
-                    style={{
-                      background: isSelected ? 'rgba(245, 158, 11, 0.15)' : 'rgba(0, 0, 0, 0.25)',
-                      border: isSelected ? '1px solid #f59e0b' : '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '8px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      color: isSelected ? '#fbbf24' : 'var(--text-secondary)'
-                    }}
-                  >
-                    <div style={{ textAlign: 'left' }}>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{p.name}</div>
-                      <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>
-                        {p.venue.toUpperCase()} • ${p.menuPrice.toFixed(2)}
-                      </div>
-                    </div>
-                    <span className="badge badge-info" style={{ fontSize: '0.62rem' }}>
-                      {p.iceTypeId.toUpperCase()}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Active Tab Content */}
-        <div>
-          {activeTab === 'recipe-lab' && (
-            <CostingEngine
+      {/* Main View Area */}
+      <main style={{ padding: '20px' }}>
+        {activeTab === 'builder' && (
+          isSpecSheetMode ? (
+            <SpecSheetView
               recipe={currentRecipe}
-              catalog={catalog}
-              subRecipes={subRecipes}
               metrics={metrics}
-              includeScrap={includeScrap}
-              setIncludeScrap={setIncludeScrap}
-              onUpdateRecipe={setCurrentRecipe}
-              onLoadPreset={handleLoadPreset}
+              onBackToBuilder={() => setIsSpecSheetMode(false)}
+              onOpenMarketplace={() => setActiveTab('marketplace')}
             />
-          )}
+          ) : (
+            /* 3-Column Clean Canvas Layout */
+            <div className="workspace-three-col">
+              {/* Column 1: Build Recipe (Inputs Only) */}
+              <BuildRecipePanel
+                recipe={currentRecipe}
+                catalog={catalog}
+                subRecipes={subRecipes}
+                includeScrap={includeScrap}
+                setIncludeScrap={setIncludeScrap}
+                onUpdateRecipe={setCurrentRecipe}
+                onLoadPreset={handleLoadPreset}
+              />
 
-          {activeTab === 'sub-recipes' && (
+              {/* Column 2: Real-Time Canvas (Visual Centerpiece) */}
+              <RealTimeCanvas
+                metrics={metrics}
+                recipe={currentRecipe}
+                onOpenSopCard={() => setIsBaristaCardOpen(true)}
+              />
+
+              {/* Column 3: Profit & Specs (Business Bottom Line) */}
+              <ProfitSpecsPanel
+                recipe={currentRecipe}
+                metrics={metrics}
+                onUpdateRecipe={setCurrentRecipe}
+                onOpenSopCard={() => setIsBaristaCardOpen(true)}
+                onOpenMarketplace={() => setActiveTab('marketplace')}
+                onSwitchToSpecSheet={() => setIsSpecSheetMode(true)}
+              />
+            </div>
+          )
+        )}
+
+        {activeTab === 'sub-recipes' && (
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <SubRecipeManager
               subRecipes={subRecipes}
               catalog={catalog}
               onUpdateSubRecipes={setSubRecipes}
             />
-          )}
+          </div>
+        )}
 
-          {activeTab === 'ai-studio' && (
-            <AiRenderStudio
-              recipe={currentRecipe}
-              metrics={metrics}
-            />
-          )}
+        {activeTab === 'marketplace' && (
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <Marketplace onAddToCart={() => {}} />
+          </div>
+        )}
 
-          {activeTab === 'marketplace' && (
-            <Marketplace
-              onAddToCart={() => {}}
-            />
-          )}
-
-          {activeTab === 'menu-matrix' && (
+        {activeTab === 'menu-matrix' && (
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             <MenuMatrix
               currentRecipe={currentRecipe}
               metrics={metrics}
             />
-          )}
-        </div>
+          </div>
+        )}
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="mobile-bottom-bar">
+      <nav className="mobile-bottom-bar-clean">
         <button
-          className={`mobile-nav-item ${activeTab === 'recipe-lab' ? 'active' : ''}`}
-          onClick={() => setActiveTab('recipe-lab')}
+          className={`mobile-nav-clean-item ${activeTab === 'builder' ? 'active' : ''}`}
+          onClick={() => setActiveTab('builder')}
         >
           <Layers size={18} />
-          <span>Costing</span>
+          <span>Studio</span>
         </button>
         <button
-          className={`mobile-nav-item ${activeTab === 'sub-recipes' ? 'active' : ''}`}
+          className={`mobile-nav-clean-item ${activeTab === 'sub-recipes' ? 'active' : ''}`}
           onClick={() => setActiveTab('sub-recipes')}
         >
           <ChefHat size={18} />
           <span>Batches</span>
         </button>
         <button
-          className={`mobile-nav-item ${activeTab === 'ai-studio' ? 'active' : ''}`}
-          onClick={() => setActiveTab('ai-studio')}
-        >
-          <Sparkles size={18} />
-          <span>AI Studio</span>
-        </button>
-        <button
-          className={`mobile-nav-item ${activeTab === 'marketplace' ? 'active' : ''}`}
+          className={`mobile-nav-clean-item ${activeTab === 'marketplace' ? 'active' : ''}`}
           onClick={() => setActiveTab('marketplace')}
         >
           <ShoppingBag size={18} />
           <span>Market</span>
         </button>
         <button
-          className={`mobile-nav-item ${activeTab === 'menu-matrix' ? 'active' : ''}`}
+          className={`mobile-nav-clean-item ${activeTab === 'menu-matrix' ? 'active' : ''}`}
           onClick={() => setActiveTab('menu-matrix')}
         >
           <BarChart3 size={18} />
