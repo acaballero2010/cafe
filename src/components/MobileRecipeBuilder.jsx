@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { Plus, Minus, Trash2, ArrowUp, ArrowDown, Package, Sparkles, Sliders, ChevronDown, ChevronUp, GripVertical, Coffee } from 'lucide-react'
-import { VESSELS } from '../types/physics'
+import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { PACKAGING_ITEMS } from '../data/defaultCatalog'
 import { calculateSubRecipeMetrics } from '../data/defaultSubRecipes'
 
@@ -15,6 +14,7 @@ export function MobileRecipeBuilder({
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showPackagingModal, setShowPackagingModal] = useState(false)
+  const [showAddMenu, setShowAddMenu] = useState(false)
 
   const vesselPills = [
     { id: 'cold-16oz', label: '16oz Cold', sub: '473ml' },
@@ -39,7 +39,6 @@ export function MobileRecipeBuilder({
     onUpdateRecipe({ ...recipe, vesselId, packagingIds: defaultPackaging })
   }
 
-  // Stepper increment/decrement
   const handleStepVolume = (idx, delta) => {
     const updated = [...recipe.layers]
     const currentVol = Number(updated[idx].volumeMl || 0)
@@ -47,17 +46,6 @@ export function MobileRecipeBuilder({
       ...updated[idx],
       volumeMl: Math.max(0, currentVol + delta)
     }
-    onUpdateRecipe({ ...recipe, layers: updated })
-  }
-
-  // Move layer sequence up / down
-  const handleMoveLayer = (idx, direction) => {
-    const targetIdx = idx + direction
-    if (targetIdx < 0 || targetIdx >= recipe.layers.length) return
-    const updated = [...recipe.layers]
-    const temp = updated[idx]
-    updated[idx] = updated[targetIdx]
-    updated[targetIdx] = temp
     onUpdateRecipe({ ...recipe, layers: updated })
   }
 
@@ -98,6 +86,7 @@ export function MobileRecipeBuilder({
         layerType: sub.yieldUom === 'g' ? 'bottom_boba' : 'top_foam'
       }
       onUpdateRecipe({ ...recipe, layers: [...recipe.layers, newLayer] })
+      setShowAddMenu(false)
       return
     }
 
@@ -123,28 +112,67 @@ export function MobileRecipeBuilder({
     }
     updated.push(newLayer)
     onUpdateRecipe({ ...recipe, layers: updated })
+    setShowAddMenu(false)
   }
 
-  const handleTogglePackaging = (pkgId) => {
-    const current = recipe.packagingIds || []
-    const updated = current.includes(pkgId) ? current.filter(id => id !== pkgId) : [...current, pkgId]
-    onUpdateRecipe({ ...recipe, packagingIds: updated })
+  // Generate clean portion label
+  const getPortionLabel = (layer) => {
+    if (layer.isTopOff) return 'Top-Off Liquid'
+    const vol = layer.volumeMl || 0
+    if (layer.layerType === 'espresso') {
+      const shots = Math.round(vol / 18)
+      return `${vol}ml (${shots || 2} shots)`
+    }
+    if (layer.layerType === 'dense_syrup') {
+      const pumps = (vol / 12.5).toFixed(1).replace('.0', '')
+      return `${pumps} pumps (${vol}ml)`
+    }
+    return `${vol} ml`
+  }
+
+  // Generate layer sequence label
+  const getSequenceSubtext = (idx, total, isTopOff) => {
+    if (idx === 0) return 'Poured 1st • Base foundation'
+    if (isTopOff || idx === total - 1) return `Poured ${idx + 1}${idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'} • Crown layer`
+    return `Poured ${idx + 1}${idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'} • Middle stratum`
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '680px', margin: '0 auto' }}>
-      {/* 1. Bold 22pt Drink Title & Presets */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#c2410c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Drink Configuration
-          </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '680px', margin: '0 auto', paddingBottom: '130px' }}>
+      {/* 1. Prominent Drink Title Hero Block */}
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ flex: 1 }}>
+            <input
+              type="text"
+              value={recipe.name}
+              onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
+              style={{
+                fontSize: '1.28rem',
+                fontWeight: 800,
+                color: '#111827',
+                fontFamily: 'var(--font-display)',
+                border: 'none',
+                borderBottom: '1px solid transparent',
+                paddingBottom: '2px',
+                width: '100%',
+                outline: 'none',
+                background: 'transparent',
+                lineHeight: 1.3
+              }}
+              placeholder="Iced Brown Sugar Shaken Espresso"
+            />
+            <div style={{ fontSize: '0.74rem', color: '#9ca3af', marginTop: '4px', fontWeight: 500 }}>
+              Tap to rename • Created Today
+            </div>
+          </div>
+
           <button
             onClick={onLoadPreset}
             style={{
-              background: '#fef3c7',
+              background: '#fffbeb',
               border: '1px solid #fde68a',
-              color: '#92400e',
+              color: '#d97706',
               padding: '6px 12px',
               borderRadius: '9999px',
               fontSize: '0.74rem',
@@ -152,38 +180,19 @@ export function MobileRecipeBuilder({
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
+              gap: '4px',
+              flexShrink: 0
             }}
           >
             <Sparkles size={12} />
-            <span>Preset Recipes</span>
+            <span>Presets</span>
           </button>
         </div>
-
-        <input
-          type="text"
-          value={recipe.name}
-          onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
-          style={{
-            fontSize: '1.35rem',
-            fontWeight: 800,
-            color: '#111827',
-            fontFamily: 'var(--font-display)',
-            border: 'none',
-            borderBottom: '1px solid #e5e7eb',
-            paddingBottom: '6px',
-            width: '100%',
-            outline: 'none',
-            background: 'transparent',
-            lineHeight: 1.3
-          }}
-          placeholder="Drink Name..."
-        />
       </div>
 
-      {/* 2. Cup & Size (Horizontal Scrollable Segmented Bar) */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '10px' }}>
+      {/* 2. Cup & Size (Scrollable Segmented Bar) */}
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#4b5563', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
           Cup Vessel & Size
         </label>
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
@@ -198,15 +207,16 @@ export function MobileRecipeBuilder({
                   minWidth: '105px',
                   padding: '10px 12px',
                   borderRadius: '14px',
-                  border: isSelected ? '2px solid #451a03' : '1px solid #e5e7eb',
-                  background: isSelected ? '#fffbeb' : '#ffffff',
-                  color: isSelected ? '#451a03' : '#4b5563',
+                  border: isSelected ? '2px solid #111827' : '1px solid #e5e7eb',
+                  background: isSelected ? '#ffffff' : '#f9fafb',
+                  color: isSelected ? '#111827' : '#4b5563',
                   cursor: 'pointer',
                   textAlign: 'center',
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.08)' : 'none'
                 }}
               >
-                <div style={{ fontSize: '0.84rem', fontWeight: 700 }}>{v.label}</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800 }}>{v.label}</div>
                 <div style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: '2px' }}>{v.sub}</div>
               </button>
             )
@@ -215,8 +225,8 @@ export function MobileRecipeBuilder({
       </div>
 
       {/* 3. Ice Level (iOS 3-Segment Control) */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-        <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '10px' }}>
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#4b5563', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
           Ice Level
         </label>
         <div
@@ -236,7 +246,7 @@ export function MobileRecipeBuilder({
                 onClick={() => onUpdateRecipe({ ...recipe, iceTypeId: seg.id })}
                 style={{
                   flex: 1,
-                  padding: '9px 0',
+                  padding: '10px 0',
                   borderRadius: '10px',
                   border: 'none',
                   background: isSelected ? '#ffffff' : 'transparent',
@@ -245,7 +255,8 @@ export function MobileRecipeBuilder({
                   fontWeight: isSelected ? 800 : 600,
                   cursor: 'pointer',
                   boxShadow: isSelected ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  minHeight: '44px'
                 }}
               >
                 {seg.label}
@@ -255,50 +266,15 @@ export function MobileRecipeBuilder({
         </div>
       </div>
 
-      {/* 4. Refactored Ingredient Cards (Thumb Steppers & Sequence Handles) */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      {/* 4. Streamlined Recipe Build Order */}
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div>
-            <label style={{ fontSize: '0.82rem', fontWeight: 800, color: '#111827' }}>
-              Ingredient Strata & Order
-            </label>
-            <p style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>
-              Poured from bottom (1) to top
-            </p>
-          </div>
-
-          {/* Add Dropdown */}
-          <select
-            onChange={(e) => {
-              if (e.target.value) {
-                handleAddLayer(e.target.value)
-                e.target.value = ''
-              }
-            }}
-            style={{
-              background: '#f9fafb',
-              border: '1px solid #d1d5db',
-              borderRadius: '10px',
-              padding: '7px 12px',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              color: '#111827',
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <option value="" disabled selected>+ Add Ingredient</option>
-            <optgroup label="✨ House Batch Preps">
-              {subRecipes.map(s => (
-                <option key={s.id} value={`sub:${s.id}`}>[Batch] {s.name}</option>
-              ))}
-            </optgroup>
-            <optgroup label="📦 Raw Ingredients">
-              {catalog.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </optgroup>
-          </select>
+          <h2 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Recipe Build Order
+          </h2>
+          <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: 600 }}>
+            {recipe.layers.length} Layers
+          </span>
         </div>
 
         {/* Clean Ergonomic Layer Cards */}
@@ -314,50 +290,49 @@ export function MobileRecipeBuilder({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '10px',
+                gap: '12px',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
               }}
             >
-              {/* Layer Sequence Number & Color Swatch */}
+              {/* Left: Swatch & Clean Title/Subtext */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
                 <div
                   style={{
-                    width: '24px',
-                    height: '24px',
+                    width: '26px',
+                    height: '26px',
                     borderRadius: '50%',
                     background: layer.colorHex || '#d97706',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#ffffff',
-                    fontSize: '0.72rem',
+                    fontSize: '0.76rem',
                     fontWeight: 800,
-                    flexShrink: 0,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+                    flexShrink: 0
                   }}
                 >
                   {idx + 1}
                 </div>
 
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#111827', lineHeight: 1.3 }}>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#111827', lineHeight: 1.25 }}>
                     {layer.name}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>
-                    {layer.isTopOff ? 'Auto fill to rim line' : `Portion: ${layer.volumeMl} ml`}
+                  <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: '2px' }}>
+                    {getSequenceSubtext(idx, recipe.layers.length, layer.isTopOff)}
                   </div>
                 </div>
               </div>
 
-              {/* Touch Stepper (- / +) or Top-off Badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+              {/* Right: Sleek Touch Stepper & Reorder Handle */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                 {!layer.isTopOff ? (
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       background: '#f3f4f6',
-                      borderRadius: '10px',
+                      borderRadius: '12px',
                       padding: '2px',
                       border: '1px solid #e5e7eb'
                     }}
@@ -365,9 +340,9 @@ export function MobileRecipeBuilder({
                     <button
                       onClick={() => handleStepVolume(idx, -5)}
                       style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
                         border: 'none',
                         background: '#ffffff',
                         display: 'flex',
@@ -375,22 +350,22 @@ export function MobileRecipeBuilder({
                         justifyContent: 'center',
                         cursor: 'pointer',
                         color: '#374151',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
                       }}
                     >
                       <Minus size={14} />
                     </button>
 
-                    <div style={{ minWidth: '46px', textAlign: 'center', fontSize: '0.82rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-mono)' }}>
-                      {layer.volumeMl}
+                    <div style={{ minWidth: '80px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#111827', padding: '0 4px', fontFamily: 'var(--font-mono)' }}>
+                      {getPortionLabel(layer)}
                     </div>
 
                     <button
                       onClick={() => handleStepVolume(idx, 5)}
                       style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
                         border: 'none',
                         background: '#ffffff',
                         display: 'flex',
@@ -398,7 +373,7 @@ export function MobileRecipeBuilder({
                         justifyContent: 'center',
                         cursor: 'pointer',
                         color: '#374151',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
                       }}
                     >
                       <Plus size={14} />
@@ -411,118 +386,141 @@ export function MobileRecipeBuilder({
                       background: '#059669',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.72rem',
+                      padding: '8px 14px',
+                      borderRadius: '10px',
+                      fontSize: '0.76rem',
                       fontWeight: 800,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      minHeight: '40px'
                     }}
                   >
                     Top-Off Liquid
                   </button>
                 )}
 
-                {/* Sequence Shift Controls */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <button
-                    onClick={() => handleMoveLayer(idx, -1)}
-                    disabled={idx === 0}
-                    style={{
-                      width: '24px',
-                      height: '16px',
-                      borderRadius: '4px',
-                      border: '1px solid #e5e7eb',
-                      background: '#f9fafb',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: idx === 0 ? 'default' : 'pointer',
-                      opacity: idx === 0 ? 0.3 : 1
-                    }}
-                  >
-                    <ArrowUp size={11} />
-                  </button>
-                  <button
-                    onClick={() => handleMoveLayer(idx, 1)}
-                    disabled={idx === recipe.layers.length - 1}
-                    style={{
-                      width: '24px',
-                      height: '16px',
-                      borderRadius: '4px',
-                      border: '1px solid #e5e7eb',
-                      background: '#f9fafb',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: idx === recipe.layers.length - 1 ? 'default' : 'pointer',
-                      opacity: idx === recipe.layers.length - 1 ? 0.3 : 1
-                    }}
-                  >
-                    <ArrowDown size={11} />
-                  </button>
+                {/* Native Drag Reorder Handle (≡) */}
+                <div style={{ color: '#9ca3af', cursor: 'grab', padding: '4px', display: 'flex', alignItems: 'center' }} title="Reorder Sequence">
+                  <GripVertical size={20} />
                 </div>
-
-                {/* Remove */}
-                <button
-                  onClick={() => handleRemoveLayer(idx)}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: 'transparent',
-                    color: '#9ca3af',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Trash2 size={15} />
-                </button>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Clean Full-Width Dashed "+ Add Ingredient" Button */}
+        <div style={{ marginTop: '14px' }}>
+          {!showAddMenu ? (
+            <button
+              onClick={() => setShowAddMenu(true)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '14px',
+                border: '2px dashed #d1d5db',
+                background: '#f9fafb',
+                color: '#374151',
+                fontSize: '0.84rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'all 0.15s ease',
+                minHeight: '44px'
+              }}
+            >
+              <Plus size={16} />
+              <span>Add Ingredient to Sequence</span>
+            </button>
+          ) : (
+            <div style={{ background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '14px', padding: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#374151' }}>Select Item to Add:</span>
+                <button
+                  onClick={() => setShowAddMenu(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <select
+                autoFocus
+                onChange={(e) => handleAddLayer(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: '#ffffff',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '10px',
+                  padding: '10px 12px',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  color: '#111827',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  minHeight: '44px'
+                }}
+              >
+                <option value="" disabled selected>Tap to choose ingredient...</option>
+                <optgroup label="✨ House Batch Preps">
+                  {subRecipes.map(s => (
+                    <option key={s.id} value={`sub:${s.id}`}>[Batch] {s.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="📦 Raw Ingredients">
+                  {catalog.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 5. Packaging Auto-Bundle Pill */}
-      <div style={{ background: '#ffffff', borderRadius: '16px', padding: '14px 18px', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: '#ffffff', borderRadius: '18px', padding: '16px 20px', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Package size={16} color="#6b7280" />
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#111827' }}>
+          <Package size={18} color="#6b7280" />
+          <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#111827' }}>
             Packaging Auto-Bundled ({recipe.packagingIds?.length || 2} items)
           </span>
         </div>
 
         <button
           onClick={() => setShowPackagingModal(!showPackagingModal)}
-          style={{ fontSize: '0.74rem', color: '#c2410c', fontWeight: 700, background: 'transparent', border: 'none', cursor: 'pointer' }}
+          style={{ fontSize: '0.76rem', color: '#d97706', fontWeight: 800, background: 'transparent', border: 'none', cursor: 'pointer', minHeight: '44px', display: 'flex', alignItems: 'center' }}
         >
           {showPackagingModal ? 'Done' : 'Customize'}
         </button>
       </div>
 
       {showPackagingModal && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px', padding: '0 4px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
           {PACKAGING_ITEMS.map(pkg => {
             const isSelected = (recipe.packagingIds || []).includes(pkg.id)
             return (
               <button
                 key={pkg.id}
-                onClick={() => handleTogglePackaging(pkg.id)}
+                onClick={() => {
+                  const current = recipe.packagingIds || []
+                  const updated = current.includes(pkg.id) ? current.filter(id => id !== pkg.id) : [...current, pkg.id]
+                  onUpdateRecipe({ ...recipe, packagingIds: updated })
+                }}
                 style={{
                   background: isSelected ? '#fffbeb' : '#ffffff',
-                  border: isSelected ? '2px solid #451a03' : '1px solid #e5e7eb',
+                  border: isSelected ? '2px solid #111827' : '1px solid #e5e7eb',
                   borderRadius: '12px',
-                  padding: '8px 10px',
-                  fontSize: '0.72rem',
+                  padding: '10px 12px',
+                  fontSize: '0.74rem',
                   textAlign: 'left',
                   cursor: 'pointer',
-                  color: isSelected ? '#451a03' : '#4b5563'
+                  color: isSelected ? '#111827' : '#4b5563',
+                  minHeight: '44px'
                 }}
               >
-                <div style={{ fontWeight: 700 }}>{pkg.name.split(' (')[0]}</div>
+                <div style={{ fontWeight: 800 }}>{pkg.name.split(' (')[0]}</div>
                 <div style={{ color: '#6b7280', marginTop: '2px' }}>+₱{pkg.unitCost.toFixed(2)}</div>
               </button>
             )
@@ -531,7 +529,7 @@ export function MobileRecipeBuilder({
       )}
 
       {/* 6. Collapsible Food Science Drawer */}
-      <div style={{ padding: '0 4px', marginBottom: '80px' }}>
+      <div>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
           style={{
@@ -543,7 +541,8 @@ export function MobileRecipeBuilder({
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px'
+            gap: '6px',
+            minHeight: '44px'
           }}
         >
           <Sliders size={14} />
@@ -552,7 +551,7 @@ export function MobileRecipeBuilder({
         </button>
 
         {showAdvanced && (
-          <div style={{ marginTop: '10px', background: '#ffffff', padding: '14px', borderRadius: '14px', border: '1px solid #e5e7eb', fontSize: '0.74rem' }}>
+          <div style={{ marginTop: '8px', background: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e5e7eb', fontSize: '0.74rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <strong style={{ color: '#111827' }}>Bar Shrinkage Buffer (+8% to 18%)</strong>
@@ -564,7 +563,7 @@ export function MobileRecipeBuilder({
                 type="checkbox"
                 checked={includeScrap}
                 onChange={(e) => setIncludeScrap(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
               />
             </div>
           </div>
