@@ -1,4 +1,4 @@
-// Specialty Drink Presets with exact layering, cup type, ice levels, and visual styling
+// Specialty Drink Presets with Philippine Peso (₱) Costing & Precise Layering
 
 export const PRESET_RECIPES = [
   {
@@ -7,18 +7,18 @@ export const PRESET_RECIPES = [
     venue: 'coffee',
     vesselId: 'cold-16oz',
     iceTypeId: 'standard', // 35%
-    menuPrice: 6.75,
-    targetMarginPct: 78,
-    description: 'Double shot blonde roast espresso shaken vigorously with spiced brown sugar & topped with velvety oat milk.',
+    menuPrice: 185.00, // ₱185 retail
+    targetMarginPct: 75,
+    description: 'Double shot blonde roast espresso shaken vigorously with spiced Muscovado brown sugar & topped with velvety oat milk.',
     garnishes: ['Ceylon Cinnamon Dust', 'Double Wall Rim'],
     packagingIds: ['cup-16oz-pet', 'lid-sip-cold', 'kraft-sleeve', 'custom-logo-label'],
     layers: [
       {
         id: 'layer-syrup',
         ingredientId: 'tiger-brown-sugar-syrup',
-        name: 'House Spiced Brown Sugar (68° Brix)',
+        name: 'House Muscovado Syrup (25ml / 2 pumps)',
         volumeMl: 25,
-        unitCostPerMl: 0.0076,
+        unitCostPerMl: 0.342, // ~₱8.55
         colorHex: '#3b1d0b',
         densityBrix: 68,
         scrapType: 'syrup_line',
@@ -28,9 +28,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-espresso',
         ingredientId: 'ethiopia-espresso',
-        name: 'Ethiopia Guji Espresso (Double Shot)',
+        name: 'Ethiopia Guji Espresso (2 shots / 36ml)',
         volumeMl: 36,
-        unitCostPerMl: 0.0105,
+        unitCostPerMl: 0.725, // ~₱26.10
         colorHex: '#422415',
         densityBrix: 9.5,
         scrapType: 'espresso',
@@ -40,9 +40,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-milk',
         ingredientId: 'oatly-barista',
-        name: 'Oatly Barista Edition (Top-Off)',
-        volumeMl: 0, // Auto calculated by liquid displacement!
-        unitCostPerMl: 0.00387,
+        name: 'Oatly Barista Oat Milk (Top-Off)',
+        volumeMl: 0, // Auto calculated: 246ml -> ~₱51.60
+        unitCostPerMl: 0.210,
         colorHex: '#f4ede2',
         densityBrix: 12.0,
         scrapType: 'milk_steaming',
@@ -51,11 +51,11 @@ export const PRESET_RECIPES = [
       }
     ],
     sopSteps: [
-      'Pump 25ml House Brown Sugar Syrup into stainless shaker.',
-      'Pull 36ml Ethiopia Guji double espresso shot directly over syrup.',
-      'Add 1 scoop ice (140g) and shake vigorously for 12 seconds to aerate microfoam.',
-      'Strain over fresh 35% ice in 16oz PET cup.',
-      'Top off smoothly with chilled Oatly Barista (~246ml). Dust with ground Ceylon cinnamon.'
+      'Pump 25ml House Muscovado Syrup into stainless shaker.',
+      'Pull 36ml double espresso shot directly over syrup.',
+      'Add 1 scoop ice (140g) and shake vigorously for 10-12 seconds until dense crema forms.',
+      'Strain over fresh regular ice in 16oz PET cup.',
+      'Top off smoothly with chilled Oatly Barista (~246ml). Dust lightly with Ceylon cinnamon.'
     ]
   },
   {
@@ -64,18 +64,18 @@ export const PRESET_RECIPES = [
     venue: 'coffee',
     vesselId: 'cold-16oz',
     iceTypeId: 'standard',
-    menuPrice: 7.25,
-    targetMarginPct: 80,
-    description: 'Distinct tri-layer beauty: House organic strawberry compote, silk whole milk, floated with whisked Kyoto ceremonial matcha.',
+    menuPrice: 210.00,
+    targetMarginPct: 78,
+    description: 'Tri-layer signature: La Trinidad organic strawberry compote, silk oat milk, floated with Kyoto ceremonial matcha.',
     garnishes: ['Matcha Dust', 'Freeze-Dried Strawberry'],
     packagingIds: ['cup-16oz-pet', 'lid-sip-cold', 'custom-logo-label'],
     layers: [
       {
         id: 'layer-strawberry',
         ingredientId: 'strawberry-compote',
-        name: 'Organic Strawberry Compote Purée',
+        name: 'Organic Strawberry Compote (40ml)',
         volumeMl: 40,
-        unitCostPerMl: 0.0080,
+        unitCostPerMl: 0.390,
         colorHex: '#c9184a',
         densityBrix: 48,
         scrapType: 'syrup_line',
@@ -86,8 +86,8 @@ export const PRESET_RECIPES = [
         id: 'layer-milk',
         ingredientId: 'oatly-barista',
         name: 'Oatly Barista Oat Milk (Body)',
-        volumeMl: 0, // Auto calculated top off
-        unitCostPerMl: 0.00387,
+        volumeMl: 0,
+        unitCostPerMl: 0.210,
         colorHex: '#fcf8f2',
         densityBrix: 12.0,
         scrapType: 'milk_steaming',
@@ -97,9 +97,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-matcha',
         ingredientId: 'ceremonial-matcha',
-        name: 'Uji Ceremonial Matcha Float',
+        name: 'Uji Ceremonial Matcha Float (60ml)',
         volumeMl: 60,
-        unitCostPerMl: 0.0095,
+        unitCostPerMl: 0.480,
         colorHex: '#2d6a4f',
         densityBrix: 5.0,
         scrapType: 'standard',
@@ -108,31 +108,31 @@ export const PRESET_RECIPES = [
       }
     ],
     sopSteps: [
-      'Spoon 40ml strawberry compote at base of 16oz cup and swirl up the sides for marbling effect.',
-      'Fill cup with 35% standard ice cubes.',
+      'Spoon 40ml strawberry compote at base of cup and swirl up the sides for marbling.',
+      'Fill cup with regular ice cubes to 75% mark.',
       'Slowly pour oat milk up to 1.5 inches below rim.',
-      'Whisk 3g Uji ceremonial matcha with 60ml 80°C water using bamboo chasen.',
-      'Slowly float whisked green matcha over the milk using the back of a bar spoon for clean color separation.'
+      'Whisk 3g Uji matcha with 60ml warm 80°C water using bamboo chasen.',
+      'Float whisked green matcha gently over the milk with a bar spoon for clean separation.'
     ]
   },
   {
     id: 'tiger-boba-brown-sugar',
-    name: 'Tiger Stripe Brown Sugar Milk (Salted Foam)',
+    name: 'Tiger Stripe Brown Sugar Boba Fresh Milk',
     venue: 'boba',
     vesselId: 'boba-20oz',
-    iceTypeId: 'standard', // 35%
-    menuPrice: 7.50,
-    targetMarginPct: 82,
-    description: 'Slow-cooked warm tapioca pearls, flame-marbled brown sugar stripes, fresh milk, capped with Himalayan sea salt cream.',
-    garnishes: ['Torched Brown Sugar Brulee', 'Extra Thick Straw'],
+    iceTypeId: 'standard',
+    menuPrice: 165.00,
+    targetMarginPct: 80,
+    description: 'Slow-cooked warm brown sugar tapioca pearls, flame-marbled cup stripes, fresh milk, capped with Himalayan sea salt cream.',
+    garnishes: ['Torched Muscovado Sugar', 'Thick 12mm Straw'],
     packagingIds: ['cup-16oz-pet', 'lid-dome-boba', 'boba-bamboo-straw', 'custom-logo-label'],
     layers: [
       {
         id: 'layer-boba',
         ingredientId: 'tiger-boba-pearls',
-        name: 'Warm Tiger Brown Sugar Tapioca',
+        name: 'Warm Tiger Tapioca Pearls (75g)',
         volumeMl: 75,
-        unitCostPerMl: 0.0034,
+        unitCostPerMl: 0.160,
         colorHex: '#120803',
         densityBrix: 72,
         scrapType: 'boba_pearls',
@@ -142,9 +142,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-syrup',
         ingredientId: 'tiger-brown-sugar-syrup',
-        name: 'Okinawa Tiger Stripe Drizzle',
+        name: 'Muscovado Tiger Stripe Drizzle (30ml)',
         volumeMl: 30,
-        unitCostPerMl: 0.0076,
+        unitCostPerMl: 0.342,
         colorHex: '#4a1e06',
         densityBrix: 68,
         scrapType: 'syrup_line',
@@ -154,9 +154,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-milk',
         ingredientId: 'organic-whole-milk',
-        name: 'Organic Grass-Fed Whole Milk (Top-Off)',
+        name: 'Magnolia / Emborg Fresh Milk (Top-Off)',
         volumeMl: 0,
-        unitCostPerMl: 0.00145,
+        unitCostPerMl: 0.095,
         colorHex: '#fffefa',
         densityBrix: 11.5,
         scrapType: 'milk_steaming',
@@ -166,9 +166,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-cheese-cap',
         ingredientId: 'cheese-foam-cap',
-        name: 'Sea Salt Himalayan Cheese Cream Cap',
+        name: 'Sea Salt Himalayan Cheese Cream Cap (50ml)',
         volumeMl: 50,
-        unitCostPerMl: 0.0041,
+        unitCostPerMl: 0.187,
         colorHex: '#fffbee',
         densityBrix: 22,
         scrapType: 'milk_steaming',
@@ -177,11 +177,11 @@ export const PRESET_RECIPES = [
       }
     ],
     sopSteps: [
-      'Scoop 75ml fresh warm boba pearls into bottom of 20oz cup.',
-      'Coat the inner walls of the cup with 30ml thick brown sugar syrup by tilting and rotating.',
-      'Fill with standard ice to 80% mark.',
-      'Pour chilled whole milk to fill line.',
-      'Layer 50ml salted cheese cream on top and dust with organic demerara sugar before torching for 3 seconds.'
+      'Scoop 75g fresh warm boba pearls into bottom of 20oz cup.',
+      'Coat inner cup walls with 30ml thick brown sugar syrup by rotating cup.',
+      'Fill with regular ice to fill line.',
+      'Pour fresh cold milk smoothly.',
+      'Layer 50ml salted cheese cream on top; dust with Muscovado sugar.'
     ]
   },
   {
@@ -189,19 +189,19 @@ export const PRESET_RECIPES = [
     name: 'Smoked Rosemary Agave Mezcal Sour',
     venue: 'cocktail',
     vesselId: 'coupe-7oz',
-    iceTypeId: 'none', // Chilled & strained
-    menuPrice: 18.00,
-    targetMarginPct: 84,
-    description: 'Artisanal Oaxaca Mezcal, fresh hand-pressed lime juice, house-smoked rosemary nectar, silky emulsified foam head.',
-    garnishes: ['Smoked Fresh Rosemary Sprig', 'Dehydrated Blood Orange Wheel'],
+    iceTypeId: 'none',
+    menuPrice: 380.00,
+    targetMarginPct: 82,
+    description: 'Artisanal Mezcal, fresh pressed Calamansi/Lime juice, smoked rosemary agave nectar, silky foam head.',
+    garnishes: ['Smoked Fresh Rosemary Sprig', 'Dehydrated Citrus Wheel'],
     packagingIds: ['cocktail-garnish-pick', 'custom-logo-label'],
     layers: [
       {
         id: 'layer-syrup',
         ingredientId: 'smoked-rosemary-syrup',
-        name: 'House Smoked Rosemary Agave',
+        name: 'Smoked Rosemary Agave (25ml)',
         volumeMl: 25,
-        unitCostPerMl: 0.0085,
+        unitCostPerMl: 0.420,
         colorHex: '#7f5539',
         densityBrix: 55,
         scrapType: 'syrup_line',
@@ -211,9 +211,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-lime',
         ingredientId: 'fresh-lime-juice',
-        name: 'Fresh Key Lime Juice',
+        name: 'Fresh Key Lime / Calamansi (30ml)',
         volumeMl: 30,
-        unitCostPerMl: 0.0155,
+        unitCostPerMl: 0.225,
         colorHex: '#d8f3dc',
         densityBrix: 8.5,
         scrapType: 'fresh_citrus',
@@ -223,9 +223,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-mezcal',
         ingredientId: 'artisanal-mezcal',
-        name: 'Del Maguey Vida Artisanal Mezcal',
-        volumeMl: 55,
-        unitCostPerMl: 0.0453,
+        name: 'Del Maguey Artisanal Mezcal (45ml)',
+        volumeMl: 45,
+        unitCostPerMl: 2.600,
         colorHex: '#ebe9dc',
         densityBrix: 0.5,
         scrapType: 'standard',
@@ -235,9 +235,9 @@ export const PRESET_RECIPES = [
       {
         id: 'layer-foam',
         ingredientId: 'cheese-foam-cap',
-        name: 'Aquafaba Botanical Froth Cap',
+        name: 'Botanical Froth Cap (30ml)',
         volumeMl: 30,
-        unitCostPerMl: 0.0041,
+        unitCostPerMl: 0.187,
         colorHex: '#faf9f6',
         densityBrix: 4.0,
         scrapType: 'standard',
@@ -246,11 +246,11 @@ export const PRESET_RECIPES = [
       }
     ],
     sopSteps: [
-      'Add 55ml mezcal, 30ml lime juice, and 25ml smoked rosemary syrup into shaker tin.',
-      'Add 30ml aquafaba froth and dry shake without ice for 10 seconds to build silky emulsion.',
-      'Add king cube ice and hard shake for 12 seconds until tin frosts.',
+      'Add 45ml mezcal, 30ml lime juice, and 25ml smoked rosemary syrup into shaker tin.',
+      'Dry shake without ice for 8 seconds to build emulsion.',
+      'Add ice and hard shake for 12 seconds until tin frosts.',
       'Double strain into pre-chilled 7oz Coupe glass.',
-      'Torch a sprig of fresh rosemary over cedar wood and clip to rim.'
+      'Torch a sprig of fresh rosemary and clip to rim.'
     ]
   }
 ]

@@ -12,17 +12,17 @@ export function BaristaCardModal({
   if (!isOpen) return null
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '620px' }}>
+    <div className="clean-modal-overlay" onClick={onClose}>
+      <div className="clean-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
         {/* Modal Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div
               style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '6px',
-                background: '#a855f7',
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: '#111827',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -32,11 +32,11 @@ export function BaristaCardModal({
               <Award size={16} />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: '#fff' }}>
-                Barista SOP Training & Station Card
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>
+                Barista Quick SOP Card
               </h3>
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Printable 4x6" laminated build card for bar stations & staff onboarding.
+                Printable 4x6" laminated build card for station speed & barista onboarding.
               </p>
             </div>
           </div>
@@ -50,62 +50,61 @@ export function BaristaCardModal({
         </div>
 
         {/* Card Side Switcher */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <div className="pill-group" style={{ marginBottom: '16px', width: '100%' }}>
           <button
-            className={`btn btn-sm ${activeSide === 'front' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`pill-btn ${activeSide === 'front' ? 'active' : ''}`}
             onClick={() => setActiveSide('front')}
-            style={{ flex: 1 }}
+            style={{ flex: 1, justifyContent: 'center' }}
           >
-            Side A: Visual Layer Build & Measurements
+            Side A: Visual Build & Measurements
           </button>
           <button
-            className={`btn btn-sm ${activeSide === 'back' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`pill-btn ${activeSide === 'back' ? 'active' : ''}`}
             onClick={() => setActiveSide('back')}
-            style={{ flex: 1 }}
+            style={{ flex: 1, justifyContent: 'center' }}
           >
-            Side B: Step-by-Step SOP & Speed Technique
+            Side B: Step-by-Step SOP
           </button>
         </div>
 
-        {/* The Printable 4x6 Card Container */}
+        {/* Printable Card */}
         <div
           id="barista-sop-print-card"
           style={{
-            background: '#0d131d',
-            border: '2px solid rgba(245, 158, 11, 0.4)',
+            background: '#ffffff',
+            border: '2px solid var(--brand-amber)',
             borderRadius: 'var(--radius-lg)',
             padding: '20px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+            boxShadow: 'var(--shadow-card)',
             position: 'relative'
           }}
         >
           {activeSide === 'front' ? (
             <div>
-              {/* Card Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
                 <div>
-                  <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>
+                  <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--brand-amber)', textTransform: 'uppercase' }}>
                     {recipe.venue.toUpperCase()} SOP
                   </span>
-                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', fontFamily: 'var(--font-display)', marginTop: '4px' }}>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginTop: '2px' }}>
                     {recipe.name}
                   </h2>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                     {metrics.vessel.name} • {metrics.ice.name}
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#34d399' }}>
-                    ${recipe.menuPrice?.toFixed(2)}
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    ₱{recipe.menuPrice?.toFixed(2)}
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                    COGS: ${metrics.totalCogs.toFixed(2)} ({metrics.grossMarginPct.toFixed(0)}% GM)
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                    COGS: ₱{metrics.totalCogs.toFixed(2)} ({metrics.grossMarginPct.toFixed(0)}% GM)
                   </div>
                 </div>
               </div>
 
-              {/* Layer Breakdown Sequence */}
+              {/* Layer Breakdown */}
               <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>
                   Pour Order (Bottom ➔ Top)
@@ -115,8 +114,8 @@ export function BaristaCardModal({
                   <div
                     key={idx}
                     style={{
-                      background: 'rgba(255, 255, 255, 0.04)',
-                      borderLeft: `4px solid ${layer.colorHex || '#f59e0b'}`,
+                      background: '#f8f9fb',
+                      borderLeft: `4px solid ${layer.colorHex || '#d97706'}`,
                       borderRadius: '0 8px 8px 0',
                       padding: '8px 12px',
                       display: 'flex',
@@ -125,40 +124,39 @@ export function BaristaCardModal({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#f59e0b', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--brand-amber)', fontFamily: 'var(--font-mono)' }}>
                         #{idx + 1}
                       </span>
                       <div>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#ffffff' }}>{layer.name}</div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-primary)' }}>{layer.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                           {layer.isTopOff ? 'Auto fill to rim line' : `Pour exactly ${layer.calculatedVolumeMl} ml`}
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#38bdf8', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                       {layer.calculatedVolumeMl} ml ({layer.calculatedVolumeOz} oz)
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Garnishes & Finish */}
-              <div style={{ marginTop: '16px', display: 'flex', gap: '10px', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '8px' }}>
-                <Sparkles size={16} color="#fbbf24" />
-                <div style={{ fontSize: '0.74rem', color: '#f8fafc' }}>
+              {/* Garnish */}
+              <div style={{ marginTop: '16px', display: 'flex', gap: '10px', alignItems: 'center', background: 'var(--brand-amber-subtle)', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--brand-amber-light)' }}>
+                <Sparkles size={16} color="#d97706" />
+                <div style={{ fontSize: '0.74rem', color: 'var(--brand-espresso)' }}>
                   <strong>Finish & Garnish:</strong> {recipe.garnishes?.join(', ') || 'Standard presentation'}
                 </div>
               </div>
             </div>
           ) : (
             <div>
-              {/* Back: Detailed SOP Steps */}
-              <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: '10px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#ffffff', fontFamily: 'var(--font-display)' }}>
+              <div style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
                   Standard Operating Procedure (SOP)
                 </h3>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                   Target speed of service: &lt; 45 seconds per ticket.
                 </p>
               </div>
@@ -176,32 +174,31 @@ export function BaristaCardModal({
                         width: '22px',
                         height: '22px',
                         borderRadius: '50%',
-                        background: 'rgba(245, 158, 11, 0.2)',
-                        border: '1px solid #f59e0b',
-                        color: '#fbbf24',
+                        background: '#f3f4f6',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--brand-amber)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '0.7rem',
-                        fontWeight: 700,
+                        fontWeight: 800,
                         flexShrink: 0
                       }}
                     >
                       {idx + 1}
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: '#e2e8f0', lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                       {step}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Allergen & Quality Control Box */}
               <div
                 style={{
                   marginTop: '16px',
-                  background: 'rgba(244, 63, 94, 0.1)',
-                  border: '1px solid rgba(244, 63, 94, 0.3)',
+                  background: '#fff1f2',
+                  border: '1px solid #fecdd3',
                   borderRadius: 'var(--radius-sm)',
                   padding: '10px 12px',
                   display: 'flex',
@@ -209,9 +206,9 @@ export function BaristaCardModal({
                   gap: '10px'
                 }}
               >
-                <ShieldAlert size={18} color="#fb7185" />
-                <div style={{ fontSize: '0.72rem', color: '#fecdd3' }}>
-                  <strong>Allergen Warning:</strong> Contains Dairy / Tree Nuts (Oat Milk / Almond Milk alternatives). Always sanitize steam wand & shaker between drinks.
+                <ShieldAlert size={18} color="#e11d48" />
+                <div style={{ fontSize: '0.72rem', color: '#9f1239' }}>
+                  <strong>Allergen Notice:</strong> Contains Dairy / Tree Nuts (Oat / Almond alternatives). Sanitize steaming pitcher and shaker between drinks.
                 </div>
               </div>
             </div>
@@ -221,7 +218,7 @@ export function BaristaCardModal({
         {/* Modal Actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '18px' }}>
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn-clean btn-clean-secondary btn-clean-sm"
             onClick={() => window.print()}
           >
             <Printer size={14} />
@@ -229,14 +226,14 @@ export function BaristaCardModal({
           </button>
 
           <button
-            className="btn btn-primary btn-sm"
+            className="btn-clean btn-clean-primary btn-clean-sm"
             onClick={() => {
-              alert('Exported Barista Training PDF & High-Res Card!')
+              alert('Exported Barista Training PDF!')
               onClose()
             }}
           >
             <Download size={14} />
-            <span>Download PDF Kit</span>
+            <span>Download PDF</span>
           </button>
         </div>
       </div>

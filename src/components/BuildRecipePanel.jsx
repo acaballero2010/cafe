@@ -16,15 +16,13 @@ export function BuildRecipePanel({
   const [showAdvancedScience, setShowAdvancedScience] = useState(false)
   const [isEditingPackaging, setIsEditingPackaging] = useState(false)
 
-  // Smart Sizes Selector: 12oz, 16oz, 20oz, etc.
   const commonVessels = [
-    { id: 'cold-16oz', label: '16oz Cold Cup' },
-    { id: 'boba-20oz', label: '20oz Boba Cup' },
-    { id: 'hot-12oz', label: '12oz Hot Cup' },
+    { id: 'cold-16oz', label: '16oz Cold' },
+    { id: 'boba-20oz', label: '20oz Boba' },
+    { id: 'hot-12oz', label: '12oz Hot' },
     { id: 'coupe-7oz', label: '7oz Coupe' }
   ]
 
-  // Smart Ice Presets: Regular Ice (35%), Less Ice (20%), No Ice (0%)
   const smartIceOptions = [
     { id: 'standard', label: 'Regular Ice' },
     { id: 'light', label: 'Less Ice' },
@@ -32,7 +30,6 @@ export function BuildRecipePanel({
   ]
 
   const handleVesselSelect = (vesselId) => {
-    // Auto-bundle default packaging based on vessel
     let defaultPackaging = ['cup-16oz-pet', 'lid-sip-cold']
     if (vesselId.includes('boba')) {
       defaultPackaging = ['cup-16oz-pet', 'lid-dome-boba', 'boba-bamboo-straw']
@@ -128,7 +125,7 @@ export function BuildRecipePanel({
 
   return (
     <div className="card-clean" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
-      {/* 1. Header & Drink Title */}
+      {/* 1. Header & Drink Title (No Text Clipping) */}
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--brand-amber)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
@@ -144,8 +141,8 @@ export function BuildRecipePanel({
           </button>
         </div>
 
-        <input
-          type="text"
+        <textarea
+          rows={2}
           value={recipe.name}
           onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
           style={{
@@ -158,13 +155,15 @@ export function BuildRecipePanel({
             paddingBottom: '4px',
             width: '100%',
             outline: 'none',
-            background: 'transparent'
+            background: 'transparent',
+            resize: 'none',
+            lineHeight: 1.3
           }}
-          placeholder="Drink Name (e.g., Iced Brown Sugar Oat Latte)"
+          placeholder="Drink Name..."
         />
       </div>
 
-      {/* 2. Cup & Size Selector (Clean Pill Buttons) */}
+      {/* 2. Cup & Size Selector */}
       <div>
         <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
           Cup & Size
@@ -175,7 +174,7 @@ export function BuildRecipePanel({
               key={v.id}
               className={`pill-btn ${recipe.vesselId === v.id ? 'active' : ''}`}
               onClick={() => handleVesselSelect(v.id)}
-              style={{ flex: 1, justifyContent: 'center' }}
+              style={{ flex: 1, justifyContent: 'center', padding: '6px 8px', fontSize: '0.76rem' }}
             >
               {v.label}
             </button>
@@ -183,7 +182,7 @@ export function BuildRecipePanel({
         </div>
       </div>
 
-      {/* 3. Ice Level Selector (Smart Defaults) */}
+      {/* 3. Ice Level Selector */}
       <div>
         <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
           Ice Level
@@ -202,14 +201,13 @@ export function BuildRecipePanel({
         </div>
       </div>
 
-      {/* 4. Ingredients & Layer Stack */}
+      {/* 4. Ingredients & Layer Stack (Clean & Spacious) */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-            Ingredients & Build Sequence
+            Ingredients & Sequence
           </label>
 
-          {/* Clean Add Dropdown */}
           <select
             onChange={(e) => {
               if (e.target.value) {
@@ -243,7 +241,7 @@ export function BuildRecipePanel({
           </select>
         </div>
 
-        {/* Clean Items List */}
+        {/* Clean Items List with Wrap */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {recipe.layers.map((layer, idx) => (
             <div
@@ -259,29 +257,30 @@ export function BuildRecipePanel({
                 gap: '8px'
               }}
             >
-              {/* Color dot & Name */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, overflow: 'hidden' }}>
+              {/* Color dot & Name with comfortable wrapping */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
                 <div
                   style={{
                     width: '10px',
                     height: '10px',
                     borderRadius: '50%',
                     background: layer.colorHex || '#d97706',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    marginTop: '4px'
                   }}
                 />
-                <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-word', lineHeight: 1.3 }}>
                     {layer.name}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                    {layer.isTopOff ? 'Auto fill to rim' : `${layer.volumeMl} ml`}
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {layer.isTopOff ? 'Auto fill to rim line' : `${layer.volumeMl} ml`}
                   </div>
                 </div>
               </div>
 
               {/* Volume input or Top-off pill */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 {!layer.isTopOff && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                     <input
@@ -292,8 +291,8 @@ export function BuildRecipePanel({
                       value={layer.volumeMl}
                       onChange={(e) => handleVolumeChange(idx, e.target.value)}
                       style={{
-                        width: '52px',
-                        padding: '3px 6px',
+                        width: '50px',
+                        padding: '3px 4px',
                         fontSize: '0.78rem',
                         fontWeight: 600,
                         border: '1px solid var(--border-light)',
@@ -336,7 +335,7 @@ export function BuildRecipePanel({
         </div>
       </div>
 
-      {/* 5. Auto-Bundled Packaging */}
+      {/* 5. Auto-Bundled Packaging (₱) */}
       <div style={{ background: '#f8f9fb', borderRadius: 'var(--radius-md)', padding: '12px 14px', border: '1px solid var(--border-light)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -374,7 +373,7 @@ export function BuildRecipePanel({
                   }}
                 >
                   <div style={{ fontWeight: 600 }}>{pkg.name.split(' (')[0]}</div>
-                  <div>+${pkg.unitCost.toFixed(2)}</div>
+                  <div>+₱{pkg.unitCost.toFixed(2)}</div>
                 </button>
               )
             })}
@@ -382,7 +381,7 @@ export function BuildRecipePanel({
         )}
       </div>
 
-      {/* 6. Progressive Disclosure: Food Science & Scrap Toggle */}
+      {/* 6. Food Science Accordion */}
       <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '12px' }}>
         <button
           onClick={() => setShowAdvancedScience(!showAdvancedScience)}

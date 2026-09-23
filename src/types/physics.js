@@ -1,4 +1,4 @@
-// Liquid Physics, Ice Displacement, Density & Scrap Math
+// Liquid Physics, Ice Displacement, Density & Scrap Math (Philippine Peso ₱ Context)
 
 export const VESSELS = [
   { id: 'cold-16oz', name: '16oz Cold Cup (PET)', category: 'cold', volumeMl: 473, volumeOz: 16, shape: 'tapered', icon: 'cup' },
@@ -13,11 +13,11 @@ export const VESSELS = [
 
 export const ICE_TYPES = [
   { id: 'none', name: 'No Ice', displacementRatio: 0.0, meltDilutionMl: 0, desc: 'Maximum liquid top-off' },
-  { id: 'light', name: 'Light Ice (20%)', displacementRatio: 0.20, meltDilutionMl: 15, desc: 'Quick chill, standard dilution' },
-  { id: 'standard', name: 'Standard Ice (35%)', displacementRatio: 0.35, meltDilutionMl: 25, desc: 'Standard cafe & boba baseline' },
-  { id: 'extra', name: 'Extra Ice (50%)', displacementRatio: 0.50, meltDilutionMl: 35, desc: 'High displacement, lower liquid COGS' },
-  { id: 'craft_cube', name: '2" King Clear Cube (55%)', displacementRatio: 0.55, meltDilutionMl: 8, desc: 'Slow melt craft cocktail standard' },
-  { id: 'crushed', name: 'Crushed / Nugget Ice (45%)', displacementRatio: 0.45, meltDilutionMl: 40, desc: 'Boba & tiki rapid cooling' }
+  { id: 'light', name: 'Less Ice', displacementRatio: 0.20, meltDilutionMl: 15, desc: 'Quick chill, standard dilution' },
+  { id: 'standard', name: 'Regular Ice', displacementRatio: 0.35, meltDilutionMl: 25, desc: 'Standard cafe & boba baseline' },
+  { id: 'extra', name: 'Extra Ice', displacementRatio: 0.50, meltDilutionMl: 35, desc: 'High displacement, lower liquid COGS' },
+  { id: 'craft_cube', name: 'King Clear Cube', displacementRatio: 0.55, meltDilutionMl: 8, desc: 'Slow melt craft cocktail standard' },
+  { id: 'crushed', name: 'Crushed Ice', displacementRatio: 0.45, meltDilutionMl: 40, desc: 'Boba & tiki rapid cooling' }
 ]
 
 export const SCRAP_PROFILES = {
@@ -30,7 +30,7 @@ export const SCRAP_PROFILES = {
 }
 
 /**
- * Calculates complete displacement, top-off liquid needed, and real vs nominal cost breakdown.
+ * Calculates complete displacement, top-off liquid needed, and real vs nominal cost breakdown in ₱ PHP.
  */
 export function calculateDrinkMetrics({
   vesselId,
@@ -39,7 +39,7 @@ export function calculateDrinkMetrics({
   packagingItems = [],
   includeScrap = true,
   targetMarginPct = 75,
-  menuPrice = 6.00
+  menuPrice = 180.00
 }) {
   const vessel = VESSELS.find(v => v.id === vesselId) || VESSELS[0]
   const ice = ICE_TYPES.find(i => i.id === iceTypeId) || ICE_TYPES[2]
@@ -48,11 +48,9 @@ export function calculateDrinkMetrics({
   const iceDisplacementMl = Math.round(totalVesselVolumeMl * ice.displacementRatio)
   const availableLiquidCapacityMl = Math.max(0, totalVesselVolumeMl - iceDisplacementMl)
 
-  // Separate fixed layers vs auto-top-off layer
   let fixedLayersMl = 0
   let layersDetailed = []
 
-  // Check if there's an auto top-off layer
   const topOffIndex = layers.findIndex(l => l.isTopOff)
 
   layers.forEach((layer, idx) => {
@@ -61,7 +59,6 @@ export function calculateDrinkMetrics({
     }
   })
 
-  // Compute required volume for top-off layer
   const topOffVolumeMl = Math.max(0, availableLiquidCapacityMl - fixedLayersMl)
   const isOverflowing = fixedLayersMl > availableLiquidCapacityMl
 
@@ -72,12 +69,9 @@ export function calculateDrinkMetrics({
     const isTopOff = idx === topOffIndex
     const actualVolumeMl = isTopOff ? topOffVolumeMl : Number(layer.volumeMl || 0)
     
-    // Cost calculation based on unit cost
-    // unitCost is typically $/ml or $/oz
-    const unitCostPerMl = layer.unitCostPerMl || (layer.unitCostPerOz ? layer.unitCostPerOz / 29.5735 : 0.005)
+    const unitCostPerMl = layer.unitCostPerMl || 0.20
     const nominalCost = actualVolumeMl * unitCostPerMl
 
-    // Scrap multiplier
     const scrapType = layer.scrapType || 'standard'
     const scrapRate = SCRAP_PROFILES[scrapType] ? SCRAP_PROFILES[scrapType].defaultRate : 0.03
     const scrapMultiplier = includeScrap ? (1 + scrapRate) : 1
@@ -97,7 +91,7 @@ export function calculateDrinkMetrics({
     })
   })
 
-  // Packaging Consumables Cost
+  // Packaging Consumables Cost in ₱
   let packagingCost = 0
   packagingItems.forEach(pkg => {
     if (pkg.selected) {
@@ -105,8 +99,8 @@ export function calculateDrinkMetrics({
     }
   })
 
-  // Ice Cost (Purified RO / craft ice batch estimate)
-  const iceCost = ice.displacementRatio > 0 ? 0.04 : 0.00
+  // Purified tube ice cost (~₱1.50 per cup)
+  const iceCost = ice.displacementRatio > 0 ? 1.50 : 0.00
 
   const totalCogsNominal = nominalLiquidCost + packagingCost + iceCost
   const totalCogsReal = realLiquidCostWithScrap + packagingCost + iceCost
@@ -117,7 +111,7 @@ export function calculateDrinkMetrics({
   const grossProfit = Math.max(0, menuPrice - actualCogs)
   const grossMarginPct = menuPrice > 0 ? ((menuPrice - actualCogs) / menuPrice) * 100 : 0
 
-  // Suggested Price at Target Margin
+  // Suggested Price at Target Margin (₱)
   const suggestedMenuPrice = targetMarginPct < 100 ? (actualCogs / (1 - (targetMarginPct / 100))) : (actualCogs * 4)
 
   return {

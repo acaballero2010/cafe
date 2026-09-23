@@ -8,7 +8,7 @@ export function SpecSheetView({
   onOpenMarketplace
 }) {
   return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ maxWidth: '820px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Top action bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
@@ -29,7 +29,7 @@ export function SpecSheetView({
           </button>
           <button
             className="btn-clean btn-clean-primary"
-            onClick={() => alert('Saved Spec Sheet to Menu Binder!')}
+            onClick={() => alert('Saved Spec Sheet to Manila Bar Binder!')}
           >
             <Download size={15} />
             <span>Export PDF</span>
@@ -37,7 +37,7 @@ export function SpecSheetView({
         </div>
       </div>
 
-      {/* The Printable iPadOS Spec Card */}
+      {/* Printable iPadOS Spec Card */}
       <div
         className="card-clean"
         id="printable-spec-sheet"
@@ -69,7 +69,7 @@ export function SpecSheetView({
               {recipe.venue.toUpperCase()} SPEC SHEET
             </span>
 
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginTop: '8px' }}>
+            <h1 style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginTop: '8px', lineHeight: 1.25 }}>
               {recipe.name}
             </h1>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
@@ -77,10 +77,10 @@ export function SpecSheetView({
             </p>
           </div>
 
-          {/* Economics Pill */}
+          {/* Economics Pill (₱) */}
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-              ${recipe.menuPrice?.toFixed(2)}
+              ₱{recipe.menuPrice?.toFixed(2)}
             </div>
             <div
               style={{
@@ -99,12 +99,12 @@ export function SpecSheetView({
             >
               <span>{metrics.grossMarginPct.toFixed(0)}% Margin</span>
               <span>•</span>
-              <span>+${metrics.grossProfit.toFixed(2)} profit</span>
+              <span>+₱{metrics.grossProfit.toFixed(2)} profit</span>
             </div>
           </div>
         </div>
 
-        {/* Build Sequence (Clean Flow) */}
+        {/* Build Sequence */}
         <div>
           <h3 style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '14px' }}>
             Build Order (Bottom ➔ Top)
@@ -176,7 +176,7 @@ export function SpecSheetView({
           </div>
         </div>
 
-        {/* Supplier Reorder Banner */}
+        {/* Supplier Reorder Banner (₱) */}
         <div
           style={{
             background: 'var(--brand-amber-subtle)',
@@ -195,7 +195,7 @@ export function SpecSheetView({
                 Supplier Inventory Link
               </div>
               <div style={{ fontSize: '0.74rem', color: 'var(--brand-amber)' }}>
-                Oat milk low? 2 local suppliers have stock from $3.20/L with Net-30 terms.
+                Oat milk low? 2 local suppliers have stock from ₱210/L with Net-30 terms.
               </div>
             </div>
           </div>

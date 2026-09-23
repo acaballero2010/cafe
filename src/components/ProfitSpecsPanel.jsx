@@ -39,7 +39,7 @@ export function ProfitSpecsPanel({
             Step 3 • Profit & Specs
           </span>
           <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', marginTop: '2px' }}>
-            Unit Economics
+            Unit Economics (PHP)
           </h3>
         </div>
 
@@ -80,10 +80,10 @@ export function ProfitSpecsPanel({
               Total Unit Cost (COGS)
             </span>
             <div style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-              ${totalCogs.toFixed(2)}
+              ₱{totalCogs.toFixed(2)}
             </div>
             <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-              Liquid: ${realLiquidCostWithScrap.toFixed(2)} • Pack: ${(packagingCost + iceCost).toFixed(2)}
+              Liquid: ₱{realLiquidCostWithScrap.toFixed(2)} • Pack: ₱{(packagingCost + iceCost).toFixed(2)}
             </div>
           </div>
 
@@ -104,28 +104,28 @@ export function ProfitSpecsPanel({
               {grossMarginPct.toFixed(0)}%
             </div>
             <div style={{ fontSize: '0.66rem', fontWeight: 600, color: isHighMargin ? '#047857' : '#b45309' }}>
-              +${grossProfit.toFixed(2)} profit / cup
+              +₱{grossProfit.toFixed(2)} profit / cup
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Retail Price Slider & Input */}
+      {/* 3. Retail Price Slider & Input (Philippine Peso ₱) */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
           <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
             Target Retail Menu Price
           </label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>$</span>
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>₱</span>
             <input
               type="number"
-              step="0.25"
+              step="5"
               min="0"
-              value={recipe.menuPrice || 6.00}
+              value={recipe.menuPrice || 180.00}
               onChange={(e) => handlePriceChange(e.target.value)}
               style={{
-                width: '74px',
+                width: '85px',
                 padding: '4px 6px',
                 fontSize: '1.1rem',
                 fontWeight: 800,
@@ -142,22 +142,22 @@ export function ProfitSpecsPanel({
         {/* Clean Interactive Slider */}
         <input
           type="range"
-          min="2.00"
-          max="12.00"
-          step="0.25"
-          value={recipe.menuPrice || 6.00}
+          min="60.00"
+          max="400.00"
+          step="5.00"
+          value={recipe.menuPrice || 180.00}
           onChange={(e) => handlePriceChange(e.target.value)}
           className="clean-slider"
         />
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-          <span>Min: $2.00</span>
-          <span style={{ color: 'var(--brand-amber)', fontWeight: 600 }}>Suggested: ${suggestedMenuPrice.toFixed(2)} (80% GM)</span>
-          <span>Max: $12.00</span>
+          <span>Min: ₱60</span>
+          <span style={{ color: 'var(--brand-amber)', fontWeight: 600 }}>Suggested: ₱{suggestedMenuPrice.toFixed(0)} (80% GM)</span>
+          <span>Max: ₱400</span>
         </div>
       </div>
 
-      {/* 4. Monthly Profit Projection Run-Rate */}
+      {/* 4. Monthly Profit Projection Run-Rate in ₱ */}
       <div style={{ background: '#ffffff', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -169,7 +169,7 @@ export function ProfitSpecsPanel({
             </div>
           </div>
           <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#059669', fontFamily: 'var(--font-mono)' }}>
-            +${(grossProfit * 120 * 30).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            +₱{(grossProfit * 120 * 30).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}> / mo</span>
           </div>
         </div>
@@ -193,7 +193,7 @@ export function ProfitSpecsPanel({
             Wholesale Reorder Available
           </div>
           <div style={{ fontSize: '0.68rem', color: 'var(--brand-amber)', marginTop: '2px' }}>
-            2 local suppliers have stock from $3.87/L with Net-30 terms.
+            2 Manila distributors have stock from ₱210/L with Net-30 terms.
           </div>
         </div>
         <button
