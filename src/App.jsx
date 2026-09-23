@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { Header } from './components/Header'
-import { BuildRecipePanel } from './components/BuildRecipePanel'
-import { RealTimeCanvas } from './components/RealTimeCanvas'
-import { ProfitSpecsPanel } from './components/ProfitSpecsPanel'
+import { MobileHeader } from './components/MobileHeader'
+import { MobileRecipeBuilder } from './components/MobileRecipeBuilder'
+import { MobileStickyBottomBar } from './components/MobileStickyBottomBar'
+import { MobileBottomSheet } from './components/MobileBottomSheet'
 import { SpecSheetView } from './components/SpecSheetView'
 import { SubRecipeManager } from './components/SubRecipeManager'
 import { Marketplace } from './components/Marketplace'
@@ -13,12 +13,13 @@ import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
 import { calculateDrinkMetrics } from './types/physics'
-import { Layers, Sparkles, ShoppingBag, BarChart3, Receipt, BookOpen, ChefHat } from 'lucide-react'
+import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen } from 'lucide-react'
 
 export function App() {
   const [activeVenue, setActiveVenue] = useState('coffee')
-  const [activeTab, setActiveTab] = useState('builder') // 'builder' | 'sub-recipes' | 'marketplace' | 'menu-matrix'
+  const [activeTab, setActiveTab] = useState('studio') // 'studio' | 'batches' | 'marketplace' | 'matrix'
   const [isSpecSheetMode, setIsSpecSheetMode] = useState(false)
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG)
   const [subRecipes, setSubRecipes] = useState(DEFAULT_SUB_RECIPES)
   const [currentRecipe, setCurrentRecipe] = useState(PRESET_RECIPES[0])
@@ -28,7 +29,7 @@ export function App() {
   const [isOcrOpen, setIsOcrOpen] = useState(false)
   const [isBaristaCardOpen, setIsBaristaCardOpen] = useState(false)
 
-  // Sync preset when venue changes
+  // Sync preset when category changes
   useEffect(() => {
     const venueRecipe = PRESET_RECIPES.find(r => r.venue === activeVenue)
     if (venueRecipe) {
@@ -44,7 +45,7 @@ export function App() {
     }))
   }, [currentRecipe.packagingIds])
 
-  // Compute live physics & economics
+  // Compute live physics & economics in PHP ₱
   const metrics = useMemo(() => {
     return calculateDrinkMetrics({
       vesselId: currentRecipe.vesselId,
@@ -52,8 +53,8 @@ export function App() {
       layers: currentRecipe.layers,
       packagingItems: activePackagingItems,
       includeScrap: includeScrap,
-      targetMarginPct: currentRecipe.targetMarginPct || 78,
-      menuPrice: currentRecipe.menuPrice || 6.50
+      targetMarginPct: currentRecipe.targetMarginPct || 75,
+      menuPrice: currentRecipe.menuPrice || 180.00
     })
   }, [currentRecipe, activePackagingItems, includeScrap])
 
@@ -82,24 +83,18 @@ export function App() {
   }
 
   return (
-    <div className="app-container">
-      {/* Top Header */}
-      <Header
+    <div style={{ minHeight: '100vh', background: '#f8f9fb', color: '#111827', display: 'flex', flexDirection: 'column' }}>
+      {/* 1. Native Mobile Navigation Header & Category Carousel */}
+      <MobileHeader
         activeVenue={activeVenue}
         setActiveVenue={setActiveVenue}
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setActiveTab(tab)
-          setIsSpecSheetMode(false)
-        }}
+        onOpenSop={() => setIsBaristaCardOpen(true)}
         onOpenOcr={() => setIsOcrOpen(true)}
-        onOpenBaristaCard={() => setIsBaristaCardOpen(true)}
-        globalMarginPct={metrics.grossMarginPct}
       />
 
-      {/* Main View Area */}
-      <main style={{ padding: '20px' }}>
-        {activeTab === 'builder' && (
+      {/* 2. Main Scrollable Viewport */}
+      <main style={{ flex: 1, padding: '16px 16px 140px', maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+        {activeTab === 'studio' && (
           isSpecSheetMode ? (
             <SpecSheetView
               recipe={currentRecipe}
@@ -108,96 +103,156 @@ export function App() {
               onOpenMarketplace={() => setActiveTab('marketplace')}
             />
           ) : (
-            /* 3-Column Clean Canvas Layout */
-            <div className="workspace-three-col">
-              {/* Column 1: Build Recipe (Inputs Only) */}
-              <BuildRecipePanel
-                recipe={currentRecipe}
-                catalog={catalog}
-                subRecipes={subRecipes}
-                includeScrap={includeScrap}
-                setIncludeScrap={setIncludeScrap}
-                onUpdateRecipe={setCurrentRecipe}
-                onLoadPreset={handleLoadPreset}
-              />
-
-              {/* Column 2: Real-Time Canvas (Visual Centerpiece) */}
-              <RealTimeCanvas
-                metrics={metrics}
-                recipe={currentRecipe}
-                onOpenSopCard={() => setIsBaristaCardOpen(true)}
-              />
-
-              {/* Column 3: Profit & Specs (Business Bottom Line) */}
-              <ProfitSpecsPanel
-                recipe={currentRecipe}
-                metrics={metrics}
-                onUpdateRecipe={setCurrentRecipe}
-                onOpenSopCard={() => setIsBaristaCardOpen(true)}
-                onOpenMarketplace={() => setActiveTab('marketplace')}
-                onSwitchToSpecSheet={() => setIsSpecSheetMode(true)}
-              />
-            </div>
+            <MobileRecipeBuilder
+              recipe={currentRecipe}
+              catalog={catalog}
+              subRecipes={subRecipes}
+              includeScrap={includeScrap}
+              setIncludeScrap={setIncludeScrap}
+              onUpdateRecipe={setCurrentRecipe}
+              onLoadPreset={handleLoadPreset}
+            />
           )
         )}
 
-        {activeTab === 'sub-recipes' && (
-          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <SubRecipeManager
-              subRecipes={subRecipes}
-              catalog={catalog}
-              onUpdateSubRecipes={setSubRecipes}
-            />
-          </div>
+        {activeTab === 'batches' && (
+          <SubRecipeManager
+            subRecipes={subRecipes}
+            catalog={catalog}
+            onUpdateSubRecipes={setSubRecipes}
+          />
         )}
 
         {activeTab === 'marketplace' && (
-          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <Marketplace onAddToCart={() => {}} />
-          </div>
+          <Marketplace onAddToCart={() => {}} />
         )}
 
-        {activeTab === 'menu-matrix' && (
-          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-            <MenuMatrix
-              currentRecipe={currentRecipe}
-              metrics={metrics}
-            />
-          </div>
+        {activeTab === 'matrix' && (
+          <MenuMatrix
+            currentRecipe={currentRecipe}
+            metrics={metrics}
+          />
         )}
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <nav className="mobile-bottom-bar-clean">
+      {/* 3. Floating Sticky Bottom Bar (Active on Studio Tab) */}
+      {activeTab === 'studio' && !isSpecSheetMode && (
+        <MobileStickyBottomBar
+          metrics={metrics}
+          onOpenBottomSheet={() => setIsBottomSheetOpen(true)}
+        />
+      )}
+
+      {/* 4. Native Mobile Bottom Navigation Bar */}
+      <nav
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 45,
+          background: 'rgba(255, 255, 255, 0.96)',
+          backdropFilter: 'blur(16px)',
+          borderTop: '1px solid #e5e7eb',
+          display: 'flex',
+          justifyContent: 'space-around',
+          padding: '6px 12px calc(6px + env(safe-area-inset-bottom))',
+          maxWidth: '680px',
+          margin: '0 auto'
+        }}
+      >
         <button
-          className={`mobile-nav-clean-item ${activeTab === 'builder' ? 'active' : ''}`}
-          onClick={() => setActiveTab('builder')}
+          onClick={() => {
+            setActiveTab('studio')
+            setIsSpecSheetMode(false)
+          }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === 'studio' ? '#451a03' : '#9ca3af',
+            cursor: 'pointer',
+            padding: '4px 10px'
+          }}
         >
-          <Layers size={18} />
-          <span>Studio</span>
+          <Layers size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'studio' ? 800 : 600 }}>Studio</span>
         </button>
+
         <button
-          className={`mobile-nav-clean-item ${activeTab === 'sub-recipes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('sub-recipes')}
+          onClick={() => setActiveTab('batches')}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === 'batches' ? '#451a03' : '#9ca3af',
+            cursor: 'pointer',
+            padding: '4px 10px'
+          }}
         >
-          <ChefHat size={18} />
-          <span>Batches</span>
+          <ChefHat size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'batches' ? 800 : 600 }}>Batches</span>
         </button>
+
         <button
-          className={`mobile-nav-clean-item ${activeTab === 'marketplace' ? 'active' : ''}`}
           onClick={() => setActiveTab('marketplace')}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === 'marketplace' ? '#451a03' : '#9ca3af',
+            cursor: 'pointer',
+            padding: '4px 10px'
+          }}
         >
-          <ShoppingBag size={18} />
-          <span>Market</span>
+          <ShoppingBag size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'marketplace' ? 800 : 600 }}>Market</span>
         </button>
+
         <button
-          className={`mobile-nav-clean-item ${activeTab === 'menu-matrix' ? 'active' : ''}`}
-          onClick={() => setActiveTab('menu-matrix')}
+          onClick={() => setActiveTab('matrix')}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === 'matrix' ? '#451a03' : '#9ca3af',
+            cursor: 'pointer',
+            padding: '4px 10px'
+          }}
         >
-          <BarChart3 size={18} />
-          <span>Matrix</span>
+          <BarChart3 size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'matrix' ? 800 : 600 }}>Matrix</span>
         </button>
       </nav>
+
+      {/* 5. Mobile Bottom Sheet Drawer */}
+      <MobileBottomSheet
+        isOpen={isBottomSheetOpen}
+        onClose={() => setIsBottomSheetOpen(false)}
+        recipe={currentRecipe}
+        metrics={metrics}
+        onUpdateRecipe={setCurrentRecipe}
+        onOpenSopCard={() => {
+          setIsBottomSheetOpen(false)
+          setIsBaristaCardOpen(true)
+        }}
+        onOpenMarketplace={() => {
+          setIsBottomSheetOpen(false)
+          setActiveTab('marketplace')
+        }}
+      />
 
       {/* Modals */}
       <BaristaCardModal
