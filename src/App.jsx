@@ -2,20 +2,23 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Header } from './components/Header'
 import { DrinkVisualizer } from './components/DrinkVisualizer'
 import { CostingEngine } from './components/CostingEngine'
+import { SubRecipeManager } from './components/SubRecipeManager'
 import { AiRenderStudio } from './components/AiRenderStudio'
 import { Marketplace } from './components/Marketplace'
 import { MenuMatrix } from './components/MenuMatrix'
 import { BaristaCardModal } from './components/BaristaCardModal'
 import { InvoiceOcrModal } from './components/InvoiceOcrModal'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
+import { DEFAULT_SUB_RECIPES, calculateSubRecipeMetrics } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
 import { calculateDrinkMetrics } from './types/physics'
-import { Layers, Sparkles, ShoppingBag, BarChart3, Receipt, BookOpen } from 'lucide-react'
+import { Layers, Sparkles, ShoppingBag, BarChart3, Receipt, BookOpen, ChefHat } from 'lucide-react'
 
 export function App() {
   const [activeVenue, setActiveVenue] = useState('coffee')
   const [activeTab, setActiveTab] = useState('recipe-lab')
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG)
+  const [subRecipes, setSubRecipes] = useState(DEFAULT_SUB_RECIPES)
   const [currentRecipe, setCurrentRecipe] = useState(PRESET_RECIPES[0])
   const [includeScrap, setIncludeScrap] = useState(true)
 
@@ -111,7 +114,7 @@ export function App() {
 
       {/* Main Workspace Layout */}
       <main className="workspace-grid">
-        {/* Left Column: Live Visualizer Stage (Always accessible or prominent in Lab/AI tabs) */}
+        {/* Left Column: Live Visualizer Stage */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <DrinkVisualizer
             metrics={metrics}
@@ -162,17 +165,26 @@ export function App() {
           </div>
         </div>
 
-        {/* Right Column: Tab Viewports */}
+        {/* Right Column: Active Tab Content */}
         <div>
           {activeTab === 'recipe-lab' && (
             <CostingEngine
               recipe={currentRecipe}
               catalog={catalog}
+              subRecipes={subRecipes}
               metrics={metrics}
               includeScrap={includeScrap}
               setIncludeScrap={setIncludeScrap}
               onUpdateRecipe={setCurrentRecipe}
               onLoadPreset={handleLoadPreset}
+            />
+          )}
+
+          {activeTab === 'sub-recipes' && (
+            <SubRecipeManager
+              subRecipes={subRecipes}
+              catalog={catalog}
+              onUpdateSubRecipes={setSubRecipes}
             />
           )}
 
@@ -208,6 +220,13 @@ export function App() {
           <span>Costing</span>
         </button>
         <button
+          className={`mobile-nav-item ${activeTab === 'sub-recipes' ? 'active' : ''}`}
+          onClick={() => setActiveTab('sub-recipes')}
+        >
+          <ChefHat size={18} />
+          <span>Batches</span>
+        </button>
+        <button
           className={`mobile-nav-item ${activeTab === 'ai-studio' ? 'active' : ''}`}
           onClick={() => setActiveTab('ai-studio')}
         >
@@ -227,13 +246,6 @@ export function App() {
         >
           <BarChart3 size={18} />
           <span>Matrix</span>
-        </button>
-        <button
-          className="mobile-nav-item"
-          onClick={() => setIsOcrOpen(true)}
-        >
-          <Receipt size={18} />
-          <span>OCR</span>
         </button>
       </nav>
 

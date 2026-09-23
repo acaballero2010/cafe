@@ -1,5 +1,5 @@
 import React from 'react'
-import { Coffee, Sparkles, Receipt, BookOpen, ShoppingBag, BarChart3, Layers } from 'lucide-react'
+import { Coffee, Sparkles, Receipt, BookOpen, ShoppingBag, BarChart3, Layers, ChefHat } from 'lucide-react'
 
 export function Header({
   activeVenue,
@@ -18,6 +18,7 @@ export function Header({
 
   const navTabs = [
     { id: 'recipe-lab', label: 'Recipe Costing Lab', icon: Layers },
+    { id: 'sub-recipes', label: 'Batch Preps & Yields', icon: ChefHat },
     { id: 'ai-studio', label: 'AI Visual Studio', icon: Sparkles },
     { id: 'marketplace', label: 'B2B Supply & Group Buy', icon: ShoppingBag },
     { id: 'menu-matrix', label: 'Menu Engineering', icon: BarChart3 }

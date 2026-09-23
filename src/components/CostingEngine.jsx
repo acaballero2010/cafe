@@ -12,14 +12,17 @@ import {
   AlertCircle,
   HelpCircle,
   Sparkles,
-  Sliders
+  Sliders,
+  ChefHat
 } from 'lucide-react'
 import { VESSELS, ICE_TYPES, SCRAP_PROFILES } from '../types/physics'
 import { PACKAGING_ITEMS } from '../data/defaultCatalog'
+import { calculateSubRecipeMetrics } from '../data/defaultSubRecipes'
 
 export function CostingEngine({
   recipe,
   catalog,
+  subRecipes = [],
   metrics,
   includeScrap,
   setIncludeScrap,
@@ -56,15 +59,41 @@ export function CostingEngine({
 
   const handleRemoveLayer = (idx) => {
     const updatedLayers = recipe.layers.filter((_, i) => i !== idx)
-    // If we removed the top off layer, assign top off to the last liquid layer if any
     if (updatedLayers.length > 0 && !updatedLayers.some(l => l.isTopOff)) {
       updatedLayers[updatedLayers.length - 1].isTopOff = true
     }
     onUpdateRecipe({ ...recipe, layers: updatedLayers })
   }
 
-  const handleAddIngredient = (ingredientId) => {
-    const item = catalog.find(c => c.id === ingredientId)
+  const handleAddIngredientOrSubRecipe = (value) => {
+    if (!value) return
+
+    if (value.startsWith('sub:')) {
+      const subId = value.replace('sub:', '')
+      const sub = subRecipes.find(s => s.id === subId)
+      if (!sub) return
+
+      const subMetrics = calculateSubRecipeMetrics(sub, catalog)
+      const newLayer = {
+        id: `layer-sub-${Date.now()}`,
+        isSubRecipe: true,
+        subRecipeId: sub.id,
+        ingredientId: sub.id,
+        name: `[Batch] ${sub.name}`,
+        volumeMl: sub.yieldUom === 'g' ? 60 : 50,
+        unitCostPerMl: subMetrics.effectiveUnitCost,
+        colorHex: sub.colorHex || '#160802',
+        densityBrix: sub.densityBrix || 50,
+        scrapType: 'boba_pearls',
+        isTopOff: false,
+        layerType: sub.yieldUom === 'g' ? 'bottom_boba' : 'top_foam'
+      }
+
+      onUpdateRecipe({ ...recipe, layers: [...recipe.layers, newLayer] })
+      return
+    }
+
+    const item = catalog.find(c => c.id === value)
     if (!item) return
 
     const newLayer = {
@@ -80,7 +109,6 @@ export function CostingEngine({
       layerType: item.layerType || 'liquid'
     }
 
-    // If new layer is top off, remove top off from existing
     let updatedLayers = [...recipe.layers]
     if (newLayer.isTopOff) {
       updatedLayers = updatedLayers.map(l => ({ ...l, isTopOff: false }))
@@ -109,8 +137,7 @@ export function CostingEngine({
     totalCogs,
     grossProfit,
     grossMarginPct,
-    suggestedMenuPrice,
-    targetMarginPct
+    suggestedMenuPrice
   } = metrics
 
   const isHealthyMargin = grossMarginPct >= 75
@@ -138,7 +165,7 @@ export function CostingEngine({
                 paddingBottom: '4px',
                 outline: 'none'
               }}
-              placeholder="Recipe Title (e.g., Iced Salted Caramel Cream Foam)"
+              placeholder="Recipe Title"
             />
             <input
               type="text"
@@ -157,7 +184,6 @@ export function CostingEngine({
             />
           </div>
 
-          {/* Quick Presets Button */}
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
               className="btn btn-secondary btn-sm"
@@ -170,7 +196,7 @@ export function CostingEngine({
           </div>
         </div>
 
-        {/* 1. Vessel Geometry & Shape Picker */}
+        {/* 1. Vessel Shape Picker */}
         <div style={{ marginTop: '18px' }}>
           <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
             1. Serving Glassware / To-Go Vessel
@@ -207,7 +233,7 @@ export function CostingEngine({
           </div>
         </div>
 
-        {/* 2. Ice Displacement Level Slider */}
+        {/* 2. Ice Displacement Level */}
         <div style={{ marginTop: '18px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -241,23 +267,22 @@ export function CostingEngine({
         </div>
       </div>
 
-      {/* 3. Layer Stack & Liquid Displacement Builder */}
+      {/* 3. Layer Stack & Sub-Recipes */}
       <div className="glass-panel" style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <div>
             <h3 style={{ fontSize: '0.98rem', fontWeight: 700, fontFamily: 'var(--font-display)' }}>
-              3. Ingredient Layers & Density Ordering
+              3. Layer Stack (Raw SKUs & Batch Preps)
             </h3>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Layers are stacked by specific gravity. Auto top-off calculates exact milk/tea fill.
+              Add raw ingredients or house sub-recipes (tapioca batches, cheese caps, cold brew).
             </p>
           </div>
 
-          {/* Add Layer Picker */}
           <select
             onChange={(e) => {
               if (e.target.value) {
-                handleAddIngredient(e.target.value)
+                handleAddIngredientOrSubRecipe(e.target.value)
                 e.target.value = ''
               }
             }}
@@ -272,12 +297,24 @@ export function CostingEngine({
               outline: 'none'
             }}
           >
-            <option value="" disabled selected>+ Add Ingredient</option>
-            {catalog.map(c => (
-              <option key={c.id} value={c.id} style={{ background: '#111827', color: '#fff' }}>
-                [{c.category.toUpperCase()}] {c.name} (${c.unitCostPerMl.toFixed(4)}/ml)
-              </option>
-            ))}
+            <option value="" disabled selected>+ Add Layer / Batch</option>
+            <optgroup label="✨ HOUSE SUB-RECIPES (BATCH PREPS)">
+              {subRecipes.map(s => {
+                const subM = calculateSubRecipeMetrics(s, catalog)
+                return (
+                  <option key={s.id} value={`sub:${s.id}`} style={{ background: '#111827', color: '#fbbf24' }}>
+                    [BATCH] {s.name} (${subM.effectiveUnitCostFormatted}/{s.yieldUom})
+                  </option>
+                )
+              })}
+            </optgroup>
+            <optgroup label="📦 RAW INGREDIENTS">
+              {catalog.map(c => (
+                <option key={c.id} value={c.id} style={{ background: '#111827', color: '#fff' }}>
+                  [{c.category.toUpperCase()}] {c.name} (${c.unitCostPerMl.toFixed(4)}/ml)
+                </option>
+              ))}
+            </optgroup>
           </select>
         </div>
 
@@ -297,7 +334,6 @@ export function CostingEngine({
                 gap: '10px'
               }}
             >
-              {/* Layer Color swatch & name */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                 <div
                   style={{
@@ -327,7 +363,6 @@ export function CostingEngine({
                 </div>
               </div>
 
-              {/* Volume Input or Top-off badge */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {layer.isTopOff ? (
                   <div
@@ -374,12 +409,10 @@ export function CostingEngine({
                   </div>
                 )}
 
-                {/* Layer Cost */}
                 <div style={{ minWidth: '60px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>
                   ${(includeScrap ? layer.realCost : layer.nominalCost).toFixed(2)}
                 </div>
 
-                {/* Toggle Top-Off */}
                 <button
                   onClick={() => handleToggleTopOff(idx)}
                   title={layer.isTopOff ? 'Auto top-off active' : 'Set as auto-calculated top-off liquid'}
@@ -396,17 +429,9 @@ export function CostingEngine({
                   Top-Off
                 </button>
 
-                {/* Delete Layer */}
                 <button
                   onClick={() => handleRemoveLayer(idx)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '4px'
-                  }}
-                  title="Remove Layer"
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -416,7 +441,7 @@ export function CostingEngine({
         </div>
       </div>
 
-      {/* 4. Packaging & Consumables Check */}
+      {/* 4. Packaging & Consumables */}
       <div className="glass-panel" style={{ padding: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <div>
@@ -507,7 +532,7 @@ export function CostingEngine({
         )}
       </div>
 
-      {/* 6. COGS, Margins & Price Recommendation Terminal */}
+      {/* 6. COGS, Margins & Price Recommendation */}
       <div
         className="glass-panel-heavy"
         style={{
@@ -517,7 +542,6 @@ export function CostingEngine({
         }}
       >
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
-          {/* Total COGS */}
           <div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
               Total True COGS
@@ -530,7 +554,6 @@ export function CostingEngine({
             </div>
           </div>
 
-          {/* Gross Margin % */}
           <div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
               Gross Margin
@@ -550,7 +573,6 @@ export function CostingEngine({
             </div>
           </div>
 
-          {/* Menu Price Input */}
           <div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
               Current Menu Price
@@ -579,7 +601,6 @@ export function CostingEngine({
             </div>
           </div>
 
-          {/* Suggested Price at 80% GM */}
           <div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>
               Suggested Price (80% GM)
@@ -593,7 +614,6 @@ export function CostingEngine({
           </div>
         </div>
 
-        {/* 150 Cups/Day Profit Projection */}
         <div
           style={{
             marginTop: '18px',
