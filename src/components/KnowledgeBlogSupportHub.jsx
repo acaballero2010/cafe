@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react'
 import { 
   BookOpen, Newspaper, HelpCircle, Search, Sparkles, ChevronRight, 
   Clock, User, Tag, CheckCircle2, AlertTriangle, ArrowRight, 
-  MessageSquare, Send, ThumbsUp, Bookmark, ExternalLink, X, Zap, ShieldCheck
+  MessageSquare, Send, ThumbsUp, Bookmark, ExternalLink, X, Zap, 
+  ShieldCheck, ArrowLeft, Star, Heart, Share2, Award, Coffee, FlaskConical
 } from 'lucide-react'
 import { KNOWLEDGE_ARTICLES, BLOG_POSTS, TROUBLESHOOTING_FAQS } from '../data/knowledgeBlogData'
 import { triggerHaptic } from '../utils/haptics'
@@ -13,8 +14,20 @@ export function KnowledgeBlogSupportHub({
 }) {
   const [activeSection, setActiveSection] = useState('knowledge') // 'knowledge' | 'blog' | 'support'
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedArticle, setSelectedArticle] = useState(null)
+  const [selectedItem, setSelectedItem] = useState(null) // Active article or blog post for Full-Page view
   const [selectedCategory, setSelectedCategory] = useState('all')
+
+  // Rating & Comments State per article ID
+  const [userRatings, setUserRatings] = useState({}) // { [articleId]: ratingNumber }
+  const [articleComments, setArticleComments] = useState(() => {
+    const initial = {}
+    KNOWLEDGE_ARTICLES.forEach(a => { initial[a.id] = a.comments || [] })
+    BLOG_POSTS.forEach(b => { initial[b.id] = b.comments || [] })
+    return initial
+  })
+  const [newCommentText, setNewCommentText] = useState('')
+  const [commentRating, setCommentRating] = useState(5)
+  const [commentSubmitted, setCommentSubmitted] = useState(false)
 
   // AI Assistant Query State
   const [aiQuestion, setAiQuestion] = useState('')
@@ -39,6 +52,18 @@ export function KnowledgeBlogSupportHub({
     })
   }, [selectedCategory, searchQuery])
 
+  // Filtered Blog Posts
+  const filteredBlogs = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return BLOG_POSTS
+    return BLOG_POSTS.filter(post => 
+      post.title.toLowerCase().includes(q) || 
+      post.summary?.toLowerCase().includes(q) ||
+      post.category?.toLowerCase().includes(q) ||
+      post.tags?.some(t => t.toLowerCase().includes(q))
+    )
+  }, [searchQuery])
+
   // Filtered FAQs
   const filteredFaqs = useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
@@ -49,6 +74,47 @@ export function KnowledgeBlogSupportHub({
       f.category.toLowerCase().includes(q)
     )
   }, [searchQuery])
+
+  // Handle User Rating
+  const handleRateArticle = (itemId, ratingValue) => {
+    triggerHaptic('success')
+    setUserRatings(prev => ({ ...prev, [itemId]: ratingValue }))
+  }
+
+  // Handle Add Comment
+  const handleAddComment = (e) => {
+    e.preventDefault()
+    if (!newCommentText.trim() || !selectedItem) return
+
+    triggerHaptic('success')
+    const newComment = {
+      id: `c-user-${Date.now()}`,
+      userName: 'You (Head Barista)',
+      userRole: 'Verified Creator',
+      rating: commentRating,
+      timestamp: 'Just now',
+      text: newCommentText.trim(),
+      likes: 0
+    }
+
+    setArticleComments(prev => ({
+      ...prev,
+      [selectedItem.id]: [newComment, ...(prev[selectedItem.id] || [])]
+    }))
+
+    setNewCommentText('')
+    setCommentSubmitted(true)
+    setTimeout(() => setCommentSubmitted(false), 3000)
+  }
+
+  // Handle Like Comment
+  const handleLikeComment = (itemId, commentId) => {
+    triggerHaptic('tap')
+    setArticleComments(prev => ({
+      ...prev,
+      [itemId]: (prev[itemId] || []).map(c => c.id === commentId ? { ...c, likes: c.likes + 1 } : c)
+    }))
+  }
 
   // Simulate AI Assistant instant answers
   const handleAskAi = (e) => {
@@ -66,28 +132,28 @@ export function KnowledgeBlogSupportHub({
         setAiResponse({
           title: '☕ Espresso Dialing Recommendation',
           answer: 'Your espresso is likely under-extracted (high acidity, salty astringency). We recommend: (1) Grind 2 notches finer, (2) Extend brew time to 28-30s, or (3) Increase water temperature to 93.5°C to pull sweeter soluble sugars.',
-          suggestedLink: 'kb-espresso-dialing'
+          suggestedArticle: KNOWLEDGE_ARTICLES[0]
         })
       } else if (q.includes('foam') || q.includes('milk') || q.includes('deflate')) {
         setAiResponse({
           title: '☁️ Cold Foam Stabilization Formulation',
           answer: 'Cold foam collapses when lipid/protein ratios are too low. Formulate with 60% fresh chilled milk + 40% heavy cream + 15ml vanilla syrup for structural density. Whip at 4°C for 18 seconds.',
-          suggestedLink: 'faq-cold-foam-deflating'
+          suggestedArticle: KNOWLEDGE_ARTICLES[1]
         })
       } else if (q.includes('curdle') || q.includes('citrus') || q.includes('yuzu') || q.includes('lemon')) {
         setAiResponse({
           title: '🍋 Acid-Protein Coagulation Prevention',
           answer: 'Citrus juice (pH < 2.5) coagulates dairy casein. For layered tonics: (1) Use oat milk or tonic soda without dairy, or (2) Separate the citrus syrup with dense ice before floating espresso.',
-          suggestedLink: 'faq-citrus-curdling'
+          suggestedArticle: null
         })
       } else {
         setAiResponse({
           title: '💡 Food-Science R&D Insight',
-          answer: `For "${aiQuestion}", beverage chemistry suggests balancing the sugar density (target 16–20° Brix) and pairing with complementary lipid notes. Test this formulation directly in the R&D Lab or Recipe Studio!`,
-          suggestedLink: null
+          answer: `For "${aiQuestion}", beverage chemistry suggests balancing the sugar density (target 16–20° Brix) and pairing with complementary lipid notes. Check our master guides or test in R&D Lab!`,
+          suggestedArticle: null
         })
       }
-    }, 600)
+    }, 550)
   }
 
   const handleSendSupport = (e) => {
@@ -101,6 +167,308 @@ export function KnowledgeBlogSupportHub({
     }, 3500)
   }
 
+  // ==========================================
+  // 1. FULL-PAGE ARTICLE / BLOG READER VIEW
+  // ==========================================
+  if (selectedItem) {
+    const currentComments = articleComments[selectedItem.id] || []
+    const currentUserRating = userRatings[selectedItem.id] || 0
+    const displayedAvgRating = currentUserRating 
+      ? (((selectedItem.rating * selectedItem.ratingsCount) + currentUserRating) / (selectedItem.ratingsCount + 1)).toFixed(2)
+      : (selectedItem.rating || 4.90).toFixed(2)
+    const displayedRatingsCount = currentUserRating ? (selectedItem.ratingsCount + 1) : selectedItem.ratingsCount
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '140px' }}>
+        {/* Top Back Navigation Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+          <button
+            onClick={() => {
+              triggerHaptic('tap')
+              setSelectedItem(null)
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '12px',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              color: '#0f172a',
+              fontSize: '0.82rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+            }}
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Academy</span>
+          </button>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.74rem', background: '#eff6ff', color: '#2563eb', padding: '4px 10px', borderRadius: '12px', fontWeight: 800 }}>
+              {selectedItem.categoryName || selectedItem.category}
+            </span>
+          </div>
+        </div>
+
+        {/* Hero Banner Header */}
+        <div style={{ borderRadius: '20px', overflow: 'hidden', background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+          {selectedItem.image && (
+            <div style={{ height: '180px', width: '100%', position: 'relative', background: '#1e293b' }}>
+              <img
+                src={selectedItem.image}
+                alt={selectedItem.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  e.target.onerror = null
+                  e.target.src = 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=600&q=80'
+                }}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15, 23, 42, 0.8) 0%, transparent 60%)' }} />
+              <div style={{ position: 'absolute', bottom: '12px', left: '16px', right: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', color: '#ffffff' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: '#cbd5e1' }}>
+                  <Clock size={13} />
+                  <span>{selectedItem.readTime || '4 min read'}</span>
+                  <span>•</span>
+                  <span>{selectedItem.publishedDate || selectedItem.date || 'Sept 2026'}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#f59e0b', color: '#0f172a', padding: '3px 8px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900 }}>
+                  <Star size={13} fill="#0f172a" />
+                  <span>{displayedAvgRating} ({displayedRatingsCount})</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Article Info & Author */}
+          <div style={{ padding: '20px' }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 900, color: '#0f172a', margin: '0 0 12px', lineHeight: 1.3 }}>
+              {selectedItem.title}
+            </h1>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+              <span style={{ fontSize: '1.4rem' }}>{selectedItem.authorAvatar || '👨‍🍳'}</span>
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>
+                  {selectedItem.author}
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                  {selectedItem.authorRole || 'Beverage Consultant'}
+                </div>
+              </div>
+            </div>
+
+            {/* Formatted Markdown Content */}
+            <div style={{ marginTop: '20px', fontSize: '0.88rem', color: '#334155', lineHeight: 1.65 }}>
+              <div style={{ whiteSpace: 'pre-line' }}>
+                {selectedItem.content}
+              </div>
+            </div>
+
+            {/* Tags Row */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+              {(selectedItem.tags || []).map((tag, idx) => (
+                <span key={idx} style={{ fontSize: '0.72rem', background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '8px', fontWeight: 600 }}>
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Interactive 5-Star Rating Widget */}
+        <div style={{ background: '#ffffff', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '18px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                Article Rating & Quality
+              </span>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: '2px 0 0' }}>
+                How helpful was this food-science guide?
+              </h3>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#d97706' }}>
+                ★ {displayedAvgRating}
+              </div>
+              <span style={{ fontSize: '0.68rem', color: '#64748b' }}>{displayedRatingsCount} barista ratings</span>
+            </div>
+          </div>
+
+          {/* Interactive Star Buttons */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '4px' }}>
+            {[1, 2, 3, 4, 5].map(starNum => {
+              const isFilled = starNum <= (currentUserRating || Math.round(parseFloat(displayedAvgRating)))
+              return (
+                <button
+                  key={starNum}
+                  onClick={() => handleRateArticle(selectedItem.id, starNum)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '4px',
+                    cursor: 'pointer',
+                    transition: 'transform 0.15s'
+                  }}
+                  title={`Rate ${starNum} Stars`}
+                >
+                  <Star 
+                    size={28} 
+                    color="#f59e0b" 
+                    fill={isFilled ? '#f59e0b' : 'none'} 
+                  />
+                </button>
+              )
+            })}
+            {currentUserRating > 0 && (
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#16a34a', marginLeft: '6px', background: '#f0fdf4', padding: '3px 8px', borderRadius: '8px' }}>
+                ✓ You rated {currentUserRating} ★
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* 3. Barista Comments & Community Discussion */}
+        <div style={{ background: '#ffffff', borderRadius: '18px', border: '1px solid #e2e8f0', padding: '18px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <MessageSquare size={16} color="#2563eb" />
+              <span>Barista Discussions ({currentComments.length})</span>
+            </h3>
+            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Community peer review</span>
+          </div>
+
+          {/* Leave a Comment Form */}
+          <form onSubmit={handleAddComment} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>Your Rating:</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setCommentRating(n)}
+                    style={{ background: 'transparent', border: 'none', padding: '2px', cursor: 'pointer' }}
+                  >
+                    <Star size={16} color="#f59e0b" fill={n <= commentRating ? '#f59e0b' : 'none'} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <textarea
+              rows={3}
+              required
+              placeholder="Share your cafe tasting experience, SOP tweaks, or questions with the community..."
+              value={newCommentText}
+              onChange={(e) => setNewCommentText(e.target.value)}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.84rem',
+                fontFamily: 'inherit'
+              }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                type="submit"
+                style={{
+                  padding: '9px 16px',
+                  borderRadius: '10px',
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Send size={13} />
+                <span>Post Comment</span>
+              </button>
+
+              {commentSubmitted && (
+                <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 700 }}>
+                  ✓ Comment published!
+                </span>
+              )}
+            </div>
+          </form>
+
+          {/* Comments Feed */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '6px' }}>
+            {currentComments.map(c => (
+              <div
+                key={c.id}
+                style={{
+                  background: '#f8fafc',
+                  borderRadius: '14px',
+                  padding: '12px 14px',
+                  border: '1px solid #f1f5f9',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>{c.userName}</span>
+                    <span style={{ fontSize: '0.68rem', color: '#64748b' }}>• {c.userRole}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ display: 'flex' }}>
+                      {[...Array(c.rating || 5)].map((_, i) => (
+                        <Star key={i} size={11} color="#f59e0b" fill="#f59e0b" />
+                      ))}
+                    </div>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{c.timestamp}</span>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: '0.8rem', color: '#334155', margin: 0, lineHeight: 1.4 }}>
+                  {c.text}
+                </p>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '2px' }}>
+                  <button
+                    onClick={() => handleLikeComment(selectedItem.id, c.id)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.72rem',
+                      color: '#64748b',
+                      cursor: 'pointer',
+                      padding: '2px 6px',
+                      borderRadius: '6px'
+                    }}
+                  >
+                    <ThumbsUp size={12} />
+                    <span>Helpful ({c.likes})</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ==========================================
+  // 2. MAIN ACADEMY & SUPPORT HUB OVERVIEW VIEW
+  // ==========================================
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px' }}>
       {/* 1. Hub Header */}
@@ -266,6 +634,15 @@ export function KnowledgeBlogSupportHub({
             <p style={{ fontSize: '0.78rem', color: '#e2e8f0', margin: '6px 0 0', lineHeight: 1.45 }}>
               {aiResponse.answer}
             </p>
+            {aiResponse.suggestedArticle && (
+              <button
+                onClick={() => setSelectedItem(aiResponse.suggestedArticle)}
+                style={{ marginTop: '8px', background: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#ffffff', borderRadius: '8px', padding: '4px 10px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <span>Read Full Masterclass Guide</span>
+                <ArrowRight size={12} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -273,107 +650,140 @@ export function KnowledgeBlogSupportHub({
       {/* SECTION 1: KNOWLEDGE BASE ARTICLES */}
       {activeSection === 'knowledge' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {filteredArticles.map(article => (
-            <div
-              key={article.id}
-              onClick={() => {
-                triggerHaptic('selection')
-                setSelectedArticle(article)
-              }}
-              style={{
-                background: '#ffffff',
-                borderRadius: '16px',
-                border: '1px solid #e2e8f0',
-                padding: '16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '12px',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                transition: 'transform 0.15s'
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 800 }}>
-                    {article.categoryName}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                    {article.readTime}
-                  </span>
-                </div>
-
-                <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px', lineHeight: 1.3 }}>
-                  {article.title}
-                </h3>
-                <p style={{ fontSize: '0.76rem', color: '#64748b', margin: 0, lineHeight: 1.4 }}>
-                  {article.summary}
-                </p>
-
-                <div style={{ display: 'flex', gap: '4px', marginTop: '8px' }}>
-                  {article.tags.map((t, idx) => (
-                    <span key={idx} style={{ fontSize: '0.66rem', background: '#f8fafc', color: '#475569', padding: '2px 6px', borderRadius: '6px' }}>
-                      #{t}
+          {filteredArticles.map(article => {
+            const commentsCount = (articleComments[article.id] || []).length
+            return (
+              <div
+                key={article.id}
+                onClick={() => {
+                  triggerHaptic('selection')
+                  setSelectedItem(article)
+                }}
+                style={{
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  border: '1px solid #e2e8f0',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                  transition: 'transform 0.15s'
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 800 }}>
+                      {article.categoryName}
                     </span>
-                  ))}
+                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                      {article.readTime}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', fontWeight: 800, color: '#d97706', marginLeft: 'auto' }}>
+                      <Star size={12} fill="#d97706" />
+                      <span>{article.rating} ({article.ratingsCount})</span>
+                    </span>
+                  </div>
+
+                  <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px', lineHeight: 1.3 }}>
+                    {article.title}
+                  </h3>
+                  <p style={{ fontSize: '0.76rem', color: '#64748b', margin: 0, lineHeight: 1.4 }}>
+                    {article.summary}
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {article.tags.map((t, idx) => (
+                        <span key={idx} style={{ fontSize: '0.66rem', background: '#f8fafc', color: '#475569', padding: '2px 6px', borderRadius: '6px' }}>
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+
+                    <span style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <MessageSquare size={12} />
+                      {commentsCount} comments
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
+                  <ChevronRight size={16} />
                 </div>
               </div>
-
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
-                <ChevronRight size={16} />
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
       {/* SECTION 2: BEVERAGE SCIENCE & TRENDS BLOG */}
       {activeSection === 'blog' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {BLOG_POSTS.map(post => (
-            <div
-              key={post.id}
-              style={{
-                background: '#ffffff',
-                borderRadius: '16px',
-                border: '1px solid #e2e8f0',
-                overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <div style={{ height: '140px', background: '#1e293b', position: 'relative' }}>
-                <img
-                  src={post.image}
-                  alt={post.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  onError={(e) => {
-                    e.target.onerror = null
-                    e.target.src = 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=400&q=80'
-                  }}
-                />
-                <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#fbbf24', padding: '3px 8px', borderRadius: '8px', fontSize: '0.68rem', fontWeight: 800 }}>
-                  {post.category}
+          {filteredBlogs.map(post => {
+            const commentsCount = (articleComments[post.id] || []).length
+            return (
+              <div
+                key={post.id}
+                onClick={() => {
+                  triggerHaptic('selection')
+                  setSelectedItem(post)
+                }}
+                style={{
+                  background: '#ffffff',
+                  borderRadius: '16px',
+                  border: '1px solid #e2e8f0',
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{ height: '140px', background: '#1e293b', position: 'relative' }}>
+                  <img
+                    src={post.image}
+                    alt={post.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=400&q=80'
+                    }}
+                  />
+                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#fbbf24', padding: '3px 8px', borderRadius: '8px', fontSize: '0.68rem', fontWeight: 800 }}>
+                    {post.category}
+                  </div>
+                </div>
+
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8' }}>
+                    <span>{post.author} • {post.date}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#d97706', fontWeight: 800 }}>
+                      <Star size={11} fill="#d97706" />
+                      {post.rating} ({post.ratingsCount})
+                    </span>
+                  </div>
+
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>
+                    {post.title}
+                  </h3>
+                  <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
+                    {post.summary || post.excerpt}
+                  </p>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px', marginTop: '4px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{post.readTime}</span>
+                    <span style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span>Read Article & Comments ({commentsCount})</span>
+                      <ArrowRight size={13} />
+                    </span>
+                  </div>
                 </div>
               </div>
-
-              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8' }}>
-                  <span>{post.author} • {post.date}</span>
-                  <span>{post.views}</span>
-                </div>
-
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>
-                  {post.title}
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
-                  {post.excerpt}
-                </p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -469,62 +879,6 @@ export function KnowledgeBlogSupportHub({
                 <span>Ticket logged! An R&D specialist will review within 24 hours.</span>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* 5. Article Reader Modal */}
-      {selectedArticle && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px'
-          }}
-          onClick={() => setSelectedArticle(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#ffffff',
-              borderRadius: '24px',
-              width: '100%',
-              maxWidth: '560px',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
-            }}
-          >
-            <div style={{ padding: '18px 20px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-              <div>
-                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase' }}>
-                  {selectedArticle.categoryName} • {selectedArticle.readTime}
-                </span>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', margin: '2px 0 0' }}>
-                  {selectedArticle.title}
-                </h2>
-              </div>
-              <button
-                onClick={() => setSelectedArticle(null)}
-                style={{ background: '#e2e8f0', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div style={{ padding: '20px', overflowY: 'auto', fontSize: '0.85rem', color: '#334155', lineHeight: 1.6 }}>
-              <div style={{ whiteSpace: 'pre-line' }}>
-                {selectedArticle.content}
-              </div>
-            </div>
           </div>
         </div>
       )}
