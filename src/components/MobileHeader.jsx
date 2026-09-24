@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { 
   ChevronDown, Crown, User, ShieldCheck, LogOut, FileText, 
-  Sparkles, ExternalLink, Moon, Sun, ShoppingBag
+  Sparkles, ExternalLink, Moon, Sun, ShoppingBag, Plus
 } from 'lucide-react'
 import { triggerHaptic } from '../utils/haptics'
 
@@ -18,6 +18,7 @@ export function MobileHeader({
   onCreateBatch,
   onOpenSop,
   onOpenOcr,
+  onOpenUploadRecipe = () => {},
   onOpenAdminLogin = () => {},
   onOpenAdminPortal = () => {},
   onOpenTrending = () => {},
@@ -103,6 +104,32 @@ export function MobileHeader({
 
         {/* Right Side: Streamlined Actions & User Menu */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }} ref={menuRef}>
+          {/* Icon-Only Upload Recipe Button */}
+          <button
+            onClick={() => {
+              triggerHaptic('tap')
+              onOpenUploadRecipe()
+            }}
+            style={{
+              width: '36px',
+              height: '36px',
+              minWidth: '36px',
+              borderRadius: '50%',
+              background: '#0f172a',
+              border: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
+              transition: 'transform 0.1s ease'
+            }}
+            title="Upload Recipe"
+            aria-label="Upload Recipe"
+          >
+            <Plus size={18} strokeWidth={2.5} color="#38bdf8" />
+          </button>
+
           {/* Marketplace Cart Button if on market tab */}
           {activeTab === 'marketplace' && (
             <button
@@ -111,6 +138,7 @@ export function MobileHeader({
                 position: 'relative',
                 width: '36px',
                 height: '36px',
+                minWidth: '36px',
                 borderRadius: '50%',
                 background: '#f8fafc',
                 border: '1px solid #e2e8f0',
@@ -147,29 +175,32 @@ export function MobileHeader({
             </button>
           )}
 
-          {/* Unified Profile & Persona Avatar Button */}
+          {/* Clean User Avatar Menu Trigger */}
           <button
             onClick={() => {
               triggerHaptic('tap')
               setIsUserMenuOpen(!isUserMenuOpen)
             }}
             style={{
+              width: '36px',
+              height: '36px',
+              minWidth: '36px',
+              borderRadius: '50%',
+              background: '#f1f5f9',
+              border: '1.5px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '5px 10px 5px 8px',
-              borderRadius: '24px',
-              background: isAdmin ? '#fffbeb' : '#f8fafc',
-              border: isAdmin ? '1px solid #fde68a' : '1px solid #e2e8f0',
+              justifyContent: 'center',
               cursor: 'pointer',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.15s ease',
+              padding: 0
             }}
+            title={currentUser?.name || 'User Profile'}
+            aria-label="User profile menu"
           >
-            <span style={{ fontSize: '0.9rem' }}>{currentUser?.avatar || (isAdmin ? '👑' : '👨‍🍳')}</span>
-            <span style={{ fontSize: '0.74rem', fontWeight: 800, color: isAdmin ? '#b45309' : '#334155' }}>
-              {currentUser?.name ? currentUser.name.split(' ')[0] : 'Account'}
+            <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>
+              {currentUser?.avatar || (isAdmin ? '👑' : '👨‍🍳')}
             </span>
-            <ChevronDown size={13} color={isAdmin ? '#b45309' : '#64748b'} style={{ transform: isUserMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
           </button>
 
           {/* Streamlined Dropdown Menu */}
@@ -193,8 +224,13 @@ export function MobileHeader({
             >
               {/* User Info Header */}
               <div style={{ padding: '8px 10px', borderBottom: '1px solid #f1f5f9', marginBottom: '4px' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>
-                  {currentUser?.name || 'Barista User'}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>
+                    {currentUser?.name || 'Barista User'}
+                  </div>
+                  <span style={{ fontSize: '0.64rem', padding: '1px 6px', borderRadius: '6px', background: '#fef3c7', color: '#92400e', fontWeight: 700 }}>
+                    🇵🇭 PH Edition
+                  </span>
                 </div>
                 <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                   <span>{currentUser?.shopName || 'PourCraft Studio'}</span>

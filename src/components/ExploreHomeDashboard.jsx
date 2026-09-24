@@ -101,52 +101,27 @@ export function ExploreHomeDashboard({
     return recipe.layers.reduce((sum, l) => sum + (l.volumeMl * (l.unitCostPerMl || 0.15)), 0)
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '32px' }}>
-      {/* 1. Header Greeting & Universal Search */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                PourCraft Discovery
-              </span>
-              <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px', background: '#fef3c7', color: '#92400e', fontWeight: 800 }}>
-                PH Edition 🇵🇭
-              </span>
-            </div>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 900, color: '#0f172a', margin: '2px 0 0', letterSpacing: '-0.02em' }}>
-              Welcome back, {currentUser?.name ? currentUser.name.split(' ')[0] : 'Barista'} 👋
-            </h1>
-          </div>
+  // Dynamic Greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 17) return 'Good afternoon'
+    return 'Good evening'
+  }
 
-          <button
-            onClick={() => {
-              triggerHaptic('tap')
-              if (onOpenUploadRecipe) onOpenUploadRecipe()
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-              color: '#ffffff',
-              border: 'none',
-              fontSize: '0.8rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)'
-            }}
-          >
-            <PlusCircle size={15} color="#38bdf8" />
-            <span>Upload Recipe</span>
-          </button>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '32px' }}>
+      {/* 1. Header Greeting & Universal Search */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Single-line streamlined greeting */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+            {getGreeting()}, {currentUser?.name ? currentUser.name.split(' ')[0] : 'Admin'} 👋
+          </h1>
         </div>
 
-        {/* Universal Search Input */}
-        <div style={{ position: 'relative' }}>
+        {/* Universal Search Input (Standard 44px Tap Height & Full Mobile Width) */}
+        <div style={{ position: 'relative', width: '100%' }}>
           <Search 
             size={18} 
             color="#94a3b8" 
@@ -156,34 +131,64 @@ export function ExploreHomeDashboard({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search 200+ recipes, ingredients (e.g. Oat Milk, Uji Matcha), clones..."
+            placeholder="Search 200+ recipes, ingredients, SOPs..."
             style={{
               width: '100%',
+              height: '44px',
+              minHeight: '44px',
               boxSizing: 'border-box',
-              padding: '13px 40px 13px 44px',
-              borderRadius: '16px',
+              paddingLeft: '42px',
+              paddingRight: searchQuery ? '40px' : '96px',
+              borderRadius: '12px',
               border: '1px solid #e2e8f0',
               background: '#ffffff',
-              fontSize: '0.88rem',
+              fontSize: '0.85rem',
               color: '#0f172a',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
               outline: 'none',
               transition: 'border-color 0.2s, box-shadow 0.2s'
             }}
           />
+          
+          {/* Subtle Compact Region Badge when not typing */}
+          {!searchQuery && (
+            <div 
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '3px 7px',
+                borderRadius: '6px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                fontSize: '0.66rem',
+                fontWeight: 700,
+                color: '#64748b',
+                pointerEvents: 'none'
+              }}
+            >
+              <span>🇵🇭</span>
+              <span>PH Edition</span>
+            </div>
+          )}
+
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               style={{
                 position: 'absolute',
-                right: '12px',
+                right: '10px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 background: '#f1f5f9',
                 border: 'none',
                 borderRadius: '50%',
-                width: '22px',
-                height: '22px',
+                width: '24px',
+                height: '24px',
                 fontSize: '0.75rem',
                 color: '#64748b',
                 cursor: 'pointer',

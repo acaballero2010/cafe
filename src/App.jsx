@@ -359,6 +359,7 @@ export function App() {
         onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
         onOpenTrending={() => setIsTrendingModalOpen(true)}
         onOpenRepository={() => setIsRepositoryOpen(true)}
+        onOpenUploadRecipe={() => setIsUploadModalOpen(true)}
         onExitToLanding={() => setAppView('landing')}
       />
 
