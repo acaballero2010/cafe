@@ -44,6 +44,7 @@ import {
 import { AuthDatabase } from '../utils/authDatabase'
 import { MASTER_SUPPLIERS, SAMPLE_PRICELISTS } from '../data/suppliersData'
 import { AFFILIATE_CONFIG, generateAffiliateLink } from '../data/affiliateStoresData'
+import { ShopeeLazadaStoreImporter } from './ShopeeLazadaStoreImporter'
 import { triggerHaptic } from '../utils/haptics'
 
 export function PlatformAdminPortal({
@@ -334,6 +335,29 @@ export function PlatformAdminPortal({
           }}
         >
           <button
+            onClick={() => setActiveTab('store_import')}
+            style={{
+              flex: '1 0 auto',
+              padding: '9px 12px',
+              borderRadius: '10px',
+              border: 'none',
+              background: activeTab === 'store_import' ? '#ffffff' : 'transparent',
+              color: activeTab === 'store_import' ? '#0f172a' : '#64748b',
+              fontWeight: 800,
+              fontSize: '0.76rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'store_import' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+            }}
+          >
+            <Store size={15} color={activeTab === 'store_import' ? '#ea580c' : '#64748b'} />
+            <span>🛍️ Shopee & Lazada Importer</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('pricelists')}
             style={{
               flex: '1 0 auto',
@@ -448,6 +472,24 @@ export function PlatformAdminPortal({
             <span>🏬 Suppliers ({MASTER_SUPPLIERS.length})</span>
           </button>
         </div>
+
+        {/* ============================================================ */}
+        {/* TAB 0: SHOPEE MALL & LAZADA STORE IMPORTER                   */}
+        {/* ============================================================ */}
+        {activeTab === 'store_import' && (
+          <ShopeeLazadaStoreImporter
+            onPublishToCatalog={(items, brand) => {
+              const updates = items.map(item => ({
+                skuId: item.sku,
+                name: item.name,
+                newPrice: item.pricePhp,
+                newUnitCost: item.unitCost,
+                supplier: brand
+              }))
+              onPublishPricelistUpdates(updates, brand)
+            }}
+          />
+        )}
 
         {/* ============================================================ */}
         {/* TAB 1: CSV / EXCEL PRICELIST INGESTION                       */}
