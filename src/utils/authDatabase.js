@@ -1,6 +1,6 @@
 /**
  * Persistent User Administration & Authentication Engine
- * Stores registered users, cafe organizations, and roles with localStorage persistence.
+ * Strict 2-Role System: 'admin' (Platform SuperAdmin) and 'user' (Beverage Creator / Barista / Consultant)
  */
 
 const STORAGE_KEY_USERS = 'pourcraft_registered_users'
@@ -9,69 +9,64 @@ const STORAGE_KEY_AUTH = 'pourcraft_current_session'
 export const INITIAL_USERS = [
   {
     id: 'usr-admin-1',
-    name: 'Admin Sarah Jenkins',
+    name: 'Sarah Jenkins',
     email: 'admin@pourcraft.io',
-    role: 'platform_admin', // 'platform_admin' | 'cafe_owner' | 'head_barista'
-    shopName: 'PourCraft Platform HQ',
-    branch: 'Global Operations / PH Hub',
+    role: 'admin', // 'admin' | 'user'
+    title: 'Platform SuperAdmin & Catalog Curator',
+    affiliation: 'PourCraft Master Lab',
     region: 'Metro Manila',
-    tier: 'Platform SuperAdmin',
     status: 'active',
     activeRecipesCount: 142,
     lastActive: 'Just now',
     avatar: '👑'
   },
   {
-    id: 'usr-owner-1',
-    name: 'Chef Marco Dela Cruz',
+    id: 'usr-user-1',
+    name: 'Marco Dela Cruz',
     email: 'marco@kapecraft.ph',
-    role: 'cafe_owner',
-    shopName: 'Kape Craft Studio & Bar',
-    branch: 'BGC High Street, Taguig',
+    role: 'user',
+    title: 'Beverage R&D Consultant & Q-Grader',
+    affiliation: 'Independent R&D Consultant',
     region: 'Metro Manila',
-    tier: 'Enterprise R&D',
     status: 'active',
     activeRecipesCount: 24,
     lastActive: '5m ago',
     avatar: '👨‍🍳'
   },
   {
-    id: 'usr-owner-2',
+    id: 'usr-user-2',
     name: 'Elena Ramos',
     email: 'elena@matchabloom.ph',
-    role: 'cafe_owner',
-    shopName: 'Matcha Bloom Botanicals',
-    branch: 'Cebu IT Park, Cebu City',
+    role: 'user',
+    title: 'Matcha & Tea Formulation Specialist',
+    affiliation: 'Matcha Bloom Creative Lab',
     region: 'Cebu',
-    tier: 'Pro Commercial',
     status: 'active',
     activeRecipesCount: 18,
     lastActive: '2h ago',
     avatar: '🍵'
   },
   {
-    id: 'usr-barista-1',
+    id: 'usr-user-3',
     name: 'Kyle Santos',
     email: 'kyle.s@kapecraft.ph',
-    role: 'head_barista',
-    shopName: 'Kape Craft Studio & Bar',
-    branch: 'BGC High Street, Taguig',
+    role: 'user',
+    title: 'Head Barista & Recipe Engineer',
+    affiliation: 'Craft Beverage Studio',
     region: 'Metro Manila',
-    tier: 'Station Access',
     status: 'active',
     activeRecipesCount: 8,
     lastActive: 'Yesterday',
     avatar: '☕'
   },
   {
-    id: 'usr-owner-3',
+    id: 'usr-user-4',
     name: 'Anton Lim',
     email: 'anton@davaobrew.com',
-    role: 'cafe_owner',
-    shopName: 'Mount Apo Specialty Roasters',
-    branch: 'Lanang, Davao City',
+    role: 'user',
+    title: 'Specialty Coffee Trainer & Consultant',
+    affiliation: 'Mindanao Coffee Guild',
     region: 'Davao',
-    tier: 'Pro Commercial',
     status: 'active',
     activeRecipesCount: 15,
     lastActive: '3d ago',
@@ -104,11 +99,10 @@ export class AuthDatabase {
   }
 
   static getCurrentUser() {
-    if (typeof window === 'undefined') return INITIAL_USERS[1] // Default to Cafe Owner
+    if (typeof window === 'undefined') return INITIAL_USERS[1] // Default to Creator User
     try {
       const data = localStorage.getItem(STORAGE_KEY_AUTH)
       if (!data) {
-        // Default login as Cafe Owner
         const defaultUser = INITIAL_USERS[1]
         localStorage.setItem(STORAGE_KEY_AUTH, JSON.stringify(defaultUser))
         return defaultUser
@@ -130,12 +124,17 @@ export class AuthDatabase {
 
   static addUser(userData) {
     const users = this.getUsers()
+    const role = userData.role === 'admin' ? 'admin' : 'user'
     const newUser = {
       id: `usr-${Date.now()}`,
       status: 'active',
+      role,
       activeRecipesCount: 0,
       lastActive: 'Just registered',
-      avatar: userData.role === 'platform_admin' ? '👑' : userData.role === 'cafe_owner' ? '🏬' : '☕',
+      avatar: role === 'admin' ? '👑' : '👨‍🍳',
+      title: userData.title || 'Beverage Recipe Creator',
+      affiliation: userData.affiliation || 'Independent Creator',
+      region: userData.region || 'Metro Manila',
       ...userData
     }
     const updated = [newUser, ...users]

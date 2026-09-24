@@ -3,12 +3,10 @@ import {
   Zap, 
   Lock, 
   Mail, 
-  Store, 
   User, 
   MapPin, 
   ArrowRight, 
   Check, 
-  ShieldCheck, 
   Coffee, 
   Crown, 
   Sparkles, 
@@ -17,7 +15,9 @@ import {
   EyeOff,
   Building2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Briefcase,
+  Compass
 } from 'lucide-react'
 import { AuthDatabase } from '../utils/authDatabase'
 import { 
@@ -45,8 +45,9 @@ export function AuthPage({
   const [signInPassword, setSignInPassword] = useState('')
 
   // Sign Up Form State
-  const [signUpShopName, setSignUpShopName] = useState('')
-  const [signUpOwnerName, setSignUpOwnerName] = useState('')
+  const [signUpFullName, setSignUpFullName] = useState('')
+  const [signUpTitle, setSignUpTitle] = useState('Beverage Consultant & R&D')
+  const [signUpAffiliation, setSignUpAffiliation] = useState('')
   const [signUpEmail, setSignUpEmail] = useState('')
   const [signUpPassword, setSignUpPassword] = useState('')
   const [signUpRegion, setSignUpRegion] = useState('Metro Manila')
@@ -70,9 +71,6 @@ export function AuthPage({
       if (res.success) {
         triggerHaptic('success')
         onLoginSuccess(res.user)
-        if (mode === 'signup') {
-          onOpenOnboarding()
-        }
       } else {
         triggerHaptic('error')
         setErrorMsg(res.error)
@@ -92,7 +90,7 @@ export function AuthPage({
     setInfoMsg('')
 
     if (!signInEmail.trim() || !signInPassword.trim()) {
-      setErrorMsg('Please enter both your business email and password.')
+      setErrorMsg('Please enter both your email and password.')
       return
     }
 
@@ -122,8 +120,8 @@ export function AuthPage({
     setErrorMsg('')
     setInfoMsg('')
 
-    if (!signUpEmail.trim() || !signUpShopName.trim() || !signUpPassword.trim()) {
-      setErrorMsg('Please provide your shop name, business email, and a password (min 6 characters).')
+    if (!signUpEmail.trim() || !signUpFullName.trim() || !signUpPassword.trim()) {
+      setErrorMsg('Please provide your name, email, and a secure password (min 6 characters).')
       return
     }
 
@@ -137,16 +135,16 @@ export function AuthPage({
 
     try {
       const res = await registerWithEmailPassword(signUpEmail, signUpPassword, {
-        name: signUpOwnerName.trim() || signUpShopName.trim(),
-        shopName: signUpShopName.trim(),
+        name: signUpFullName.trim(),
+        title: signUpTitle.trim() || 'Beverage Recipe Creator',
+        affiliation: signUpAffiliation.trim() || 'Independent Creator',
         region: signUpRegion,
-        role: 'cafe_owner'
+        role: 'user'
       })
 
       if (res.success) {
         triggerHaptic('success')
         onLoginSuccess(res.user)
-        onOpenOnboarding()
       } else {
         triggerHaptic('error')
         setErrorMsg(res.error)
@@ -269,7 +267,9 @@ export function AuthPage({
             PourCraft <span style={{ color: '#f59e0b' }}>OS</span>
           </h2>
           <p style={{ fontSize: '0.76rem', color: '#94a3b8', margin: '4px 0 0' }}>
-            {mode === 'signin' ? 'Sign in to your Firebase Beverage R&D workspace' : 'Create your verified cafe tenant in Firebase'}
+            {mode === 'signin' 
+              ? 'Beverage R&D, Gram-Precision Costing & Creator Studio' 
+              : 'Join as a Barista, Consultant, or Beverage Recipe Creator'}
           </p>
         </div>
 
@@ -326,7 +326,7 @@ export function AuthPage({
               transition: 'all 0.15s ease'
             }}
           >
-            Create Shop Account
+            Create Creator Account
           </button>
         </div>
 
@@ -355,7 +355,6 @@ export function AuthPage({
             transition: 'all 0.15s ease'
           }}
         >
-          {/* Google SVG Icon */}
           <svg width="18" height="18" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
             <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.37 7.34 24 12 24z"/>
@@ -392,14 +391,14 @@ export function AuthPage({
           <form onSubmit={handleSignInSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '4px' }}>
-                Firebase Registered Email
+                Account Email
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="email"
                   required
-                  placeholder="chef@kapecraft.ph"
+                  placeholder="consultant@beveragelab.ph"
                   value={signInEmail}
                   onChange={(e) => setSignInEmail(e.target.value)}
                   style={{
@@ -489,7 +488,7 @@ export function AuthPage({
                 </>
               ) : (
                 <>
-                  <span>Sign In with Firebase</span>
+                  <span>Sign In to Studio</span>
                   <ArrowRight size={14} />
                 </>
               )}
@@ -498,7 +497,7 @@ export function AuthPage({
             {/* Quick Persona Demo Switcher */}
             <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block', marginBottom: '8px' }}>
-                ⚡ 1-Tap Quick Access (Demo Profiles)
+                ⚡ Quick Switch (Demo Profiles)
               </span>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
@@ -523,9 +522,14 @@ export function AuthPage({
                     }}
                   >
                     <span>{u.avatar || '👤'}</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {u.name.split(' ')[0]}
-                    </span>
+                    <div style={{ overflow: 'hidden' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {u.name.split(' ')[0]}
+                      </div>
+                      <div style={{ fontSize: '0.62rem', color: u.role === 'admin' ? '#f59e0b' : '#94a3b8' }}>
+                        {u.role === 'admin' ? 'SuperAdmin' : 'Creator'}
+                      </div>
+                    </div>
                   </button>
                 ))}
               </div>
@@ -536,32 +540,16 @@ export function AuthPage({
           <form onSubmit={handleSignUpSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
-                Cafe / Store Brand Name
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Store size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Luna Roastworks"
-                  value={signUpShopName}
-                  onChange={(e) => setSignUpShopName(e.target.value)}
-                  style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155', color: '#ffffff', fontSize: '0.8rem', boxSizing: 'border-box' }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
-                Head Architect / Owner Name
+                Your Full Name
               </label>
               <div style={{ position: 'relative' }}>
                 <User size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="text"
-                  placeholder="Chef Anton Luna"
-                  value={signUpOwnerName}
-                  onChange={(e) => setSignUpOwnerName(e.target.value)}
+                  required
+                  placeholder="e.g. Chef Anton Luna"
+                  value={signUpFullName}
+                  onChange={(e) => setSignUpFullName(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155', color: '#ffffff', fontSize: '0.8rem', boxSizing: 'border-box' }}
                 />
               </div>
@@ -569,14 +557,30 @@ export function AuthPage({
 
             <div>
               <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
-                Business Email (Firebase Auth)
+                Specialty / Profession
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Briefcase size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  placeholder="e.g. Barista Trainer / Beverage Consultant / R&D Specialist"
+                  value={signUpTitle}
+                  onChange={(e) => setSignUpTitle(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155', color: '#ffffff', fontSize: '0.8rem', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
+                Email Address (Firebase Auth)
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="email"
                   required
-                  placeholder="anton@lunaroast.ph"
+                  placeholder="anton@beveragelab.ph"
                   value={signUpEmail}
                   onChange={(e) => setSignUpEmail(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155', color: '#ffffff', fontSize: '0.8rem', boxSizing: 'border-box' }}
@@ -611,7 +615,7 @@ export function AuthPage({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
-                  Wholesale Region
+                  Wholesale Sourcing Region
                 </label>
                 <select
                   value={signUpRegion}
@@ -672,7 +676,7 @@ export function AuthPage({
               ) : (
                 <>
                   <Sparkles size={14} />
-                  <span>Register with Firebase & Launch Wizard</span>
+                  <span>Create Creator Account</span>
                 </>
               )}
             </button>

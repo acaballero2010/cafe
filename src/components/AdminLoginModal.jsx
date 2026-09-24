@@ -96,14 +96,10 @@ export function AdminLoginModal({
   }
 
   const getRoleBadge = (role) => {
-    switch (role) {
-      case 'platform_admin':
-        return { label: 'Platform SuperAdmin', bg: '#fef3c7', color: '#b45309', border: '#fde68a', icon: <Crown size={12} /> }
-      case 'head_barista':
-        return { label: 'Head Barista', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0', icon: <Coffee size={12} /> }
-      default:
-        return { label: 'Cafe Owner & R&D', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: <Building2 size={12} /> }
+    if (role === 'admin') {
+      return { label: 'Platform SuperAdmin', bg: '#fef3c7', color: '#b45309', border: '#fde68a', icon: <Crown size={12} /> }
     }
+    return { label: 'Beverage Creator / R&D', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', icon: <Coffee size={12} /> }
   }
 
   return (
@@ -203,7 +199,7 @@ export function AdminLoginModal({
               </div>
             </div>
 
-            {currentUser.role === 'platform_admin' && (
+            {(currentUser.role === 'admin' || currentUser.role === 'platform_admin') && (
               <button
                 onClick={() => {
                   onClose()

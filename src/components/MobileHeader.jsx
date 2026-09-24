@@ -132,7 +132,7 @@ export function MobileHeader({
 
         {/* Top-Right: Dynamic Action Button & User/Admin Portal */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {currentUser?.role === 'platform_admin' && (
+          {(currentUser?.role === 'admin' || currentUser?.role === 'platform_admin') && (
             <button
               onClick={() => {
                 triggerHaptic('light')

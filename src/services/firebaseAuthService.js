@@ -52,15 +52,14 @@ export function formatAuthError(error) {
 export function mapFirebaseUserToAppUser(fbUser, extraData = {}) {
   if (!fbUser) return null
 
-  // Check if user already exists in AuthDatabase to preserve roles / shop details
+  // Check if user already exists in AuthDatabase to preserve roles / profile details
   const users = AuthDatabase.getUsers()
   const existing = users.find(u => u.email?.toLowerCase() === fbUser.email?.toLowerCase())
 
-  const role = existing?.role || (fbUser.email === 'admin@pourcraft.io' ? 'platform_admin' : 'cafe_owner')
-  const shopName = extraData.shopName || existing?.shopName || `${fbUser.displayName || fbUser.email.split('@')[0]}'s Cafe Studio`
+  const role = existing?.role || (fbUser.email === 'admin@pourcraft.io' ? 'admin' : 'user')
+  const title = extraData.title || existing?.title || 'Beverage Recipe Creator'
+  const affiliation = extraData.affiliation || existing?.affiliation || 'Independent Creator & Consultant'
   const region = extraData.region || existing?.region || 'Metro Manila'
-  const branch = existing?.branch || 'Flagship Branch'
-  const tier = existing?.tier || (role === 'platform_admin' ? 'Platform SuperAdmin' : 'Pro Commercial R&D')
 
   const appUser = {
     id: fbUser.uid || `usr-${Date.now()}`,
@@ -68,15 +67,14 @@ export function mapFirebaseUserToAppUser(fbUser, extraData = {}) {
     name: fbUser.displayName || extraData.name || fbUser.email.split('@')[0],
     email: fbUser.email,
     photoURL: fbUser.photoURL || null,
-    role,
-    shopName,
-    branch,
+    role, // 'admin' | 'user'
+    title,
+    affiliation,
     region,
-    tier,
     status: 'active',
     activeRecipesCount: existing?.activeRecipesCount || 12,
     lastActive: 'Just now',
-    avatar: fbUser.photoURL || (role === 'platform_admin' ? '👑' : '👨‍🍳')
+    avatar: fbUser.photoURL || (role === 'admin' ? '👑' : '👨‍🍳')
   }
 
   // Update or insert into local auth database

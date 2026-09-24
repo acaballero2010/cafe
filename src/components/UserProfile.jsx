@@ -202,36 +202,36 @@ export function UserProfile({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  {currentUser?.shopName || profileData.shopName}
+                  {currentUser?.name || profileData.ownerName}
                 </h2>
                 <span 
                   style={{ 
                     fontSize: '0.64rem', 
-                    background: currentUser?.role === 'platform_admin' ? '#fef3c7' : '#ecfdf5', 
-                    color: currentUser?.role === 'platform_admin' ? '#b45309' : '#059669', 
+                    background: currentUser?.role === 'admin' ? '#fef3c7' : '#ecfdf5', 
+                    color: currentUser?.role === 'admin' ? '#b45309' : '#059669', 
                     padding: '2px 8px', 
                     borderRadius: '999px', 
                     fontWeight: 800,
-                    border: currentUser?.role === 'platform_admin' ? '1px solid #fde68a' : '1px solid #a7f3d0'
+                    border: currentUser?.role === 'admin' ? '1px solid #fde68a' : '1px solid #a7f3d0'
                   }}
                 >
-                  {currentUser?.tier || 'R&D Verified'}
+                  {currentUser?.role === 'admin' ? '👑 Platform SuperAdmin' : '✨ Beverage Creator'}
                 </span>
               </div>
               <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>{currentUser?.name || profileData.ownerName}</span>
+                <span>{currentUser?.title || 'Beverage R&D Consultant'}</span>
                 <span>•</span>
-                <span>{currentUser?.role === 'platform_admin' ? 'SuperAdmin' : currentUser?.role === 'head_barista' ? 'Head Barista' : 'Cafe Owner'}</span>
+                <span>{currentUser?.affiliation || 'Independent Creator'}</span>
               </p>
               <p style={{ fontSize: '0.70rem', color: '#94a3b8', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <MapPin size={11} />
-                <span>{currentUser?.branch || profileData.branch}</span>
+                <span>{currentUser?.region || 'Metro Manila, PH'}</span>
               </p>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            {currentUser?.role === 'platform_admin' && (
+            {(currentUser?.role === 'admin' || currentUser?.role === 'platform_admin') && (
               <button
                 onClick={onOpenAdminPortal}
                 style={{
