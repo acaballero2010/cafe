@@ -40,14 +40,13 @@ export function MobileHeader({
     <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(255, 255, 255, 0.98)', backdropFilter: 'blur(16px)', borderBottom: '1px solid #e2e8f0' }}>
       {/* 1. iOS-Style Top System Bar */}
       <div
+        className="app-responsive-frame"
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           height: '52px',
-          padding: '0 16px',
-          maxWidth: '680px',
-          margin: '0 auto'
+          padding: '0 16px'
         }}
       >
         {/* Top-Left Action */}
@@ -248,14 +247,13 @@ export function MobileHeader({
       {/* 2. Horizontal Category Pills (Only on Recipe Studio) */}
       {activeTab === 'studio' && (
         <div
+          className="app-responsive-frame"
           style={{
             display: 'flex',
             gap: '8px',
             overflowX: 'auto',
             padding: '4px 16px 10px',
             scrollbarWidth: 'none',
-            maxWidth: '680px',
-            margin: '0 auto',
             alignItems: 'center'
           }}
         >

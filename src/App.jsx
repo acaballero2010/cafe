@@ -237,7 +237,7 @@ export function App() {
       />
 
       {/* 2. Main Scrollable Container with 160px Bottom Scroll Clearance */}
-      <main style={{ flex: 1, padding: '16px 16px 160px', maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+      <main className="app-responsive-frame" style={{ flex: 1, padding: '16px 16px 160px' }}>
         {activeTab === 'studio' && (
           isSpecSheetMode ? (
             <SpecSheetView
@@ -346,6 +346,7 @@ export function App() {
 
       {/* 4. Native Mobile Bottom Tab Navigation Bar */}
       <nav
+        className="app-responsive-frame"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -357,9 +358,7 @@ export function App() {
           borderTop: isDarkMode ? '1px solid #1e293b' : '1px solid #e5e7eb',
           display: 'flex',
           justifyContent: 'space-around',
-          padding: '6px 8px calc(6px + env(safe-area-inset-bottom))',
-          maxWidth: '680px',
-          margin: '0 auto'
+          padding: '6px 8px calc(6px + env(safe-area-inset-bottom))'
         }}
       >
         <button

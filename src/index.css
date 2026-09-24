@@ -199,6 +199,35 @@ body {
   overscroll-behavior-y: none;
 }
 
+/* Responsive Content Frame (Mobile & Tablet Portrait Optimization) */
+.app-responsive-frame {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (min-width: 600px) {
+  .app-responsive-frame {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Tablet Portrait specific optimizations: balanced 16px/20px side margins, no huge empty gutters */
+  .app-responsive-frame {
+    max-width: 740px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-responsive-frame {
+    max-width: 840px;
+  }
+}
+
 /* Main 3-Column Clean Canvas Layout */
 .app-container {
   max-width: 1540px;

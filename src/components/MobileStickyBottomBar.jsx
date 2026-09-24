@@ -11,6 +11,7 @@ export function MobileStickyBottomBar({
 
   return (
     <div
+      className="app-responsive-frame"
       style={{
         position: 'fixed',
         bottom: '60px', // Anchored right above mobile bottom tab navigation
@@ -18,8 +19,6 @@ export function MobileStickyBottomBar({
         right: 0,
         zIndex: 48,
         padding: '0 16px 8px',
-        maxWidth: '680px',
-        margin: '0 auto',
         pointerEvents: 'none'
       }}
     >

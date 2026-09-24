@@ -228,7 +228,7 @@ export function MobileRecipeBuilder({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '680px', margin: '0 auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', margin: '0 auto' }}>
       
       {/* 1. Clean Drink Title & Action Row (Stacked 2-Tier Layout - Zero Truncation!) */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>

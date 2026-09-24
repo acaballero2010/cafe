@@ -148,7 +148,7 @@ export function SubRecipeManager({
   if (!activeSubRecipe || !metrics) return null
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '680px', margin: '0 auto', paddingBottom: '110px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', margin: '0 auto', paddingBottom: '110px' }}>
       
       {/* 1. Operations Header with Waste Logger Quick Action */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -771,10 +771,9 @@ export function SubRecipeManager({
           right: 0,
           zIndex: 45,
           padding: '0 16px 8px',
-          maxWidth: '680px',
-          margin: '0 auto',
           pointerEvents: 'none'
         }}
+        className="app-responsive-frame"
       >
         <div
           style={{

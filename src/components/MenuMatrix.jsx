@@ -105,7 +105,7 @@ export function MenuMatrix({ currentRecipe, metrics }) {
   ]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '680px', margin: '0 auto', paddingBottom: '100px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', margin: '0 auto', paddingBottom: '100px' }}>
       
       {/* 1. Dynamic Multi-Channel Pricing & Delivery Commission Guard */}
       <div className="card-clean" style={{ padding: '20px', background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0' }}>

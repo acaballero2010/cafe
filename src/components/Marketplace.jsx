@@ -362,7 +362,7 @@ export function Marketplace({
     })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '680px', margin: '0 auto', paddingBottom: '120px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%', margin: '0 auto', paddingBottom: '120px' }}>
       
       {/* 1. Search Bar & Filter Trigger */}
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>

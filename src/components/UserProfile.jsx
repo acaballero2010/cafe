@@ -175,7 +175,7 @@ export function UserProfile({
   const avgMargin = (((avgPrice - avgCogs) / avgPrice) * 100).toFixed(1)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '680px', margin: '0 auto', paddingBottom: '120px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', margin: '0 auto', paddingBottom: '120px' }}>
       
       {/* 1. Shop & Operator Profile Header Card */}
       <div style={{ background: '#ffffff', borderRadius: '24px', padding: '18px 20px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
