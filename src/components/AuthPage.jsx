@@ -572,6 +572,25 @@ export function AuthPage({
             </div>
 
             <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1' }}>
+                  Store / Brand / Studio Name
+                </label>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>Optional</span>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <Building2 size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type="text"
+                  placeholder="e.g. Kape Craft Studio, Matcha Bloom (or leave blank)"
+                  value={signUpAffiliation}
+                  onChange={(e) => setSignUpAffiliation(e.target.value)}
+                  style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155', color: '#ffffff', fontSize: '0.8rem', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+
+            <div>
               <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
                 Email Address (Firebase Auth)
               </label>

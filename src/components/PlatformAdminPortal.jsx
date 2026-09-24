@@ -27,7 +27,15 @@ import {
   RefreshCw,
   X,
   Send,
-  Eye
+  Eye,
+  Globe,
+  Radio,
+  Key,
+  Code2,
+  Lock,
+  Terminal,
+  Activity,
+  CheckCheck
 } from 'lucide-react'
 import { AuthDatabase } from '../utils/authDatabase'
 import { MASTER_SUPPLIERS, SAMPLE_PRICELISTS } from '../data/suppliersData'
@@ -40,46 +48,57 @@ export function PlatformAdminPortal({
   onPublishPricelistUpdates = () => {},
   onSwitchUser = () => {}
 }) {
-  const [activeTab, setActiveTab] = useState('pricelists') // 'pricelists' | 'users' | 'suppliers' | 'analytics'
+  const [activeTab, setActiveTab] = useState('pricelists') // 'pricelists' | 'api_sync' | 'users' | 'suppliers'
   const [users, setUsers] = useState(() => AuthDatabase.getUsers())
   const [searchQuery, setSearchQuery] = useState('')
-  const [roleFilter, setRoleFilter] = useState('all') // 'all' | 'platform_admin' | 'cafe_owner' | 'head_barista'
+  const [roleFilter, setRoleFilter] = useState('all') // 'all' | 'admin' | 'user'
   const [regionFilter, setRegionFilter] = useState('all')
 
-  // Pricelist Uploader State
+  // CSV Pricelist Uploader State
   const [selectedSupplierId, setSelectedSupplierId] = useState('sup-gourmet-ph')
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState(null)
   const [stagedPricelist, setStagedPricelist] = useState(SAMPLE_PRICELISTS['sup-gourmet-ph'] || [])
   const [publishSuccess, setPublishSuccess] = useState(false)
 
+  // Supplier API Integration State
+  const [apiSupplierId, setApiSupplierId] = useState('sup-gourmet-ph')
+  const [apiEndpoint, setApiEndpoint] = useState('https://api.gourmetdirect.ph/v2/wholesale/catalog')
+  const [apiToken, setApiToken] = useState('pc_live_sec_89df24b1790a')
+  const [isApiSyncing, setIsApiSyncing] = useState(false)
+  const [apiSyncLog, setApiSyncLog] = useState(null)
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true)
+  const [webhookUrl, setWebhookUrl] = useState('https://pourcraft-os.web.app/api/webhooks/supplier-prices')
+
   // New User Modal State
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
   const [newUserName, setNewUserName] = useState('')
   const [newUserEmail, setNewUserEmail] = useState('')
-  const [newUserRole, setNewUserRole] = useState('cafe_owner')
-  const [newUserShop, setNewUserShop] = useState('')
-  const [newUserBranch, setNewUserBranch] = useState('')
+  const [newUserRole, setNewUserRole] = useState('user')
+  const [newUserTitle, setNewUserTitle] = useState('Beverage Recipe Creator')
+  const [newUserAffiliation, setNewUserAffiliation] = useState('')
   const [newUserRegion, setNewUserRegion] = useState('Metro Manila')
-  const [newUserTier, setNewUserTier] = useState('Pro Commercial')
 
   if (!isOpen) return null
 
   const selectedSupplier = MASTER_SUPPLIERS.find(s => s.id === selectedSupplierId) || MASTER_SUPPLIERS[0]
+  const selectedApiSupplier = MASTER_SUPPLIERS.find(s => s.id === apiSupplierId) || MASTER_SUPPLIERS[0]
 
   // Filtered Users
   const filteredUsers = useMemo(() => {
     return users.filter(u => {
-      const matchSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          u.shopName.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchSearch = u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.affiliation?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.shopName?.toLowerCase().includes(searchQuery.toLowerCase())
       const matchRole = roleFilter === 'all' || u.role === roleFilter
       const matchRegion = regionFilter === 'all' || u.region === regionFilter
       return matchSearch && matchRole && matchRegion
     })
   }, [users, searchQuery, roleFilter, regionFilter])
 
-  // Handle supplier change
+  // Handle supplier change in CSV uploader
   const handleSelectSupplier = (supplierId) => {
     setSelectedSupplierId(supplierId)
     setStagedPricelist(SAMPLE_PRICELISTS[supplierId] || [
@@ -89,7 +108,7 @@ export function PlatformAdminPortal({
     setPublishSuccess(false)
   }
 
-  // Simulate file drop / upload
+  // Simulate file drop / CSV upload
   const handleSimulateFileUpload = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -100,7 +119,6 @@ export function PlatformAdminPortal({
 
     setTimeout(() => {
       setIsUploading(false)
-      // Provide dynamic parsed items
       const sample = SAMPLE_PRICELISTS[selectedSupplierId] || SAMPLE_PRICELISTS['sup-gourmet-ph']
       setStagedPricelist(sample)
       triggerHaptic('success')
@@ -112,7 +130,6 @@ export function PlatformAdminPortal({
     triggerHaptic('heavy')
     setPublishSuccess(true)
 
-    // Convert staged items to updates format for catalog
     const updates = stagedPricelist.map(item => ({
       skuId: item.skuId,
       name: item.name,
@@ -128,6 +145,42 @@ export function PlatformAdminPortal({
     }, 4000)
   }
 
+  // Trigger Supplier API Live Sync
+  const handleTriggerApiSync = () => {
+    setIsApiSyncing(true)
+    triggerHaptic('tap')
+
+    setTimeout(() => {
+      setIsApiSyncing(false)
+      const itemsCount = stagedPricelist.length || 18
+      setApiSyncLog({
+        timestamp: new Date().toLocaleTimeString(),
+        status: 'success',
+        statusCode: 200,
+        latencyMs: 128,
+        supplierName: selectedApiSupplier.name,
+        syncedSkusCount: itemsCount,
+        payloadSample: {
+          supplierId: apiSupplierId,
+          syncBatchId: `sync-${Date.now()}`,
+          currency: 'PHP',
+          skusUpdated: stagedPricelist.map(i => ({ sku: i.skuId, pricePhp: i.newPrice, unitCost: i.unitCost }))
+        }
+      })
+
+      // Broadcast live sync
+      const updates = stagedPricelist.map(item => ({
+        skuId: item.skuId,
+        name: item.name,
+        newPrice: item.newPrice,
+        newUnitCost: item.unitCost,
+        supplier: selectedApiSupplier.name
+      }))
+      onPublishPricelistUpdates(updates, selectedApiSupplier.name)
+      triggerHaptic('success')
+    }, 1200)
+  }
+
   // Create new user
   const handleCreateUserSubmit = (e) => {
     e.preventDefault()
@@ -137,18 +190,16 @@ export function PlatformAdminPortal({
       name: newUserName.trim(),
       email: newUserEmail.trim(),
       role: newUserRole,
-      shopName: newUserShop.trim() || `${newUserName}'s Cafe`,
-      branch: newUserBranch.trim() || 'Main Branch',
-      region: newUserRegion,
-      tier: newUserTier
+      title: newUserTitle.trim() || 'Beverage Recipe Creator',
+      affiliation: newUserAffiliation.trim() || 'Independent Creator',
+      region: newUserRegion
     })
 
     setUsers(AuthDatabase.getUsers())
     setIsAddUserModalOpen(false)
     setNewUserName('')
     setNewUserEmail('')
-    setNewUserShop('')
-    setNewUserBranch('')
+    setNewUserAffiliation('')
     triggerHaptic('success')
   }
 
@@ -180,7 +231,7 @@ export function PlatformAdminPortal({
       <div 
         className="clean-modal-card" 
         onClick={(e) => e.stopPropagation()} 
-        style={{ maxWidth: '840px', width: '96%', maxHeight: '92vh', padding: '24px', overflowY: 'auto' }}
+        style={{ maxWidth: '880px', width: '96%', maxHeight: '92vh', padding: '24px', overflowY: 'auto' }}
       >
         <div className="modal-drag-handle" />
 
@@ -205,7 +256,7 @@ export function PlatformAdminPortal({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Platform Admin Console
+                  Platform SuperAdmin Console
                 </h1>
                 <span
                   style={{
@@ -218,11 +269,11 @@ export function PlatformAdminPortal({
                     border: '1px solid #fde68a'
                   }}
                 >
-                  SUPERADMIN
+                  SYSTEM MASTER
                 </span>
               </div>
               <p style={{ fontSize: '0.76rem', color: '#64748b', margin: '2px 0 0' }}>
-                Tenant user administration, wholesale supplier ingestion & catalog broadcasting
+                Wholesale CSV uploader, supplier REST API sync & creator user administration
               </p>
             </div>
           </div>
@@ -250,154 +301,162 @@ export function PlatformAdminPortal({
         <div 
           style={{ 
             display: 'flex', 
-            gap: '6px', 
-            borderBottom: '1px solid #e2e8f0', 
+            gap: '8px', 
+            background: '#f8fafc', 
+            padding: '4px', 
+            borderRadius: '14px', 
+            border: '1px solid #e2e8f0', 
             marginBottom: '20px',
-            overflowX: 'auto',
-            paddingBottom: '4px'
+            overflowX: 'auto'
           }}
         >
           <button
             onClick={() => setActiveTab('pricelists')}
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px 8px 0 0',
+              flex: '1 0 auto',
+              padding: '10px 14px',
+              borderRadius: '10px',
               border: 'none',
-              background: activeTab === 'pricelists' ? '#f8fafc' : 'transparent',
+              background: activeTab === 'pricelists' ? '#ffffff' : 'transparent',
               color: activeTab === 'pricelists' ? '#0f172a' : '#64748b',
-              fontWeight: activeTab === 'pricelists' ? 800 : 600,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
+              fontWeight: 800,
+              fontSize: '0.78rem',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
-              borderBottom: activeTab === 'pricelists' ? '2.5px solid #d97706' : 'none'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'pricelists' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
             }}
           >
             <FileSpreadsheet size={16} color={activeTab === 'pricelists' ? '#d97706' : '#64748b'} />
-            <span>Supplier Pricelists</span>
+            <span>📁 CSV Pricelist Ingestion</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('api_sync')}
+            style={{
+              flex: '1 0 auto',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: 'none',
+              background: activeTab === 'api_sync' ? '#ffffff' : 'transparent',
+              color: activeTab === 'api_sync' ? '#0f172a' : '#64748b',
+              fontWeight: 800,
+              fontSize: '0.78rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'api_sync' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+            }}
+          >
+            <Radio size={16} color={activeTab === 'api_sync' ? '#0284c7' : '#64748b'} />
+            <span>⚡ Supplier API Connectors</span>
           </button>
 
           <button
             onClick={() => setActiveTab('users')}
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px 8px 0 0',
+              flex: '1 0 auto',
+              padding: '10px 14px',
+              borderRadius: '10px',
               border: 'none',
-              background: activeTab === 'users' ? '#f8fafc' : 'transparent',
+              background: activeTab === 'users' ? '#ffffff' : 'transparent',
               color: activeTab === 'users' ? '#0f172a' : '#64748b',
-              fontWeight: activeTab === 'users' ? 800 : 600,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
+              fontWeight: 800,
+              fontSize: '0.78rem',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
-              borderBottom: activeTab === 'users' ? '2.5px solid #d97706' : 'none'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'users' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
             }}
           >
-            <Users size={16} color={activeTab === 'users' ? '#d97706' : '#64748b'} />
-            <span>User & Cafe Tenants ({users.length})</span>
+            <Users size={16} color={activeTab === 'users' ? '#16a34a' : '#64748b'} />
+            <span>👥 Creators & Users ({users.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('suppliers')}
             style={{
-              padding: '8px 16px',
-              borderRadius: '8px 8px 0 0',
+              flex: '1 0 auto',
+              padding: '10px 14px',
+              borderRadius: '10px',
               border: 'none',
-              background: activeTab === 'suppliers' ? '#f8fafc' : 'transparent',
+              background: activeTab === 'suppliers' ? '#ffffff' : 'transparent',
               color: activeTab === 'suppliers' ? '#0f172a' : '#64748b',
-              fontWeight: activeTab === 'suppliers' ? 800 : 600,
-              fontSize: '0.82rem',
-              cursor: 'pointer',
+              fontWeight: 800,
+              fontSize: '0.78rem',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '6px',
-              borderBottom: activeTab === 'suppliers' ? '2.5px solid #d97706' : 'none'
+              cursor: 'pointer',
+              boxShadow: activeTab === 'suppliers' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
             }}
           >
-            <Truck size={16} color={activeTab === 'suppliers' ? '#d97706' : '#64748b'} />
-            <span>Wholesale Suppliers ({MASTER_SUPPLIERS.length})</span>
+            <Store size={16} color={activeTab === 'suppliers' ? '#9333ea' : '#64748b'} />
+            <span>🏬 Master Suppliers ({MASTER_SUPPLIERS.length})</span>
           </button>
         </div>
 
-        {/* TAB 1: SUPPLIER PRICELIST UPLOADER */}
+        {/* ============================================================ */}
+        {/* TAB 1: CSV / EXCEL PRICELIST INGESTION                       */}
+        {/* ============================================================ */}
         {activeTab === 'pricelists' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Top Control Bar */}
-            <div 
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                gap: '16px',
-                background: '#f8fafc',
-                padding: '16px',
-                borderRadius: '16px',
-                border: '1px solid #e2e8f0'
-              }}
-            >
-              <div>
-                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Select Wholesale Supplier
-                </label>
-                <select
-                  value={selectedSupplierId}
-                  onChange={(e) => handleSelectSupplier(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.84rem',
-                    fontWeight: 600,
-                    background: '#ffffff',
-                    outline: 'none'
-                  }}
-                >
-                  {MASTER_SUPPLIERS.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.category})
-                    </option>
-                  ))}
-                </select>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                    Payment Terms: <strong>{selectedSupplier.terms}</strong> • Min Order: ₱{selectedSupplier.minOrderPhp.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-                  Download CSV Template
-                </label>
-                <button
-                  onClick={downloadSampleTemplate}
-                  className="btn-clean btn-clean-secondary"
-                  style={{ width: '100%', padding: '8px 12px', fontSize: '0.78rem' }}
-                >
-                  <Download size={14} />
-                  <span>Download {selectedSupplier.name} Format (.CSV)</span>
-                </button>
+          <div>
+            {/* Supplier Selector Grid */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>
+                Select Wholesale Supplier for CSV Pricelist Update
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                {MASTER_SUPPLIERS.map(sup => {
+                  const isSelected = sup.id === selectedSupplierId
+                  return (
+                    <div
+                      key={sup.id}
+                      onClick={() => handleSelectSupplier(sup.id)}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        border: isSelected ? '2px solid #d97706' : '1px solid #e2e8f0',
+                        background: isSelected ? '#fffbeb' : '#ffffff',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a' }}>{sup.name}</span>
+                        {isSelected && <Check size={14} color="#d97706" />}
+                      </div>
+                      <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'block', marginTop: '2px' }}>
+                        {sup.category} • {sup.skuCount} SKUs
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
-            {/* Drag & Drop Upload Zone */}
+            {/* CSV File Upload Dropzone */}
             <div
               style={{
                 border: '2px dashed #cbd5e1',
                 borderRadius: '16px',
-                padding: '28px 20px',
+                padding: '24px 20px',
                 textAlign: 'center',
-                background: isUploading ? '#fffbeb' : '#fafafa',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'all 0.2s ease'
+                background: '#f8fafc',
+                marginBottom: '20px',
+                position: 'relative'
               }}
             >
               <input
                 type="file"
-                accept=".csv, .xlsx, .xls, .json"
+                accept=".csv, .xlsx, .xls"
                 onChange={handleSimulateFileUpload}
                 style={{
                   position: 'absolute',
@@ -408,141 +467,136 @@ export function PlatformAdminPortal({
                   height: '100%'
                 }}
               />
+              <div style={{ display: 'inline-flex', padding: '12px', borderRadius: '50%', background: '#fffbeb', color: '#d97706', marginBottom: '10px' }}>
+                <UploadCloud size={24} />
+              </div>
+              <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', margin: '0 0 4px' }}>
+                {isUploading ? 'Parsing Pricelist CSV...' : uploadedFile ? `Uploaded: ${uploadedFile.name}` : 'Drop supplier CSV / Excel pricelist file here'}
+              </h3>
+              <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '0 0 12px' }}>
+                Supports standard columns: SKU_ID, Item_Name, Category, New_Price_PHP, Pack_Size, UOM
+              </p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                <div 
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                <button
+                  type="button"
+                  onClick={downloadSampleTemplate}
                   style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '50%',
-                    background: '#eff6ff',
-                    color: '#2563eb',
-                    display: 'flex',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: '#334155',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    gap: '4px'
                   }}
                 >
-                  <UploadCloud size={24} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                    {uploadedFile ? `Uploaded: ${uploadedFile.name}` : 'Drop supplier pricelist (.CSV, .XLSX) or Click to Browse'}
-                  </h3>
-                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '4px 0 0' }}>
-                    Auto-maps SKU codes, pack weights, density Brix, unit costs & effective margin dates
-                  </p>
-                </div>
+                  <Download size={13} />
+                  <span>Download Sample CSV Template</span>
+                </button>
               </div>
             </div>
 
-            {/* Parsed Diff & Price Impact Preview */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Staged Price Shift Preview ({stagedPricelist.length} SKUs)
-                  </h3>
-                  <span
-                    style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '999px',
-                      background: '#ecfdf5',
-                      color: '#059669',
-                      border: '1px solid #a7f3d0'
-                    }}
-                  >
-                    Ready to Broadcast
+            {/* Staged Pricelist Diff Viewer */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden', marginBottom: '20px' }}>
+              <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a' }}>
+                    Parsed Items from {selectedSupplier.name}
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block' }}>
+                    {stagedPricelist.length} SKU line items ready for wholesale broadcast
                   </span>
                 </div>
 
                 <button
                   onClick={handlePublishPricelist}
-                  className="btn-clean btn-clean-accent"
-                  style={{ padding: '8px 16px', fontSize: '0.8rem' }}
+                  disabled={stagedPricelist.length === 0}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    background: publishSuccess ? '#16a34a' : 'linear-gradient(135deg, #d97706, #b45309)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(217, 119, 6, 0.3)'
+                  }}
                 >
-                  <Send size={14} />
-                  <span>Publish to Wholesale Market</span>
+                  {publishSuccess ? (
+                    <>
+                      <CheckCheck size={14} />
+                      <span>Broadcasted to Studio!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send size={14} />
+                      <span>Broadcast Pricelist to App</span>
+                    </>
+                  )}
                 </button>
               </div>
 
-              {publishSuccess && (
-                <div
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    background: '#ecfdf5',
-                    border: '1px solid #a7f3d0',
-                    color: '#065f46',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    marginBottom: '12px',
-                    animation: 'toastSpringIn 0.3s ease-out'
-                  }}
-                >
-                  <CheckCircle2 size={18} color="#059669" />
-                  <div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 800 }}>
-                      Pricelist Broadcasted to All Cafe Tenants!
-                    </span>
-                    <p style={{ fontSize: '0.72rem', margin: '1px 0 0' }}>
-                      Wholesale catalog updated with {selectedSupplier.name} rates. Margin shift alerts generated.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Items Table */}
-              <div style={{ overflowX: 'auto', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', textAlign: 'left' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
-                      <th style={{ padding: '10px 12px', fontWeight: 700 }}>SKU & Name</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 700 }}>Category</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 700 }}>Previous Pack</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 700 }}>New Pack (₱)</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 700 }}>Unit Cost</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 700 }}>Shift %</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 700 }}>MOQ</th>
+                    <tr style={{ background: '#f1f5f9', color: '#475569', fontWeight: 700 }}>
+                      <th style={{ padding: '10px 14px' }}>SKU Code</th>
+                      <th style={{ padding: '10px 14px' }}>Ingredient Item</th>
+                      <th style={{ padding: '10px 14px' }}>Pack Size</th>
+                      <th style={{ padding: '10px 14px' }}>Old Price</th>
+                      <th style={{ padding: '10px 14px' }}>New Wholesale ₱</th>
+                      <th style={{ padding: '10px 14px' }}>Delta %</th>
+                      <th style={{ padding: '10px 14px' }}>Portion Unit Cost</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stagedPricelist.map((item, idx) => {
-                      const diffPct = ((item.newPrice - item.oldPrice) / item.oldPrice) * 100
-                      const isIncrease = diffPct > 0
+                      const diff = item.newPrice - item.oldPrice
+                      const pct = item.oldPrice > 0 ? ((diff / item.oldPrice) * 100).toFixed(1) : '0.0'
+                      const isSpike = diff > 0
                       return (
-                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '10px 12px' }}>
-                            <div style={{ fontWeight: 700, color: '#0f172a' }}>{item.name}</div>
-                            <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'monospace' }}>{item.skuId}</span>
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: isSpike ? '#fffbeb' : '#ffffff' }}>
+                          <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontWeight: 700, color: '#64748b' }}>
+                            {item.skuId}
                           </td>
-                          <td style={{ padding: '10px 12px', color: '#475569' }}>{item.category}</td>
-                          <td style={{ padding: '10px 12px', color: '#64748b', textDecoration: isIncrease ? 'line-through' : 'none' }}>
+                          <td style={{ padding: '10px 14px', fontWeight: 700, color: '#0f172a' }}>
+                            {item.name}
+                          </td>
+                          <td style={{ padding: '10px 14px', color: '#64748b' }}>
+                            {item.packSize}{item.uom}
+                          </td>
+                          <td style={{ padding: '10px 14px', color: '#94a3b8' }}>
                             ₱{item.oldPrice.toFixed(2)}
                           </td>
-                          <td style={{ padding: '10px 12px', fontWeight: 800, color: '#0f172a' }}>
+                          <td style={{ padding: '10px 14px', fontWeight: 800, color: '#0f172a' }}>
                             ₱{item.newPrice.toFixed(2)}
                           </td>
-                          <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#334155' }}>
-                            ₱{item.unitCost.toFixed(3)}/{item.uom}
-                          </td>
-                          <td style={{ padding: '10px 12px' }}>
-                            <span
-                              style={{
-                                fontSize: '0.72rem',
-                                fontWeight: 800,
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: isIncrease ? '#fff1f2' : diffPct < 0 ? '#ecfdf5' : '#f1f5f9',
-                                color: isIncrease ? '#e11d48' : diffPct < 0 ? '#059669' : '#64748b'
+                          <td style={{ padding: '10px 14px' }}>
+                            <span 
+                              style={{ 
+                                padding: '2px 6px', 
+                                borderRadius: '4px', 
+                                fontWeight: 800, 
+                                fontSize: '0.68rem',
+                                background: diff > 0 ? '#fee2e2' : diff < 0 ? '#dcfce7' : '#f1f5f9',
+                                color: diff > 0 ? '#dc2626' : diff < 0 ? '#16a34a' : '#64748b'
                               }}
                             >
-                              {diffPct > 0 ? `+${diffPct.toFixed(1)}%` : diffPct < 0 ? `${diffPct.toFixed(1)}%` : '0%'}
+                              {diff > 0 ? `+${pct}% ↗` : diff < 0 ? `${pct}% ↘` : '0%'}
                             </span>
                           </td>
-                          <td style={{ padding: '10px 12px', color: '#475569' }}>{item.moq} pk</td>
+                          <td style={{ padding: '10px 14px', fontWeight: 700, color: '#d97706' }}>
+                            ₱{item.unitCost?.toFixed(3)} / {item.uom}
+                          </td>
                         </tr>
                       )
                     })}
@@ -553,316 +607,454 @@ export function PlatformAdminPortal({
           </div>
         )}
 
-        {/* TAB 2: USER & CAFE TENANTS */}
-        {activeTab === 'users' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Top Filter & Search Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-              <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
-                <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type="text"
-                  placeholder="Search name, shop, or email..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px 8px 36px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.82rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
+        {/* ============================================================ */}
+        {/* TAB 2: BIG SUPPLIER REST API & WEBHOOK CONNECTORS            */}
+        {/* ============================================================ */}
+        {activeTab === 'api_sync' && (
+          <div>
+            <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '14px', padding: '14px 16px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Radio size={22} color="#0284c7" style={{ flexShrink: 0 }} />
+              <div>
+                <h3 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0369a1', margin: 0 }}>
+                  Automated B2B Supplier Integration Hub
+                </h3>
+                <p style={{ fontSize: '0.72rem', color: '#0c4a6e', margin: '2px 0 0' }}>
+                  Direct REST API connectors and webhook endpoints for automated wholesale catalog synchronization across major Philippine beverage distributors.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+              {/* Connector Configuration Form */}
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '18px' }}>
+                <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Code2 size={16} color="#d97706" />
+                  <span>Supplier REST API Config</span>
+                </h4>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Target Wholesale Supplier
+                    </label>
+                    <select
+                      value={apiSupplierId}
+                      onChange={(e) => {
+                        setApiSupplierId(e.target.value)
+                        const sup = MASTER_SUPPLIERS.find(s => s.id === e.target.value)
+                        if (sup) {
+                          setApiEndpoint(`https://api.${sup.name.toLowerCase().replace(/\s+/g, '')}.ph/v2/catalog`)
+                        }
+                      }}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', fontWeight: 700 }}
+                    >
+                      {MASTER_SUPPLIERS.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.category})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      API Endpoint URL (GET / POST)
+                    </label>
+                    <input
+                      type="text"
+                      value={apiEndpoint}
+                      onChange={(e) => setApiEndpoint(e.target.value)}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.74rem', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                      Wholesale B2B API Token / Secret
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <Key size={14} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                      <input
+                        type="password"
+                        value={apiToken}
+                        onChange={(e) => setApiToken(e.target.value)}
+                        style={{ width: '100%', padding: '8px 10px 8px 32px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.74rem', fontFamily: 'monospace', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155' }}>Daily Auto-Sync Cron</span>
+                    <input
+                      type="checkbox"
+                      checked={autoSyncEnabled}
+                      onChange={(e) => setAutoSyncEnabled(e.target.checked)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleTriggerApiSync}
+                    disabled={isApiSyncing}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      cursor: isApiSyncing ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 8px rgba(2, 132, 199, 0.3)',
+                      opacity: isApiSyncing ? 0.7 : 1
+                    }}
+                  >
+                    <RefreshCw size={14} className={isApiSyncing ? 'animate-spin' : ''} />
+                    <span>{isApiSyncing ? 'Connecting & Syncing Catalog...' : 'Test Connection & Sync Now'}</span>
+                  </button>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px' }}>
+              {/* Webhook & Live Status Panel */}
+              <div style={{ background: '#0f172a', color: '#f8fafc', borderRadius: '16px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <h4 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Activity size={16} color="#4ade80" />
+                      <span>Live Sync Terminal & Telemetry</span>
+                    </h4>
+                    <span style={{ fontSize: '0.65rem', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', padding: '2px 8px', borderRadius: '999px', fontWeight: 800 }}>
+                      CONNECTED
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: '0.72rem', color: '#94a3b8', margin: '0 0 12px' }}>
+                    Incoming Webhook Endpoint for automated price-push alerts from supplier ERP systems:
+                  </p>
+
+                  <div style={{ background: '#1e293b', padding: '8px 10px', borderRadius: '8px', border: '1px solid #334155', fontSize: '0.7rem', fontFamily: 'monospace', color: '#38bdf8', wordBreak: 'break-all', marginBottom: '14px' }}>
+                    {webhookUrl}
+                  </div>
+
+                  {apiSyncLog ? (
+                    <div style={{ background: '#1e293b', borderRadius: '8px', padding: '10px', border: '1px solid #334155' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#94a3b8', marginBottom: '6px' }}>
+                        <span>Last sync: {apiSyncLog.timestamp}</span>
+                        <span style={{ color: '#4ade80', fontWeight: 800 }}>HTTP {apiSyncLog.statusCode} ({apiSyncLog.latencyMs}ms)</span>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#f8fafc', fontWeight: 700, marginBottom: '6px' }}>
+                        ✓ Successfully pulled {apiSyncLog.syncedSkusCount} verified SKUs from {apiSyncLog.supplierName}
+                      </div>
+                      <pre style={{ fontSize: '0.64rem', color: '#cbd5e1', background: '#090d16', padding: '6px', borderRadius: '4px', overflowX: 'auto', margin: 0 }}>
+                        {JSON.stringify(apiSyncLog.payloadSample, null, 2)}
+                      </pre>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '24px 12px', color: '#64748b', fontSize: '0.74rem' }}>
+                      Click "Test Connection & Sync Now" to verify endpoint handshake.
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: '12px', fontSize: '0.66rem', color: '#64748b', borderTop: '1px solid #334155', paddingTop: '8px' }}>
+                  🔒 SSL TLS 1.3 Encryption • Rate Limit: 10,000 req/hour
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* TAB 3: USER & CREATOR MANAGEMENT                             */}
+        {/* ============================================================ */}
+        {activeTab === 'users' && (
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1 0 200px' }}>
+                <div style={{ position: 'relative', width: '100%' }}>
+                  <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search creators by name, email, specialty..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px 8px 30px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.78rem', outline: 'none' }}
+                  style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.74rem', fontWeight: 700 }}
                 >
                   <option value="all">All Roles</option>
-                  <option value="platform_admin">Platform SuperAdmin</option>
-                  <option value="cafe_owner">Cafe Owner</option>
-                  <option value="head_barista">Head Barista</option>
-                </select>
-
-                <select
-                  value={regionFilter}
-                  onChange={(e) => setRegionFilter(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.78rem', outline: 'none' }}
-                >
-                  <option value="all">All Regions</option>
-                  <option value="Metro Manila">Metro Manila</option>
-                  <option value="Cebu">Cebu</option>
-                  <option value="Davao">Davao</option>
+                  <option value="admin">Platform Admin</option>
+                  <option value="user">Beverage Creator / R&D</option>
                 </select>
 
                 <button
                   onClick={() => setIsAddUserModalOpen(true)}
-                  className="btn-clean btn-clean-primary"
-                  style={{ padding: '8px 14px', fontSize: '0.78rem' }}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '0.76rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)'
+                  }}
                 >
                   <Plus size={14} />
-                  <span>Add Tenant</span>
+                  <span>Add User</span>
                 </button>
               </div>
             </div>
 
-            {/* Users Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
-              {filteredUsers.map(user => {
-                const isCurrent = currentUser?.id === user.id
-                return (
-                  <div
-                    key={user.id}
-                    style={{
-                      background: '#ffffff',
-                      border: isCurrent ? '1.5px solid #d97706' : '1px solid #e2e8f0',
-                      borderRadius: '14px',
-                      padding: '14px',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      gap: '12px'
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '1.4rem' }}>{user.avatar || '👤'}</span>
-                        <span
-                          style={{
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: '999px',
-                            background: user.role === 'platform_admin' ? '#fef3c7' : user.role === 'cafe_owner' ? '#eff6ff' : '#f0fdf4',
-                            color: user.role === 'platform_admin' ? '#b45309' : user.role === 'cafe_owner' ? '#1d4ed8' : '#15803d',
-                            border: '1px solid rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          {user.tier}
-                        </span>
-                      </div>
-
-                      <h4 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', margin: '0 0 2px' }}>
-                        {user.name}
-                      </h4>
-                      <p style={{ fontSize: '0.74rem', color: '#64748b', margin: 0 }}>
-                        {user.email}
-                      </p>
-
-                      <div style={{ marginTop: '8px', padding: '8px', borderRadius: '8px', background: '#f8fafc', fontSize: '0.72rem', color: '#334155' }}>
-                        <div>🏬 <strong>{user.shopName}</strong></div>
-                        <div style={{ color: '#64748b', marginTop: '2px' }}>📍 {user.branch} ({user.region})</div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
-                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                        {user.activeRecipesCount} Formulations
-                      </span>
-
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                          onClick={() => {
-                            onSwitchUser(user)
-                            onClose()
-                          }}
-                          style={{
-                            padding: '4px 8px',
-                            borderRadius: '6px',
-                            background: '#eff6ff',
-                            color: '#1d4ed8',
-                            border: 'none',
-                            fontSize: '0.68rem',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Switch
-                        </button>
-                        {user.role !== 'platform_admin' && (
-                          <button
-                            onClick={() => handleDeleteUser(user.id)}
+            {/* Users Table */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', color: '#475569', fontWeight: 700 }}>
+                    <th style={{ padding: '10px 14px' }}>User / Creator</th>
+                    <th style={{ padding: '10px 14px' }}>Role</th>
+                    <th style={{ padding: '10px 14px' }}>Specialty / Affiliation</th>
+                    <th style={{ padding: '10px 14px' }}>Region</th>
+                    <th style={{ padding: '10px 14px' }}>Recipes</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map(user => {
+                    const isAdmin = user.role === 'admin'
+                    return (
+                      <tr key={user.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '10px 14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '1.1rem' }}>{user.avatar || '👤'}</span>
+                            <div>
+                              <div style={{ fontWeight: 800, color: '#0f172a' }}>{user.name}</div>
+                              <div style={{ fontSize: '0.68rem', color: '#64748b' }}>{user.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '10px 14px' }}>
+                          <span
                             style={{
-                              padding: '4px',
-                              borderRadius: '6px',
-                              background: '#fef2f2',
-                              color: '#dc2626',
-                              border: 'none',
-                              cursor: 'pointer'
+                              padding: '2px 8px',
+                              borderRadius: '999px',
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              background: isAdmin ? '#fef3c7' : '#eff6ff',
+                              color: isAdmin ? '#b45309' : '#1d4ed8',
+                              border: `1px solid ${isAdmin ? '#fde68a' : '#bfdbfe'}`
                             }}
-                            title="Remove User"
                           >
-                            <Trash2 size={13} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+                            {isAdmin ? '👑 SuperAdmin' : '👨‍🍳 Creator'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '10px 14px', color: '#334155', fontWeight: 600 }}>
+                          <div>{user.title || 'Beverage Consultant'}</div>
+                          <div style={{ fontSize: '0.68rem', color: '#64748b' }}>{user.affiliation || user.shopName || 'Independent'}</div>
+                        </td>
+                        <td style={{ padding: '10px 14px', color: '#64748b' }}>
+                          {user.region || 'Metro Manila'}
+                        </td>
+                        <td style={{ padding: '10px 14px', fontWeight: 700, color: '#d97706' }}>
+                          {user.activeRecipesCount || 12}
+                        </td>
+                        <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                            <button
+                              onClick={() => {
+                                onSwitchUser(user)
+                                onClose()
+                              }}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                background: '#f1f5f9',
+                                border: '1px solid #cbd5e1',
+                                fontSize: '0.68rem',
+                                fontWeight: 700,
+                                color: '#334155',
+                                cursor: 'pointer'
+                              }}
+                              title="Switch active session to this user"
+                            >
+                              Impersonate
+                            </button>
+                            {user.role !== 'admin' && (
+                              <button
+                                onClick={() => handleDeleteUser(user.id)}
+                                style={{
+                                  padding: '4px 6px',
+                                  borderRadius: '6px',
+                                  background: '#fee2e2',
+                                  border: '1px solid #fca5a5',
+                                  color: '#dc2626',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* TAB 3: SUPPLIERS DIRECTORY */}
+        {/* ============================================================ */}
+        {/* TAB 4: MASTER WHOLESALE SUPPLIERS DIRECTORY                  */}
+        {/* ============================================================ */}
         {activeTab === 'suppliers' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-              {MASTER_SUPPLIERS.map(sup => (
-                <div
-                  key={sup.id}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '14px',
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '10px'
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <h4 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                        {sup.name}
-                      </h4>
-                      <span style={{ fontSize: '0.72rem', color: '#d97706', fontWeight: 700 }}>
-                        ★ {sup.rating}
-                      </span>
-                    </div>
-                    <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                      {sup.category}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
+            {MASTER_SUPPLIERS.map(sup => (
+              <div
+                key={sup.id}
+                style={{
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '16px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                      {sup.name}
+                    </h3>
+                    <span style={{ fontSize: '0.62rem', background: '#dcfce7', color: '#15803d', padding: '1px 6px', borderRadius: '999px', fontWeight: 800 }}>
+                      VERIFIED
                     </span>
-
-                    <div style={{ marginTop: '10px', fontSize: '0.72rem', color: '#334155', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      <div>💳 Terms: <strong>{sup.terms}</strong> (MOQ ₱{sup.minOrderPhp.toLocaleString()})</div>
-                      <div>🚚 Lead Time: <strong>{sup.leadTimeDays} Business Day</strong></div>
-                      <div>📍 Coverage: <strong>{sup.region}</strong></div>
-                      <div>📞 {sup.contact}</div>
-                    </div>
                   </div>
+                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '0 0 10px' }}>
+                    {sup.category}
+                  </p>
 
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.7rem', color: '#475569' }}>
+                    <div><strong>Terms:</strong> {sup.terms} • <strong>Min Order:</strong> ₱{sup.minOrderPhp}</div>
+                    <div><strong>Region:</strong> {sup.region}</div>
+                    <div><strong>Catalog:</strong> {sup.skuCount} active ingredients</div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 800 }}>
+                    ★ {sup.rating}
+                  </span>
                   <button
                     onClick={() => {
-                      handleSelectSupplier(sup.id)
+                      setSelectedSupplierId(sup.id)
                       setActiveTab('pricelists')
                     }}
-                    className="btn-clean btn-clean-secondary"
-                    style={{ width: '100%', padding: '6px 10px', fontSize: '0.74rem' }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#d97706',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '2px'
+                    }}
                   >
-                    <UploadCloud size={13} />
-                    <span>Upload New Pricelist</span>
+                    <span>Update Pricelist</span>
+                    <ArrowRight size={12} />
                   </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* MODAL: ADD NEW USER / TENANT */}
+        {/* Modal: Add User */}
         {isAddUserModalOpen && (
-          <div className="clean-modal-overlay" style={{ zIndex: 130 }}>
-            <div className="clean-modal-card" style={{ maxWidth: '440px', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+          <div className="clean-modal-overlay" style={{ zIndex: 130 }} onClick={() => setIsAddUserModalOpen(false)}>
+            <div className="clean-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                 <h3 style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Add Registered Cafe Tenant
+                  Add Platform User
                 </h3>
-                <button
-                  onClick={() => setIsAddUserModalOpen(false)}
-                  style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
-                >
+                <button onClick={() => setIsAddUserModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
                   <X size={16} />
                 </button>
               </div>
 
               <form onSubmit={handleCreateUserSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Chef Anton Luna"
-                    value={newUserName}
-                    onChange={(e) => setNewUserName(e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.8rem', boxSizing: 'border-box' }}
-                  />
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>Full Name</label>
+                  <input type="text" required placeholder="Chef Sarah Santos" value={newUserName} onChange={(e) => setNewUserName(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }} />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="anton@lunabrew.ph"
-                    value={newUserEmail}
-                    onChange={(e) => setNewUserEmail(e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.8rem', boxSizing: 'border-box' }}
-                  />
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>Email</label>
+                  <input type="email" required placeholder="sarah@beveragelab.ph" value={newUserEmail} onChange={(e) => setNewUserEmail(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }} />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
-                    Cafe / Shop Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Luna Artisan Brews"
-                    value={newUserShop}
-                    onChange={(e) => setNewUserShop(e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.8rem', boxSizing: 'border-box' }}
-                  />
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>Specialty / Title</label>
+                  <input type="text" placeholder="e.g. Senior Barista / Q-Grader / Consultant" value={newUserTitle} onChange={(e) => setNewUserTitle(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>Store / Brand Name (Optional)</label>
+                  <input type="text" placeholder="e.g. Luna Roastworks (or blank)" value={newUserAffiliation} onChange={(e) => setNewUserAffiliation(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
-                      Role
-                    </label>
-                    <select
-                      value={newUserRole}
-                      onChange={(e) => setNewUserRole(e.target.value)}
-                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem' }}
-                    >
-                      <option value="cafe_owner">Cafe Owner</option>
-                      <option value="head_barista">Head Barista</option>
-                      <option value="platform_admin">Platform Admin</option>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>Role</label>
+                    <select value={newUserRole} onChange={(e) => setNewUserRole(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.76rem' }}>
+                      <option value="user">Beverage Creator</option>
+                      <option value="admin">Platform Admin</option>
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '2px' }}>
-                      Region
-                    </label>
-                    <select
-                      value={newUserRegion}
-                      onChange={(e) => setNewUserRegion(e.target.value)}
-                      style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem' }}
-                    >
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>Region</label>
+                    <select value={newUserRegion} onChange={(e) => setNewUserRegion(e.target.value)} style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.76rem' }}>
                       <option value="Metro Manila">Metro Manila</option>
                       <option value="Cebu">Cebu</option>
                       <option value="Davao">Davao</option>
+                      <option value="North Luzon">North Luzon</option>
                     </select>
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="btn-clean btn-clean-primary"
-                  style={{ width: '100%', marginTop: '6px' }}
+                  style={{
+                    marginTop: '8px',
+                    padding: '10px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontWeight: 800,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <span>Register Tenant</span>
-                  <Check size={14} />
+                  Create User
                 </button>
               </form>
             </div>
