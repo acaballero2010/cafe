@@ -20,6 +20,8 @@ import { BatchYieldCalculatorModal } from './components/BatchYieldCalculatorModa
 import { AdminLoginModal } from './components/AdminLoginModal'
 import { PlatformAdminPortal } from './components/PlatformAdminPortal'
 import { CafeOnboardingWizardModal } from './components/CafeOnboardingWizardModal'
+import { LandingPage } from './components/LandingPage'
+import { AuthPage } from './components/AuthPage'
 import { AuthDatabase } from './utils/authDatabase'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
@@ -28,9 +30,11 @@ import { INITIAL_TRENDING_RECIPES } from './data/trendingRecipes'
 import { calculateDrinkMetrics } from './types/physics'
 import { triggerHaptic } from './utils/haptics'
 import { NativeToast } from './components/NativeToast'
-import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck } from 'lucide-react'
+import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck, LogOut, Globe } from 'lucide-react'
 
 export function App() {
+  const [appView, setAppView] = useState('app') // 'app' | 'landing' | 'auth'
+  const [authInitialMode, setAuthInitialMode] = useState('signin')
   const [currentUser, setCurrentUser] = useState(() => AuthDatabase.getCurrentUser())
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
   const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false)
@@ -214,6 +218,44 @@ export function App() {
 
   const totalCartCount = cartItems.reduce((sum, item) => sum + item.qty, 0)
 
+  if (appView === 'landing') {
+    return (
+      <LandingPage
+        onLaunchStudio={() => setAppView('app')}
+        onOpenLogin={() => {
+          setAuthInitialMode('signin')
+          setAppView('auth')
+        }}
+        onOpenSignUp={() => {
+          setAuthInitialMode('signup')
+          setAppView('auth')
+        }}
+        onOpenAdmin={() => {
+          setAppView('app')
+          setIsAdminPortalOpen(true)
+        }}
+      />
+    )
+  }
+
+  if (appView === 'auth') {
+    return (
+      <AuthPage
+        initialMode={authInitialMode}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user)
+          setAppView('app')
+          showToast(`Welcome, ${user.name}!`, `${user.shopName} • ${user.role}`, 'success')
+        }}
+        onBackToLanding={() => setAppView('landing')}
+        onOpenOnboarding={() => {
+          setAppView('app')
+          setIsOnboardingWizardOpen(true)
+        }}
+      />
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#f8f9fb', color: '#111827', display: 'flex', flexDirection: 'column' }}>
       {/* 1. Native Mobile Header & Dynamic Actions */}
@@ -234,6 +276,7 @@ export function App() {
         onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
         onOpenTrending={() => setIsTrendingModalOpen(true)}
         onOpenRepository={() => setIsRepositoryOpen(true)}
+        onExitToLanding={() => setAppView('landing')}
       />
 
       {/* 2. Main Scrollable Container with 160px Bottom Scroll Clearance */}
@@ -325,6 +368,7 @@ export function App() {
             onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
             onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
             onOpenOnboardingWizard={() => setIsOnboardingWizardOpen(true)}
+            onExitToLanding={() => setAppView('landing')}
             onLoadRecipeIntoStudio={(recipeToLoad) => {
               setCurrentRecipe(recipeToLoad)
             }}

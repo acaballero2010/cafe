@@ -18,7 +18,8 @@ export function MobileHeader({
   onOpenAdminLogin = () => {},
   onOpenAdminPortal = () => {},
   onOpenTrending = () => {},
-  onOpenRepository = () => {}
+  onOpenRepository = () => {},
+  onExitToLanding = () => {}
 }) {
   const categories = [
     { id: 'coffee', label: 'Coffee' },
@@ -71,24 +72,50 @@ export function MobileHeader({
             <span style={{ fontSize: '0.65rem' }}>▾</span>
           </button>
         ) : (
-          <button
-            onClick={onOpenOcr}
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              background: 'transparent',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#0f172a',
-              cursor: 'pointer'
-            }}
-            title="Back / Scan Invoice"
-          >
-            <ChevronLeft size={22} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              onClick={() => {
+                triggerHaptic('tap')
+                onExitToLanding()
+              }}
+              style={{
+                padding: '5px 10px',
+                borderRadius: '999px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                color: '#475569',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+              title="Return to PourCraft Overview Landing Page"
+            >
+              <span>🏠</span>
+              <span>Overview</span>
+            </button>
+
+            <button
+              onClick={onOpenOcr}
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#64748b',
+                cursor: 'pointer'
+              }}
+              title="Scan Wholesale Invoice OCR"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          </div>
         )}
 
         {/* Centered Title & Subtitle */}

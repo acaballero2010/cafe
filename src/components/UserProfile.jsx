@@ -40,6 +40,7 @@ export function UserProfile({
   onOpenAdminLogin = () => {},
   onOpenAdminPortal = () => {},
   onOpenOnboardingWizard = () => {},
+  onExitToLanding = () => {},
   onLoadRecipeIntoStudio,
   onOpenStudio
 }) {
@@ -290,6 +291,30 @@ export function UserProfile({
               }}
             >
               <span>🔄 Switch</span>
+            </button>
+
+            <button
+              onClick={() => {
+                triggerHaptic('tap')
+                onExitToLanding()
+              }}
+              style={{
+                background: '#f8fafc',
+                color: '#64748b',
+                border: '1px solid #e2e8f0',
+                padding: '6px 10px',
+                borderRadius: '10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Return to Overview Landing Page"
+            >
+              <span>🏠</span>
+              <span>Overview</span>
             </button>
 
             <button
