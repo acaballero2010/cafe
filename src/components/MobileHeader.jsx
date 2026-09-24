@@ -1,5 +1,5 @@
 import React from 'react'
-import { ChevronLeft, MoreVertical, Sparkles } from 'lucide-react'
+import { ChevronLeft, MoreVertical, Sparkles, ShieldCheck, Crown, User } from 'lucide-react'
 import { triggerHaptic } from '../utils/haptics'
 
 export function MobileHeader({
@@ -9,11 +9,14 @@ export function MobileHeader({
   totalBatches = 3,
   cartCount = 2,
   activeRegion = 'Metro Manila',
+  currentUser,
   onOpenRegion,
   onOpenCart,
   onCreateBatch,
   onOpenSop,
   onOpenOcr,
+  onOpenAdminLogin = () => {},
+  onOpenAdminPortal = () => {},
   onOpenTrending = () => {},
   onOpenRepository = () => {}
 }) {
@@ -101,14 +104,109 @@ export function MobileHeader({
           )}
         </div>
 
-        {/* Top-Right: Dynamic Action Button */}
-        {activeTab === 'marketplace' ? (
-          <div style={{ position: 'relative' }}>
+        {/* Top-Right: Dynamic Action Button & User/Admin Portal */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {currentUser?.role === 'platform_admin' && (
             <button
-              onClick={onOpenCart}
+              onClick={() => {
+                triggerHaptic('light')
+                onOpenAdminPortal()
+              }}
               style={{
-                width: '40px',
-                height: '40px',
+                padding: '5px 9px',
+                borderRadius: '999px',
+                background: 'linear-gradient(135deg, #d97706, #b45309)',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(217, 119, 6, 0.3)'
+              }}
+              title="Open Platform Admin Console"
+            >
+              <Crown size={12} />
+              <span>Admin</span>
+            </button>
+          )}
+
+          {/* Persona / Account Switcher Pill */}
+          <button
+            onClick={() => {
+              triggerHaptic('tap')
+              onOpenAdminLogin()
+            }}
+            style={{
+              padding: '4px 8px',
+              borderRadius: '999px',
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#334155',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer'
+            }}
+            title="Switch User / Admin Persona"
+          >
+            <span>{currentUser?.avatar || '👤'}</span>
+            <span style={{ fontSize: '0.65rem' }}>▾</span>
+          </button>
+
+          {activeTab === 'marketplace' ? (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={onOpenCart}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#0f172a',
+                  cursor: 'pointer'
+                }}
+                title="Open Cart"
+              >
+                <span style={{ fontSize: '1rem' }}>🛍️</span>
+              </button>
+              {cartCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '16px',
+                    height: '16px',
+                    borderRadius: '50%',
+                    background: '#d97706',
+                    color: '#ffffff',
+                    fontSize: '0.62rem',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid #ffffff'
+                  }}
+                >
+                  {cartCount}
+                </span>
+              )}
+            </div>
+          ) : activeTab === 'batches' ? (
+            <button
+              onClick={onCreateBatch}
+              style={{
+                width: '36px',
+                height: '36px',
                 borderRadius: '50%',
                 background: '#f8fafc',
                 border: '1px solid #e2e8f0',
@@ -116,76 +214,35 @@ export function MobileHeader({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#0f172a',
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+              }}
+              title="Create New Batch Prep"
+              aria-label="Create New Batch"
+            >
+              <span style={{ fontSize: '1.15rem', fontWeight: 600, lineHeight: 1 }}>+</span>
+            </button>
+          ) : (
+            <button
+              onClick={onOpenSop}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#0f172a',
                 cursor: 'pointer'
               }}
-              title="Open Cart"
+              title="Menu Options & Barista SOP"
             >
-              <span style={{ fontSize: '1.1rem' }}>🛍️</span>
+              <MoreVertical size={18} />
             </button>
-            {cartCount > 0 && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '-2px',
-                  right: '-2px',
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: '50%',
-                  background: '#d97706',
-                  color: '#ffffff',
-                  fontSize: '0.68rem',
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid #ffffff'
-                }}
-              >
-                {cartCount}
-              </span>
-            )}
-          </div>
-        ) : activeTab === 'batches' ? (
-          <button
-            onClick={onCreateBatch}
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#0f172a',
-              cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
-            }}
-            title="Create New Batch Prep"
-            aria-label="Create New Batch"
-          >
-            <span style={{ fontSize: '1.25rem', fontWeight: 600, lineHeight: 1 }}>+</span>
-          </button>
-        ) : (
-          <button
-            onClick={onOpenSop}
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '50%',
-              background: 'transparent',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#0f172a',
-              cursor: 'pointer'
-            }}
-            title="Menu Options & Barista SOP"
-          >
-            <MoreVertical size={20} />
-          </button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* 2. Horizontal Category Pills (Only on Recipe Studio) */}

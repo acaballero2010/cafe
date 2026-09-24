@@ -17,6 +17,9 @@ import { FloatingActionDock } from './components/FloatingActionDock'
 import { BeveragePhotoStudioModal } from './components/BeveragePhotoStudioModal'
 import { BaristaSOPModal } from './components/BaristaSOPModal'
 import { BatchYieldCalculatorModal } from './components/BatchYieldCalculatorModal'
+import { AdminLoginModal } from './components/AdminLoginModal'
+import { PlatformAdminPortal } from './components/PlatformAdminPortal'
+import { AuthDatabase } from './utils/authDatabase'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
@@ -24,9 +27,13 @@ import { INITIAL_TRENDING_RECIPES } from './data/trendingRecipes'
 import { calculateDrinkMetrics } from './types/physics'
 import { triggerHaptic } from './utils/haptics'
 import { NativeToast } from './components/NativeToast'
-import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical } from 'lucide-react'
+import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck } from 'lucide-react'
 
 export function App() {
+  const [currentUser, setCurrentUser] = useState(() => AuthDatabase.getCurrentUser())
+  const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
+  const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false)
+  const [showPriceAlert, setShowPriceAlert] = useState(true)
   const [activeVenue, setActiveVenue] = useState('coffee')
   const [activeTab, setActiveTab] = useState('studio') // 'studio' | 'batches' | 'marketplace' | 'matrix' | 'profile'
   const [isSpecSheetMode, setIsSpecSheetMode] = useState(false)
@@ -99,7 +106,6 @@ export function App() {
   // Modals
   const [isOcrOpen, setIsOcrOpen] = useState(false)
   const [isBaristaCardOpen, setIsBaristaCardOpen] = useState(false)
-  const [showPriceAlert, setShowPriceAlert] = useState(true)
 
   // Sync preset when category changes
   useEffect(() => {
@@ -216,11 +222,14 @@ export function App() {
         totalBatches={subRecipes.length}
         cartCount={totalCartCount}
         activeRegion={activeRegion}
+        currentUser={currentUser}
         onOpenRegion={() => setIsRegionModalOpen(true)}
         onOpenCart={() => setIsCartOpen(true)}
         onCreateBatch={handleCreateNewBatch}
         onOpenSop={() => setIsBaristaCardOpen(true)}
         onOpenOcr={() => setIsOcrOpen(true)}
+        onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+        onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
         onOpenTrending={() => setIsTrendingModalOpen(true)}
         onOpenRepository={() => setIsRepositoryOpen(true)}
       />
@@ -310,6 +319,9 @@ export function App() {
             savedMenus={savedMenus}
             onUpdateSavedMenus={setSavedMenus}
             currentRecipe={currentRecipe}
+            currentUser={currentUser}
+            onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
+            onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
             onLoadRecipeIntoStudio={(recipeToLoad) => {
               setCurrentRecipe(recipeToLoad)
             }}
@@ -562,6 +574,35 @@ export function App() {
         onClose={() => setIsYieldModalOpen(false)}
         recipe={currentRecipe}
         metrics={metrics}
+      />
+
+      {/* Admin Authentication & Persona Switcher Modal */}
+      <AdminLoginModal
+        isOpen={isAdminLoginOpen}
+        onClose={() => setIsAdminLoginOpen(false)}
+        currentUser={currentUser}
+        onLoginSuccess={(user) => {
+          setCurrentUser(user)
+          showToast(`Logged in as ${user.name}`, `${user.shopName} • ${user.role}`, 'success')
+        }}
+        onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
+      />
+
+      {/* Platform Admin Console & Supplier Pricelist Uploader */}
+      <PlatformAdminPortal
+        isOpen={isAdminPortalOpen}
+        onClose={() => setIsAdminPortalOpen(false)}
+        currentUser={currentUser}
+        onPublishPricelistUpdates={(updates, supplierName) => {
+          handleApplyPriceUpdates(updates)
+          setShowPriceAlert(true)
+          showToast(`Broadcasted ${supplierName} Pricelist`, `Updated ${updates.length} SKUs across wholesale catalog`, 'sparkle')
+        }}
+        onSwitchUser={(user) => {
+          setCurrentUser(user)
+          AuthDatabase.setCurrentUser(user)
+          showToast(`Switched to ${user.name}`, user.shopName, 'info')
+        }}
       />
 
       {/* Native Mobile Toast HUD / Dynamic Island System */}

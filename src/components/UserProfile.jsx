@@ -36,6 +36,9 @@ export function UserProfile({
   savedMenus,
   onUpdateSavedMenus,
   currentRecipe,
+  currentUser,
+  onOpenAdminLogin = () => {},
+  onOpenAdminPortal = () => {},
   onLoadRecipeIntoStudio,
   onOpenStudio
 }) {
@@ -175,7 +178,7 @@ export function UserProfile({
       
       {/* 1. Shop & Operator Profile Header Card */}
       <div style={{ background: '#ffffff', borderRadius: '24px', padding: '18px 20px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
             <div
               style={{
@@ -197,43 +200,96 @@ export function UserProfile({
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  {profileData.shopName}
+                  {currentUser?.shopName || profileData.shopName}
                 </h2>
-                <span style={{ fontSize: '0.64rem', background: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: '999px', fontWeight: 800 }}>
-                  R&D Verified
+                <span 
+                  style={{ 
+                    fontSize: '0.64rem', 
+                    background: currentUser?.role === 'platform_admin' ? '#fef3c7' : '#ecfdf5', 
+                    color: currentUser?.role === 'platform_admin' ? '#b45309' : '#059669', 
+                    padding: '2px 8px', 
+                    borderRadius: '999px', 
+                    fontWeight: 800,
+                    border: currentUser?.role === 'platform_admin' ? '1px solid #fde68a' : '1px solid #a7f3d0'
+                  }}
+                >
+                  {currentUser?.tier || 'R&D Verified'}
                 </span>
               </div>
               <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>{profileData.ownerName}</span>
+                <span>{currentUser?.name || profileData.ownerName}</span>
                 <span>•</span>
-                <span>{profileData.role}</span>
+                <span>{currentUser?.role === 'platform_admin' ? 'SuperAdmin' : currentUser?.role === 'head_barista' ? 'Head Barista' : 'Cafe Owner'}</span>
               </p>
               <p style={{ fontSize: '0.70rem', color: '#94a3b8', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <MapPin size={11} />
-                <span>{profileData.branch}</span>
+                <span>{currentUser?.branch || profileData.branch}</span>
               </p>
             </div>
           </div>
 
-          <button
-            onClick={() => setIsEditingProfile(!isEditingProfile)}
-            style={{
-              background: isEditingProfile ? '#0f172a' : '#f8fafc',
-              color: isEditingProfile ? '#ffffff' : '#334155',
-              border: '1px solid #e2e8f0',
-              padding: '6px 12px',
-              borderRadius: '10px',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            <Edit3 size={12} />
-            <span>{isEditingProfile ? 'Done' : 'Edit'}</span>
-          </button>
+          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            {currentUser?.role === 'platform_admin' && (
+              <button
+                onClick={onOpenAdminPortal}
+                style={{
+                  background: 'linear-gradient(135deg, #d97706, #b45309)',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '6px 12px',
+                  borderRadius: '10px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 6px rgba(217, 119, 6, 0.3)'
+                }}
+              >
+                <span>👑 Admin Console</span>
+              </button>
+            )}
+
+            <button
+              onClick={onOpenAdminLogin}
+              style={{
+                background: '#eff6ff',
+                color: '#1d4ed8',
+                border: '1px solid #bfdbfe',
+                padding: '6px 10px',
+                borderRadius: '10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <span>🔄 Switch</span>
+            </button>
+
+            <button
+              onClick={() => setIsEditingProfile(!isEditingProfile)}
+              style={{
+                background: isEditingProfile ? '#0f172a' : '#f8fafc',
+                color: isEditingProfile ? '#ffffff' : '#334155',
+                border: '1px solid #e2e8f0',
+                padding: '6px 12px',
+                borderRadius: '10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Edit3 size={12} />
+              <span>{isEditingProfile ? 'Done' : 'Edit'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Edit Profile Drawer */}
