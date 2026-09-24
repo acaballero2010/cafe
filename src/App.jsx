@@ -23,6 +23,7 @@ import { CafeOnboardingWizardModal } from './components/CafeOnboardingWizardModa
 import { ExploreHomeDashboard } from './components/ExploreHomeDashboard'
 import { RnDLabModule } from './components/RnDLabModule'
 import { UploadRecipeModal } from './components/UploadRecipeModal'
+import { KnowledgeBlogSupportHub } from './components/KnowledgeBlogSupportHub'
 import { LandingPage } from './components/LandingPage'
 import { AuthPage } from './components/AuthPage'
 import { AuthDatabase } from './utils/authDatabase'
@@ -420,6 +421,17 @@ export function App() {
           </div>
         )}
 
+        {activeTab === 'hub' && (
+          <KnowledgeBlogSupportHub
+            onOpenStudioWithRecipe={(recipeToLoad) => {
+              setCurrentRecipe(recipeToLoad)
+              setActiveTab('studio')
+              setIsSpecSheetMode(false)
+            }}
+            onOpenRnDLab={() => setActiveTab('rnd_lab')}
+          />
+        )}
+
         {activeTab === 'matrix' && (
           <MenuMatrix
             currentRecipe={currentRecipe}
@@ -552,7 +564,7 @@ export function App() {
         <button
           onClick={() => {
             triggerHaptic('tap')
-            setActiveTab('matrix')
+            setActiveTab('hub')
           }}
           className="mobile-nav-clean-item"
           style={{
@@ -562,15 +574,15 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'matrix' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
+            color: activeTab === 'hub' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
             padding: '4px 8px',
             minHeight: '44px',
             justifyContent: 'center'
           }}
         >
-          <BarChart3 size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'matrix' ? 800 : 600 }}>Matrix</span>
+          <BookOpen size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'hub' ? 800 : 600 }}>Academy</span>
         </button>
 
         <button

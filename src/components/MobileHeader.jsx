@@ -55,6 +55,7 @@ export function MobileHeader({
       case 'home': return 'PourCraft'
       case 'studio': return 'Recipe Studio'
       case 'rnd_lab': return 'R&D Formulation Lab'
+      case 'hub': return 'Academy & Support'
       case 'batches': return 'Batch Preps'
       case 'marketplace': return 'Wholesale Market'
       case 'matrix': return 'Menu Matrix'
