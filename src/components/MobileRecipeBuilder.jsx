@@ -988,7 +988,66 @@ export function MobileRecipeBuilder({
         metrics={{ layersDetailed: recipe.layers }}
       />
 
-      {/* 4.5 Barista Preparation Instructions & Pro Tips SOP Card */}
+      {/* 4.5 Packaging Auto-Bundle Section */}
+      <div style={{ background: '#ffffff', borderRadius: '18px', padding: '16px 20px', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Package size={18} color="#64748b" />
+          <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a' }}>
+            Packaging Auto-Bundled ({recipe.packagingIds?.length || 2} items)
+          </span>
+        </div>
+
+        <button
+          onClick={() => setShowPackagingModal(!showPackagingModal)}
+          style={{ fontSize: '0.76rem', color: '#d97706', fontWeight: 800, background: 'transparent', border: 'none', cursor: 'pointer', minHeight: '44px', display: 'flex', alignItems: 'center' }}
+        >
+          {showPackagingModal ? 'Done' : 'Customize'}
+        </button>
+      </div>
+
+      {showPackagingModal && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
+          {PACKAGING_ITEMS.map(pkg => {
+            const isSelected = (recipe.packagingIds || []).includes(pkg.id)
+            return (
+              <button
+                key={pkg.id}
+                onClick={() => {
+                  const current = recipe.packagingIds || []
+                  const updated = current.includes(pkg.id) ? current.filter(id => id !== pkg.id) : [...current, pkg.id]
+                  onUpdateRecipe({ ...recipe, packagingIds: updated })
+                }}
+                style={{
+                  background: isSelected ? '#fffbeb' : '#ffffff',
+                  border: isSelected ? '2px solid #0f172a' : '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '10px 12px',
+                  fontSize: '0.74rem',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  color: isSelected ? '#0f172a' : '#475569',
+                  minHeight: '44px'
+                }}
+              >
+                <div style={{ fontWeight: 800 }}>{pkg.name.split(' (')[0]}</div>
+                <div style={{ color: '#64748b', marginTop: '2px' }}>+₱{pkg.unitCost.toFixed(2)}</div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* 4.6 Ingredient Cost Distribution Donut Ring */}
+      <CostBreakdownRing
+        recipe={recipe}
+        metrics={{ layersDetailed: recipe.layers }}
+        onOpenSupplierPicker={(layerIdx) => {
+          setActivePickerLayerIndex(layerIdx)
+          setIsPickerOpen(true)
+        }}
+      />
+
+      {/* 4.7 Barista Preparation Instructions & Pro Tips SOP Card */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1204,15 +1263,16 @@ export function MobileRecipeBuilder({
         </div>
       </div>
 
-      {/* 4.6 Community Ratings & Barista Reviews */}
+      {/* 4.8 Community Ratings & Barista Reviews */}
       <CommunityReviewsSection
         recipe={recipe}
         onOpenTrendingHub={() => setIsTrendingHubOpen(true)}
         onFeatureRecipe={() => setIsTrendingHubOpen(true)}
       />
 
-      {/* Iconic Benchmark Specs Discovery Section (Placed below Recipe Build Order for optimal ergonomic flow) */}
+      {/* 4.9 Closely Related & Trending Variations Carousel (Bottom Inspiration Section) */}
       <BenchmarkRecipesCarousel
+        currentRecipe={recipe}
         onLoadBenchmarkSpec={(incomingSpec) => {
           const specToLoad = incomingSpec?.targetRecipe || incomingSpec
           if (specToLoad && (specToLoad.layers || specToLoad.name)) {
@@ -1222,110 +1282,7 @@ export function MobileRecipeBuilder({
         onBrowseAll={() => setIsDiscoveryOpen(true)}
       />
 
-      {/* Ingredient & Supplier Picker Modal */}
-      <IngredientSupplierPickerModal
-        isOpen={isPickerOpen}
-        onClose={() => setIsPickerOpen(false)}
-        currentRecipeName={recipe.name}
-        currentPortionMl={pickerTargetPortion}
-        onApplyIngredient={({ ingredient, supplierSku, unitCostPerMl }) => {
-          // Update or add layer with selected supplier quote
-          const newLayer = {
-            id: `layer-${Date.now()}`,
-            ingredientId: ingredient.id,
-            name: `${ingredient.name} (${supplierSku.brand.split(' (')[0]})`,
-            volumeMl: pickerTargetPortion,
-            unitCostPerMl: unitCostPerMl,
-            colorHex: '#fef3c7',
-            densityBrix: ingredient.densityBrix || 12,
-            scrapType: 'milk_steam_pitcher',
-            isTopOff: true,
-            layerType: 'liquid'
-          }
-          let updated = recipe.layers.map(l => ({ ...l, isTopOff: false }))
-          updated.push(newLayer)
-          onUpdateRecipe({ ...recipe, layers: updated })
-        }}
-      />
-
-      {/* AI Recipe Generator & Food Science Modal */}
-      <AiRecipeGeneratorModal
-        isOpen={isAiGenOpen}
-        onClose={() => setIsAiGenOpen(false)}
-        onLoadRecipeIntoStudio={(generatedStudioRecipe) => {
-          onUpdateRecipe(generatedStudioRecipe)
-        }}
-      />
-
-      {/* Drink Recipe Discovery & Guide Modal */}
-      <DrinkDiscoveryModal
-        isOpen={isDiscoveryOpen}
-        onClose={() => setIsDiscoveryOpen(false)}
-        onLoadIntoStudio={(discoveredRecipe) => {
-          onUpdateRecipe(discoveredRecipe)
-        }}
-      />
-
-      {/* 4. Packaging Auto-Bundle Section */}
-      <div style={{ background: '#ffffff', borderRadius: '18px', padding: '16px 20px', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Package size={18} color="#64748b" />
-          <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a' }}>
-            Packaging Auto-Bundled ({recipe.packagingIds?.length || 2} items)
-          </span>
-        </div>
-
-        <button
-          onClick={() => setShowPackagingModal(!showPackagingModal)}
-          style={{ fontSize: '0.76rem', color: '#d97706', fontWeight: 800, background: 'transparent', border: 'none', cursor: 'pointer', minHeight: '44px', display: 'flex', alignItems: 'center' }}
-        >
-          {showPackagingModal ? 'Done' : 'Customize'}
-        </button>
-      </div>
-
-      {showPackagingModal && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '8px' }}>
-          {PACKAGING_ITEMS.map(pkg => {
-            const isSelected = (recipe.packagingIds || []).includes(pkg.id)
-            return (
-              <button
-                key={pkg.id}
-                onClick={() => {
-                  const current = recipe.packagingIds || []
-                  const updated = current.includes(pkg.id) ? current.filter(id => id !== pkg.id) : [...current, pkg.id]
-                  onUpdateRecipe({ ...recipe, packagingIds: updated })
-                }}
-                style={{
-                  background: isSelected ? '#fffbeb' : '#ffffff',
-                  border: isSelected ? '2px solid #0f172a' : '1px solid #e2e8f0',
-                  borderRadius: '12px',
-                  padding: '10px 12px',
-                  fontSize: '0.74rem',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  color: isSelected ? '#0f172a' : '#475569',
-                  minHeight: '44px'
-                }}
-              >
-                <div style={{ fontWeight: 800 }}>{pkg.name.split(' (')[0]}</div>
-                <div style={{ color: '#64748b', marginTop: '2px' }}>+₱{pkg.unitCost.toFixed(2)}</div>
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {/* 6. Ingredient Cost Distribution Donut Ring */}
-      <CostBreakdownRing
-        recipe={recipe}
-        metrics={{ layersDetailed: recipe.layers }}
-        onOpenSupplierPicker={(layerIdx) => {
-          setActivePickerLayerIndex(layerIdx)
-          setIsPickerOpen(true)
-        }}
-      />
-
-      {/* 9. Food Science Accordion */}
+      {/* 4.10 Food Science & Scrap Buffer Accordion */}
       <div>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
