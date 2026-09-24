@@ -262,9 +262,7 @@ export function KnowledgeBlogSupportHub({
 
             {/* Formatted Markdown Content */}
             <div style={{ marginTop: '20px', fontSize: '0.88rem', color: '#334155', lineHeight: 1.65 }}>
-              <div style={{ whiteSpace: 'pre-line' }}>
-                {selectedItem.content}
-              </div>
+              <ArticleMarkdownRenderer content={selectedItem.content} />
             </div>
 
             {/* Tags Row */}
@@ -924,4 +922,108 @@ export function KnowledgeBlogSupportHub({
       )}
     </div>
   )
+}
+
+function ArticleMarkdownRenderer({ content }) {
+  if (!content) return null
+
+  const lines = content.trim().split('\n')
+  const elements = []
+  let currentList = []
+  let listType = null
+
+  const flushList = () => {
+    if (currentList.length > 0) {
+      if (listType === 'ol') {
+        elements.push(
+          <ol key={`ol-${elements.length}`} style={{ margin: '8px 0 16px', paddingLeft: '22px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {currentList.map((item, idx) => (
+              <li key={idx} style={{ fontSize: '0.86rem', color: '#334155', lineHeight: 1.55 }}>
+                {renderInlineMarkdown(item)}
+              </li>
+            ))}
+          </ol>
+        )
+      } else {
+        elements.push(
+          <ul key={`ul-${elements.length}`} style={{ margin: '8px 0 16px', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {currentList.map((item, idx) => (
+              <li key={idx} style={{ fontSize: '0.86rem', color: '#334155', lineHeight: 1.55 }}>
+                {renderInlineMarkdown(item)}
+              </li>
+            ))}
+          </ul>
+        )
+      }
+      currentList = []
+      listType = null
+    }
+  }
+
+  lines.forEach((rawLine, index) => {
+    const line = rawLine.trim()
+    if (!line) {
+      flushList()
+      return
+    }
+
+    if (line.startsWith('### ')) {
+      flushList()
+      const title = line.replace(/^###\s+/, '')
+      elements.push(
+        <div key={`h3-${index}`} style={{ marginTop: '22px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '4px', height: '18px', borderRadius: '2px', background: '#d97706', flexShrink: 0 }} />
+          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+            {title}
+          </h3>
+        </div>
+      )
+    } else if (line.startsWith('## ')) {
+      flushList()
+      const title = line.replace(/^##\s+/, '')
+      elements.push(
+        <h2 key={`h2-${index}`} style={{ fontSize: '1.18rem', fontWeight: 900, color: '#0f172a', margin: '24px 0 10px' }}>
+          {title}
+        </h2>
+      )
+    } else if (line.startsWith('* ') || line.startsWith('- ')) {
+      if (listType !== 'ul') {
+        flushList()
+        listType = 'ul'
+      }
+      currentList.push(line.substring(2))
+    } else if (/^\d+\.\s+/.test(line)) {
+      if (listType !== 'ol') {
+        flushList()
+        listType = 'ol'
+      }
+      currentList.push(line.replace(/^\d+\.\s+/, ''))
+    } else {
+      flushList()
+      elements.push(
+        <p key={`p-${index}`} style={{ fontSize: '0.86rem', color: '#334155', lineHeight: 1.6, margin: '6px 0' }}>
+          {renderInlineMarkdown(line)}
+        </p>
+      )
+    }
+  })
+
+  flushList()
+
+  return <div style={{ display: 'flex', flexDirection: 'column' }}>{elements}</div>
+}
+
+function renderInlineMarkdown(text) {
+  if (!text) return ''
+  const parts = text.split(/(\*\*.*?\*\*)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={i} style={{ color: '#0f172a', fontWeight: 800 }}>
+          {part.slice(2, -2)}
+        </strong>
+      )
+    }
+    return part
+  })
 }
