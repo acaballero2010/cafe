@@ -22,6 +22,8 @@ import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
 import { INITIAL_TRENDING_RECIPES } from './data/trendingRecipes'
 import { calculateDrinkMetrics } from './types/physics'
+import { triggerHaptic } from './utils/haptics'
+import { NativeToast } from './components/NativeToast'
 import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical } from 'lucide-react'
 
 export function App() {
@@ -40,6 +42,11 @@ export function App() {
   const [isSopModalOpen, setIsSopModalOpen] = useState(false)
   const [isYieldModalOpen, setIsYieldModalOpen] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('pourcraft_theme') === 'dark')
+  const [toast, setToast] = useState(null)
+
+  const showToast = (message, subtext = '', type = 'success', duration = 3000) => {
+    setToast({ message, subtext, type, duration })
+  }
 
   useEffect(() => {
     document.body.classList.toggle('dark', isDarkMode)
@@ -124,13 +131,16 @@ export function App() {
   }, [currentRecipe, activePackagingItems, includeScrap])
 
   const handleLoadPreset = () => {
+    triggerHaptic('selection')
     const venuePresets = PRESET_RECIPES.filter(r => r.venue === activeVenue)
     const currentIndex = venuePresets.findIndex(r => r.id === currentRecipe.id)
     const nextPreset = venuePresets[(currentIndex + 1) % venuePresets.length] || PRESET_RECIPES[0]
     setCurrentRecipe(nextPreset)
+    showToast(`Swapped to ${nextPreset.name}`, `${nextPreset.volumeOz || 16}oz • ₱${nextPreset.menuPrice?.toFixed(2)}`, 'sparkle')
   }
 
   const handleApplyPriceUpdates = (updatedItems) => {
+    triggerHaptic('success')
     setCatalog(prevCatalog => {
       return prevCatalog.map(catItem => {
         const found = updatedItems.find(u => u.skuId === catItem.id)
@@ -145,9 +155,11 @@ export function App() {
       })
       return { ...prev, layers: updatedLayers }
     })
+    showToast('Catalog Costs Updated', 'Live COGS recalculated across recipes', 'success')
   }
 
   const handleCreateNewBatch = () => {
+    triggerHaptic('tap')
     const newBatch = {
       id: `sub-${Date.now()}`,
       name: 'New House Batch Prep',
@@ -165,11 +177,14 @@ export function App() {
       ]
     }
     setSubRecipes(prev => [...prev, newBatch])
+    showToast('New Batch Prep Initialized', '1,000ml yield formulation ready', 'success')
   }
 
   const handleSaveToMenu = (recipeOrMenu, isNewMenu = false, targetMenuId = null) => {
+    triggerHaptic('success')
     if (isNewMenu) {
       setSavedMenus(prev => [recipeOrMenu, ...prev])
+      showToast('New R&D Lineup Created', recipeOrMenu.title, 'success')
     } else {
       setSavedMenus(prev => prev.map(menu => {
         if (menu.id === targetMenuId) {
@@ -185,6 +200,7 @@ export function App() {
         }
         return menu
       }))
+      showToast('Formulation Saved to R&D Lab', recipeOrMenu.name || 'Active Recipe', 'success')
     }
   }
 
@@ -321,9 +337,9 @@ export function App() {
           left: 0,
           right: 0,
           zIndex: 45,
-          background: 'rgba(255, 255, 255, 0.96)',
+          background: isDarkMode ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)',
           backdropFilter: 'blur(16px)',
-          borderTop: '1px solid #e5e7eb',
+          borderTop: isDarkMode ? '1px solid #1e293b' : '1px solid #e5e7eb',
           display: 'flex',
           justifyContent: 'space-around',
           padding: '6px 8px calc(6px + env(safe-area-inset-bottom))',
@@ -333,9 +349,11 @@ export function App() {
       >
         <button
           onClick={() => {
+            triggerHaptic('tap')
             setActiveTab('studio')
             setIsSpecSheetMode(false)
           }}
+          className="mobile-nav-clean-item"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -343,7 +361,7 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'studio' ? '#0f172a' : '#94a3b8',
+            color: activeTab === 'studio' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
             padding: '4px 8px',
             minHeight: '44px',
@@ -355,7 +373,11 @@ export function App() {
         </button>
 
         <button
-          onClick={() => setActiveTab('batches')}
+          onClick={() => {
+            triggerHaptic('tap')
+            setActiveTab('batches')
+          }}
+          className="mobile-nav-clean-item"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -363,7 +385,7 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'batches' ? '#0f172a' : '#94a3b8',
+            color: activeTab === 'batches' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
             padding: '4px 8px',
             minHeight: '44px',
@@ -375,7 +397,11 @@ export function App() {
         </button>
 
         <button
-          onClick={() => setActiveTab('marketplace')}
+          onClick={() => {
+            triggerHaptic('tap')
+            setActiveTab('marketplace')
+          }}
+          className="mobile-nav-clean-item"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -383,7 +409,7 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'marketplace' ? '#0f172a' : '#94a3b8',
+            color: activeTab === 'marketplace' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
             padding: '4px 8px',
             minHeight: '44px',
@@ -395,7 +421,11 @@ export function App() {
         </button>
 
         <button
-          onClick={() => setActiveTab('matrix')}
+          onClick={() => {
+            triggerHaptic('tap')
+            setActiveTab('matrix')
+          }}
+          className="mobile-nav-clean-item"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -403,7 +433,7 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'matrix' ? '#0f172a' : '#94a3b8',
+            color: activeTab === 'matrix' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
             padding: '4px 8px',
             minHeight: '44px',
@@ -416,9 +446,11 @@ export function App() {
 
         <button
           onClick={() => {
+            triggerHaptic('tap')
             setActiveTab('profile')
             setIsSpecSheetMode(false)
           }}
+          className="mobile-nav-clean-item"
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -426,7 +458,7 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'profile' ? '#0f172a' : '#94a3b8',
+            color: activeTab === 'profile' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
             padding: '4px 8px',
             minHeight: '44px',
@@ -479,6 +511,7 @@ export function App() {
           setCurrentRecipe(recipeToLoad)
           setActiveTab('studio')
           setIsSpecSheetMode(false)
+          showToast(`Loaded ${recipeToLoad.name}`, 'Swapped active recipe in Studio', 'sparkle')
         }}
         onSaveRecipeToMenu={handleSaveToMenu}
       />
@@ -490,6 +523,7 @@ export function App() {
           setCurrentRecipe(recipeToLoad)
           setActiveTab('studio')
           setIsSpecSheetMode(false)
+          showToast(`Cloned ${recipeToLoad.name}`, 'Swapped active recipe in Studio', 'sparkle')
         }}
         onSaveRecipeToMenu={handleSaveToMenu}
       />
@@ -502,7 +536,11 @@ export function App() {
         onOpenRepo={() => setIsRepositoryOpen(true)}
         onOpenTrending={() => setIsTrendingModalOpen(true)}
         isDarkMode={isDarkMode}
-        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+        onToggleTheme={() => {
+          const nextMode = !isDarkMode
+          setIsDarkMode(nextMode)
+          showToast(nextMode ? '🌙 Barista Night Mode' : '☀️ High-Contrast Day Mode', 'Visual theme switched', 'info', 2000)
+        }}
       />
 
       <BeveragePhotoStudioModal
@@ -525,6 +563,9 @@ export function App() {
         recipe={currentRecipe}
         metrics={metrics}
       />
+
+      {/* Native Mobile Toast HUD / Dynamic Island System */}
+      <NativeToast toast={toast} onDismiss={() => setToast(null)} />
     </div>
   )
 }

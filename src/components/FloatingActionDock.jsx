@@ -9,6 +9,7 @@ import {
   Sparkles,
   Flame
 } from 'lucide-react'
+import { triggerHaptic } from '../utils/haptics'
 
 export function FloatingActionDock({
   onOpenStudio = () => {},
@@ -45,7 +46,10 @@ export function FloatingActionDock({
     >
       {/* 1. 8K Photo Studio */}
       <button
-        onClick={onOpenStudio}
+        onClick={() => {
+          triggerHaptic('light')
+          onOpenStudio()
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -68,7 +72,10 @@ export function FloatingActionDock({
 
       {/* 2. Barista Station SOP */}
       <button
-        onClick={onOpenSop}
+        onClick={() => {
+          triggerHaptic('tap')
+          onOpenSop()
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -90,7 +97,10 @@ export function FloatingActionDock({
 
       {/* 3. Kitchen Batch Yield */}
       <button
-        onClick={onOpenYield}
+        onClick={() => {
+          triggerHaptic('tap')
+          onOpenYield()
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -112,7 +122,10 @@ export function FloatingActionDock({
 
       {/* 4. Recipe Repository */}
       <button
-        onClick={onOpenRepo}
+        onClick={() => {
+          triggerHaptic('tap')
+          onOpenRepo()
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -137,7 +150,10 @@ export function FloatingActionDock({
 
       {/* 5. Dark / Light Theme Mode Toggle */}
       <button
-        onClick={onToggleTheme}
+        onClick={() => {
+          triggerHaptic('light')
+          onToggleTheme()
+        }}
         style={{
           width: '28px',
           height: '28px',

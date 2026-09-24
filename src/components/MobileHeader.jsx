@@ -1,5 +1,6 @@
 import React from 'react'
 import { ChevronLeft, MoreVertical, Sparkles } from 'lucide-react'
+import { triggerHaptic } from '../utils/haptics'
 
 export function MobileHeader({
   activeVenue,
@@ -206,7 +207,10 @@ export function MobileHeader({
             return (
               <button
                 key={cat.id}
-                onClick={() => setActiveVenue(cat.id)}
+                onClick={() => {
+                  triggerHaptic('selection')
+                  setActiveVenue(cat.id)
+                }}
                 style={{
                   flexShrink: 0,
                   padding: '7px 16px',
@@ -226,7 +230,10 @@ export function MobileHeader({
           })}
 
           <button
-            onClick={onOpenRepository}
+            onClick={() => {
+              triggerHaptic('light')
+              onOpenRepository()
+            }}
             style={{
               flexShrink: 0,
               padding: '6px 12px',
@@ -247,7 +254,10 @@ export function MobileHeader({
           </button>
 
           <button
-            onClick={onOpenTrending}
+            onClick={() => {
+              triggerHaptic('light')
+              onOpenTrending()
+            }}
             style={{
               flexShrink: 0,
               padding: '6px 12px',
