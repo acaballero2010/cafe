@@ -11,9 +11,12 @@ import {
   LogOut,
   Building2,
   Coffee,
-  Crown
+  Crown,
+  Loader2,
+  AlertCircle
 } from 'lucide-react'
 import { AuthDatabase, INITIAL_USERS } from '../utils/authDatabase'
+import { loginWithEmailPassword, loginWithGoogle } from '../services/firebaseAuthService'
 import { triggerHaptic } from '../utils/haptics'
 
 export function AdminLoginModal({
@@ -27,6 +30,7 @@ export function AdminLoginModal({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('quick') // 'quick' | 'form'
 
   if (!isOpen) return null
@@ -38,36 +42,56 @@ export function AdminLoginModal({
     onClose()
   }
 
-  const handleFormSubmit = (e) => {
+  const handleGoogleSignIn = async () => {
+    setErrorMsg('')
+    setIsLoading(true)
+    triggerHaptic('tap')
+
+    try {
+      const res = await loginWithGoogle()
+      if (res.success) {
+        triggerHaptic('success')
+        onLoginSuccess(res.user)
+        onClose()
+      } else {
+        triggerHaptic('error')
+        setErrorMsg(res.error)
+      }
+    } catch (err) {
+      console.error('Google sign in error:', err)
+      setErrorMsg('Google authentication failed.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleFormSubmit = async (e) => {
     e.preventDefault()
-    if (!email.trim()) {
-      setErrorMsg('Please enter a valid email address.')
+    setErrorMsg('')
+
+    if (!email.trim() || !password.trim()) {
+      setErrorMsg('Please enter both email and password.')
       return
     }
 
-    const users = AuthDatabase.getUsers()
-    const match = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase())
+    setIsLoading(true)
+    triggerHaptic('tap')
 
-    if (match) {
-      triggerHaptic('success')
-      AuthDatabase.setCurrentUser(match)
-      onLoginSuccess(match)
-      onClose()
-    } else {
-      // Create and log in as new cafe owner
-      const newUser = AuthDatabase.addUser({
-        name: email.split('@')[0],
-        email: email.trim(),
-        role: 'cafe_owner',
-        shopName: `${email.split('@')[0]}'s Cafe`,
-        branch: 'Main Branch',
-        region: 'Metro Manila',
-        tier: 'Standard Plan'
-      })
-      triggerHaptic('success')
-      AuthDatabase.setCurrentUser(newUser)
-      onLoginSuccess(newUser)
-      onClose()
+    try {
+      const res = await loginWithEmailPassword(email, password)
+      if (res.success) {
+        triggerHaptic('success')
+        onLoginSuccess(res.user)
+        onClose()
+      } else {
+        triggerHaptic('error')
+        setErrorMsg(res.error)
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      setErrorMsg('Authentication failed.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -111,10 +135,10 @@ export function AdminLoginModal({
             </div>
             <div>
               <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                PourCraft User & Admin Access
+                PourCraft Access & Firebase Auth
               </h2>
               <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0' }}>
-                Role-based platform control & tenant switcher
+                Role-based platform control & tenant management
               </p>
             </div>
           </div>
@@ -221,7 +245,7 @@ export function AdminLoginModal({
             onClick={() => setActiveTab('form')}
             style={{ flex: 1, justifyContent: 'center' }}
           >
-            <span>🔑 Credentials Login</span>
+            <span>🔑 Firebase Credentials</span>
           </button>
         </div>
 
@@ -295,73 +319,129 @@ export function AdminLoginModal({
             })}
           </div>
         ) : (
-          <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {errorMsg && (
-              <div style={{ padding: '8px 12px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecdd3', color: '#b91c1c', fontSize: '0.75rem' }}>
-                {errorMsg}
-              </div>
-            )}
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                Email Address
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type="email"
-                  placeholder="admin@pourcraft.io"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
-                    setErrorMsg('')
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px 9px 36px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.82rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input
-                  type="password"
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 12px 9px 36px',
-                    borderRadius: '10px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.82rem',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-            </div>
-
+          <div>
+            {/* Google Sign In Button */}
             <button
-              type="submit"
-              className="btn-clean btn-clean-primary"
-              style={{ width: '100%', marginTop: '6px' }}
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                background: '#ffffff',
+                color: '#0f172a',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginBottom: '14px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+              }}
             >
-              <span>Sign In / Register</span>
-              <ArrowRight size={14} />
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.37 7.34 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.97 0 12s.46 3.84 1.26 5.42l4.02-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+              </svg>
+              <span>Continue with Google</span>
             </button>
-          </form>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+              <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600 }}>OR EMAIL / PASSWORD</span>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+            </div>
+
+            <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {errorMsg && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', padding: '8px 12px', borderRadius: '8px', background: '#fef2f2', border: '1px solid #fecdd3', color: '#b91c1c', fontSize: '0.75rem' }}>
+                  <AlertCircle size={15} style={{ flexShrink: 0, marginTop: '1px' }} />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Email Address
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="email"
+                    required
+                    placeholder="admin@pourcraft.io"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value)
+                      setErrorMsg('')
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px 9px 36px',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••••••"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setErrorMsg('')
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '9px 12px 9px 36px',
+                      borderRadius: '10px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.82rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn-clean btn-clean-primary"
+                style={{ width: '100%', marginTop: '6px', opacity: isLoading ? 0.7 : 1 }}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span>Signing In...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign In with Firebase</span>
+                    <ArrowRight size={14} />
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
         )}
 
         {/* Setup Wizard Footer Trigger */}

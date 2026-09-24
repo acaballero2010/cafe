@@ -23,6 +23,7 @@ import { CafeOnboardingWizardModal } from './components/CafeOnboardingWizardModa
 import { LandingPage } from './components/LandingPage'
 import { AuthPage } from './components/AuthPage'
 import { AuthDatabase } from './utils/authDatabase'
+import { subscribeToAuthChanges } from './services/firebaseAuthService'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
@@ -60,6 +61,18 @@ export function App() {
   const showToast = (message, subtext = '', type = 'success', duration = 3000) => {
     setToast({ message, subtext, type, duration })
   }
+
+  // Real-time Firebase Authentication listener
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthChanges((firebaseUser) => {
+      if (firebaseUser) {
+        setCurrentUser(firebaseUser)
+      }
+    })
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [])
 
   useEffect(() => {
     document.body.classList.toggle('dark', isDarkMode)

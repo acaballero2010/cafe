@@ -15,9 +15,17 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
-  Building2
+  Building2,
+  Loader2,
+  AlertCircle
 } from 'lucide-react'
 import { AuthDatabase } from '../utils/authDatabase'
+import { 
+  loginWithEmailPassword, 
+  registerWithEmailPassword, 
+  loginWithGoogle,
+  sendPasswordReset 
+} from '../services/firebaseAuthService'
 import { triggerHaptic } from '../utils/haptics'
 
 export function AuthPage({
@@ -28,7 +36,9 @@ export function AuthPage({
 }) {
   const [mode, setMode] = useState(initialMode) // 'signin' | 'signup'
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [infoMsg, setInfoMsg] = useState('')
 
   // Sign In Form State
   const [signInEmail, setSignInEmail] = useState('')
@@ -48,58 +58,124 @@ export function AuthPage({
     onLoginSuccess(user)
   }
 
-  const handleSignInSubmit = (e) => {
-    e.preventDefault()
-    if (!signInEmail.trim()) {
-      setErrorMsg('Please enter your business email.')
-      return
-    }
+  // Live Firebase Google Sign-In
+  const handleGoogleSignIn = async () => {
+    setErrorMsg('')
+    setInfoMsg('')
+    setIsLoading(true)
+    triggerHaptic('tap')
 
-    const users = AuthDatabase.getUsers()
-    const match = users.find(u => u.email.toLowerCase() === signInEmail.trim().toLowerCase())
-
-    if (match) {
-      triggerHaptic('success')
-      AuthDatabase.setCurrentUser(match)
-      onLoginSuccess(match)
-    } else {
-      // Auto-register and log in
-      const created = AuthDatabase.addUser({
-        name: signInEmail.split('@')[0],
-        email: signInEmail.trim(),
-        role: 'cafe_owner',
-        shopName: `${signInEmail.split('@')[0]}'s Cafe Studio`,
-        branch: 'Main Branch',
-        region: 'Metro Manila',
-        tier: 'Standard Plan'
-      })
-      triggerHaptic('success')
-      AuthDatabase.setCurrentUser(created)
-      onLoginSuccess(created)
+    try {
+      const res = await loginWithGoogle()
+      if (res.success) {
+        triggerHaptic('success')
+        onLoginSuccess(res.user)
+        if (mode === 'signup') {
+          onOpenOnboarding()
+        }
+      } else {
+        triggerHaptic('error')
+        setErrorMsg(res.error)
+      }
+    } catch (err) {
+      console.error('Google auth error', err)
+      setErrorMsg('Failed to authenticate with Google. Please try again.')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleSignUpSubmit = (e) => {
+  // Live Firebase Email Sign-In
+  const handleSignInSubmit = async (e) => {
     e.preventDefault()
-    if (!signUpEmail.trim() || !signUpShopName.trim()) {
-      setErrorMsg('Please fill in your shop name and business email.')
+    setErrorMsg('')
+    setInfoMsg('')
+
+    if (!signInEmail.trim() || !signInPassword.trim()) {
+      setErrorMsg('Please enter both your business email and password.')
       return
     }
 
-    const created = AuthDatabase.addUser({
-      name: signUpOwnerName.trim() || signUpShopName.trim(),
-      email: signUpEmail.trim(),
-      role: 'cafe_owner',
-      shopName: signUpShopName.trim(),
-      branch: 'Flagship Branch',
-      region: signUpRegion,
-      tier: 'Pro Commercial R&D'
-    })
+    setIsLoading(true)
+    triggerHaptic('tap')
 
-    triggerHaptic('success')
-    AuthDatabase.setCurrentUser(created)
-    onLoginSuccess(created)
-    onOpenOnboarding()
+    try {
+      const res = await loginWithEmailPassword(signInEmail, signInPassword)
+      if (res.success) {
+        triggerHaptic('success')
+        onLoginSuccess(res.user)
+      } else {
+        triggerHaptic('error')
+        setErrorMsg(res.error)
+      }
+    } catch (err) {
+      console.error('Sign in error', err)
+      setErrorMsg('An error occurred during sign in.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Live Firebase Registration
+  const handleSignUpSubmit = async (e) => {
+    e.preventDefault()
+    setErrorMsg('')
+    setInfoMsg('')
+
+    if (!signUpEmail.trim() || !signUpShopName.trim() || !signUpPassword.trim()) {
+      setErrorMsg('Please provide your shop name, business email, and a password (min 6 characters).')
+      return
+    }
+
+    if (signUpPassword.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long.')
+      return
+    }
+
+    setIsLoading(true)
+    triggerHaptic('tap')
+
+    try {
+      const res = await registerWithEmailPassword(signUpEmail, signUpPassword, {
+        name: signUpOwnerName.trim() || signUpShopName.trim(),
+        shopName: signUpShopName.trim(),
+        region: signUpRegion,
+        role: 'cafe_owner'
+      })
+
+      if (res.success) {
+        triggerHaptic('success')
+        onLoginSuccess(res.user)
+        onOpenOnboarding()
+      } else {
+        triggerHaptic('error')
+        setErrorMsg(res.error)
+      }
+    } catch (err) {
+      console.error('Registration error', err)
+      setErrorMsg('Failed to register account. Please check credentials.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    const targetEmail = mode === 'signin' ? signInEmail : signUpEmail
+    if (!targetEmail.trim()) {
+      setErrorMsg('Please enter your email address first, then click Forgot Password.')
+      return
+    }
+
+    setErrorMsg('')
+    setIsLoading(true)
+    const res = await sendPasswordReset(targetEmail)
+    setIsLoading(false)
+
+    if (res.success) {
+      setInfoMsg(res.message)
+    } else {
+      setErrorMsg(res.error)
+    }
   }
 
   return (
@@ -116,7 +192,7 @@ export function AuthPage({
         position: 'relative'
       }}
     >
-      {/* Background glow ambient */}
+      {/* Ambient background glow */}
       <div 
         style={{
           position: 'absolute',
@@ -193,7 +269,7 @@ export function AuthPage({
             PourCraft <span style={{ color: '#f59e0b' }}>OS</span>
           </h2>
           <p style={{ fontSize: '0.76rem', color: '#94a3b8', margin: '4px 0 0' }}>
-            {mode === 'signin' ? 'Sign in to your Beverage R&D workspace' : 'Create your cafe tenant & seed initial formulations'}
+            {mode === 'signin' ? 'Sign in to your Firebase Beverage R&D workspace' : 'Create your verified cafe tenant in Firebase'}
           </p>
         </div>
 
@@ -204,7 +280,7 @@ export function AuthPage({
             background: 'rgba(255, 255, 255, 0.06)', 
             padding: '4px', 
             borderRadius: '999px', 
-            marginBottom: '20px',
+            marginBottom: '18px',
             border: '1px solid rgba(255, 255, 255, 0.08)'
           }}
         >
@@ -213,6 +289,7 @@ export function AuthPage({
               triggerHaptic('tap')
               setMode('signin')
               setErrorMsg('')
+              setInfoMsg('')
             }}
             style={{
               flex: 1,
@@ -234,6 +311,7 @@ export function AuthPage({
               triggerHaptic('tap')
               setMode('signup')
               setErrorMsg('')
+              setInfoMsg('')
             }}
             style={{
               flex: 1,
@@ -252,9 +330,60 @@ export function AuthPage({
           </button>
         </div>
 
+        {/* GOOGLE SIGN IN BUTTON */}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={isLoading}
+          style={{
+            width: '100%',
+            padding: '11px 16px',
+            borderRadius: '12px',
+            background: '#ffffff',
+            color: '#0f172a',
+            border: '1px solid #e2e8f0',
+            fontSize: '0.84rem',
+            fontWeight: 700,
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            marginBottom: '16px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+            opacity: isLoading ? 0.7 : 1,
+            transition: 'all 0.15s ease'
+          }}
+        >
+          {/* Google SVG Icon */}
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.37 7.34 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.97 0 12s.46 3.84 1.26 5.42l4.02-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.25 2.63 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>{mode === 'signin' ? 'Continue with Google' : 'Sign up with Google'}</span>
+        </button>
+
+        {/* Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
+          <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>or with email</span>
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255, 255, 255, 0.1)' }} />
+        </div>
+
+        {/* Messages */}
         {errorMsg && (
-          <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', fontSize: '0.75rem', marginBottom: '14px' }}>
-            {errorMsg}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', fontSize: '0.75rem', marginBottom: '14px' }}>
+            <AlertCircle size={15} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {infoMsg && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', color: '#4ade80', fontSize: '0.75rem', marginBottom: '14px' }}>
+            <Check size={15} style={{ flexShrink: 0 }} />
+            <span>{infoMsg}</span>
           </div>
         )}
 
@@ -263,12 +392,13 @@ export function AuthPage({
           <form onSubmit={handleSignInSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '4px' }}>
-                Business Email
+                Firebase Registered Email
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type="email"
+                  required
                   placeholder="chef@kapecraft.ph"
                   value={signInEmail}
                   onChange={(e) => setSignInEmail(e.target.value)}
@@ -288,13 +418,23 @@ export function AuthPage({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '4px' }}>
-                Password
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#cbd5e1' }}>
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  style={{ background: 'none', border: 'none', color: '#f59e0b', fontSize: '0.7rem', fontWeight: 600, cursor: 'pointer', padding: 0 }}
+                >
+                  Forgot password?
+                </button>
+              </div>
               <div style={{ position: 'relative' }}>
                 <Lock size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  required
                   placeholder="••••••••••••"
                   value={signInPassword}
                   onChange={(e) => setSignInPassword(e.target.value)}
@@ -322,6 +462,7 @@ export function AuthPage({
 
             <button
               type="submit"
+              disabled={isLoading}
               style={{
                 width: '100%',
                 padding: '11px',
@@ -331,17 +472,27 @@ export function AuthPage({
                 border: 'none',
                 fontSize: '0.84rem',
                 fontWeight: 800,
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
                 boxShadow: '0 2px 10px rgba(217, 119, 6, 0.35)',
-                marginTop: '4px'
+                marginTop: '4px',
+                opacity: isLoading ? 0.7 : 1
               }}
             >
-              <span>Sign In to Studio</span>
-              <ArrowRight size={14} />
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Verifying with Firebase...</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In with Firebase</span>
+                  <ArrowRight size={14} />
+                </>
+              )}
             </button>
 
             {/* Quick Persona Demo Switcher */}
@@ -418,7 +569,7 @@ export function AuthPage({
 
             <div>
               <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
-                Business Email
+                Business Email (Firebase Auth)
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -430,6 +581,30 @@ export function AuthPage({
                   onChange={(e) => setSignUpEmail(e.target.value)}
                   style={{ width: '100%', padding: '9px 12px 9px 36px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155', color: '#ffffff', fontSize: '0.8rem', boxSizing: 'border-box' }}
                 />
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#cbd5e1', marginBottom: '3px' }}>
+                Password (min 6 chars)
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={15} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••••••"
+                  value={signUpPassword}
+                  onChange={(e) => setSignUpPassword(e.target.value)}
+                  style={{ width: '100%', padding: '9px 36px 9px 36px', borderRadius: '10px', background: '#1e293b', border: '1px solid #334155', color: '#ffffff', fontSize: '0.8rem', boxSizing: 'border-box' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
             </div>
 
@@ -469,6 +644,7 @@ export function AuthPage({
 
             <button
               type="submit"
+              disabled={isLoading}
               style={{
                 width: '100%',
                 padding: '11px',
@@ -478,17 +654,27 @@ export function AuthPage({
                 border: 'none',
                 fontSize: '0.84rem',
                 fontWeight: 800,
-                cursor: 'pointer',
+                cursor: isLoading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
                 boxShadow: '0 2px 10px rgba(217, 119, 6, 0.35)',
-                marginTop: '4px'
+                marginTop: '4px',
+                opacity: isLoading ? 0.7 : 1
               }}
             >
-              <Sparkles size={14} />
-              <span>Create Shop & Launch Wizard</span>
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>Registering with Firebase...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  <span>Register with Firebase & Launch Wizard</span>
+                </>
+              )}
             </button>
           </form>
         )}
