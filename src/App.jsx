@@ -7,17 +7,19 @@ import { SpecSheetView } from './components/SpecSheetView'
 import { SubRecipeManager } from './components/SubRecipeManager'
 import { Marketplace } from './components/Marketplace'
 import { MenuMatrix } from './components/MenuMatrix'
+import { UserProfile } from './components/UserProfile'
 import { BaristaCardModal } from './components/BaristaCardModal'
 import { InvoiceOcrModal } from './components/InvoiceOcrModal'
+import { SupplierPriceAlertCard } from './components/SupplierPriceAlertCard'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
 import { calculateDrinkMetrics } from './types/physics'
-import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen } from 'lucide-react'
+import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User } from 'lucide-react'
 
 export function App() {
   const [activeVenue, setActiveVenue] = useState('coffee')
-  const [activeTab, setActiveTab] = useState('studio') // 'studio' | 'batches' | 'marketplace' | 'matrix'
+  const [activeTab, setActiveTab] = useState('studio') // 'studio' | 'batches' | 'marketplace' | 'matrix' | 'profile'
   const [isSpecSheetMode, setIsSpecSheetMode] = useState(false)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG)
@@ -25,9 +27,53 @@ export function App() {
   const [currentRecipe, setCurrentRecipe] = useState(PRESET_RECIPES[0])
   const [includeScrap, setIncludeScrap] = useState(true)
 
+  // Saved Menus State
+  const [savedMenus, setSavedMenus] = useState([
+    {
+      id: 'menu-summer-2026',
+      title: '☀️ Summer 2026 Core Lineup',
+      description: 'High-margin signature iced drinks, cold foams & shaken espressos.',
+      season: 'Summer Season',
+      updatedAt: 'Today',
+      drinks: [
+        PRESET_RECIPES[0],
+        PRESET_RECIPES[1],
+        PRESET_RECIPES[2] || PRESET_RECIPES[0]
+      ]
+    },
+    {
+      id: 'menu-core-espresso',
+      title: '☕ Core Espresso & Classics',
+      description: 'Daily driver milk lattes, americanos, and flat whites.',
+      season: 'Core / Year-Round',
+      updatedAt: 'Yesterday',
+      drinks: [
+        PRESET_RECIPES[0],
+        PRESET_RECIPES[3] || PRESET_RECIPES[0]
+      ]
+    }
+  ])
+
+  // Marketplace State
+  const [cartItems, setCartItems] = useState([
+    {
+      id: 'prod-1',
+      skuId: 'oatly-barista',
+      name: 'Oatly Barista Edition (Case 6 x 1L)',
+      supplier: 'Gourmet Direct PH',
+      category: 'dairy',
+      price: 1260.00,
+      qty: 2
+    }
+  ])
+  const [activeRegion, setActiveRegion] = useState('Metro Manila')
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isRegionModalOpen, setIsRegionModalOpen] = useState(false)
+
   // Modals
   const [isOcrOpen, setIsOcrOpen] = useState(false)
   const [isBaristaCardOpen, setIsBaristaCardOpen] = useState(false)
+  const [showPriceAlert, setShowPriceAlert] = useState(true)
 
   // Sync preset when category changes
   useEffect(() => {
@@ -82,18 +128,88 @@ export function App() {
     })
   }
 
+  const handleCreateNewBatch = () => {
+    const newBatch = {
+      id: `sub-${Date.now()}`,
+      name: 'New House Batch Prep',
+      category: 'syrup',
+      targetYieldQty: 1000,
+      yieldUom: 'ml',
+      prepWasteRate: 0.05,
+      shelfLifeHours: 48,
+      densityBrix: 50.0,
+      colorHex: '#d97706',
+      description: 'Slow-simmered house syrup or prep blend.',
+      sopNotes: 'Combine raw materials, heat, cool, date stamp & store.',
+      items: [
+        { ingredientId: catalog[0]?.id || 'tiger-brown-sugar-syrup', quantity: 500, uom: 'ml' }
+      ]
+    }
+    setSubRecipes(prev => [...prev, newBatch])
+  }
+
+  const handleSaveToMenu = (recipeOrMenu, isNewMenu = false, targetMenuId = null) => {
+    if (isNewMenu) {
+      setSavedMenus(prev => [recipeOrMenu, ...prev])
+    } else {
+      setSavedMenus(prev => prev.map(menu => {
+        if (menu.id === targetMenuId) {
+          const exists = menu.drinks.some(d => d.id === recipeOrMenu.id)
+          const updatedDrinks = exists 
+            ? menu.drinks.map(d => d.id === recipeOrMenu.id ? recipeOrMenu : d)
+            : [...menu.drinks, { ...recipeOrMenu, id: `saved-${Date.now()}` }]
+          return {
+            ...menu,
+            updatedAt: 'Just now',
+            drinks: updatedDrinks
+          }
+        }
+        return menu
+      }))
+    }
+  }
+
+  const totalCartCount = cartItems.reduce((sum, item) => sum + item.qty, 0)
+
   return (
     <div style={{ minHeight: '100vh', background: '#f8f9fb', color: '#111827', display: 'flex', flexDirection: 'column' }}>
-      {/* 1. Native Mobile Navigation Header & Category Carousel */}
+      {/* 1. Native Mobile Header & Dynamic Actions */}
       <MobileHeader
         activeVenue={activeVenue}
         setActiveVenue={setActiveVenue}
+        activeTab={activeTab}
+        totalBatches={subRecipes.length}
+        cartCount={totalCartCount}
+        activeRegion={activeRegion}
+        onOpenRegion={() => setIsRegionModalOpen(true)}
+        onOpenCart={() => setIsCartOpen(true)}
+        onCreateBatch={handleCreateNewBatch}
         onOpenSop={() => setIsBaristaCardOpen(true)}
         onOpenOcr={() => setIsOcrOpen(true)}
       />
 
-      {/* 2. Main Scrollable Viewport */}
-      <main style={{ flex: 1, padding: '16px 16px 140px', maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+      {/* 2. Main Scrollable Container with 160px Bottom Scroll Clearance */}
+      <main style={{ flex: 1, padding: '16px 16px 160px', maxWidth: '680px', width: '100%', margin: '0 auto' }}>
+        {/* Supplier Price Shift & Margin Impact Alert Card */}
+        {showPriceAlert && (
+          <SupplierPriceAlertCard
+            onAutoAdjustPrices={(impacted) => {
+              // Update current recipe menuPrice if it's one of the impacted
+              const match = impacted.find(i => currentRecipe.name.toLowerCase().includes(i.name.toLowerCase()))
+              if (match) {
+                setCurrentRecipe(prev => ({ ...prev, menuPrice: match.suggestedPrice }))
+              }
+            }}
+            onCompareSuppliers={() => {
+              setActiveTab('marketplace')
+            }}
+            onAcceptMargins={() => {
+              // Updates catalog unit cost for fresh milk
+              setCatalog(prev => prev.map(item => item.id.includes('milk') ? { ...item, unitCostPerMl: 0.110 } : item))
+            }}
+            onDismiss={() => setShowPriceAlert(false)}
+          />
+        )}
         {activeTab === 'studio' && (
           isSpecSheetMode ? (
             <SpecSheetView
@@ -111,6 +227,8 @@ export function App() {
               setIncludeScrap={setIncludeScrap}
               onUpdateRecipe={setCurrentRecipe}
               onLoadPreset={handleLoadPreset}
+              savedMenus={savedMenus}
+              onSaveToMenu={handleSaveToMenu}
             />
           )
         )}
@@ -124,7 +242,18 @@ export function App() {
         )}
 
         {activeTab === 'marketplace' && (
-          <Marketplace onAddToCart={() => {}} />
+          <Marketplace
+            catalog={catalog}
+            onUpdateCatalogPrice={handleApplyPriceUpdates}
+            activeRegion={activeRegion}
+            setActiveRegion={setActiveRegion}
+            isCartOpen={isCartOpen}
+            setIsCartOpen={setIsCartOpen}
+            isRegionModalOpen={isRegionModalOpen}
+            setIsRegionModalOpen={setIsRegionModalOpen}
+            cartItems={cartItems}
+            setCartItems={setCartItems}
+          />
         )}
 
         {activeTab === 'matrix' && (
@@ -133,9 +262,24 @@ export function App() {
             metrics={metrics}
           />
         )}
+
+        {activeTab === 'profile' && (
+          <UserProfile
+            savedMenus={savedMenus}
+            onUpdateSavedMenus={setSavedMenus}
+            currentRecipe={currentRecipe}
+            onLoadRecipeIntoStudio={(recipeToLoad) => {
+              setCurrentRecipe(recipeToLoad)
+            }}
+            onOpenStudio={() => {
+              setActiveTab('studio')
+              setIsSpecSheetMode(false)
+            }}
+          />
+        )}
       </main>
 
-      {/* 3. Floating Sticky Bottom Bar (Active on Studio Tab) */}
+      {/* 3. Floating Sticky Bottom Bar (Studio Tab Only) */}
       {activeTab === 'studio' && !isSpecSheetMode && (
         <MobileStickyBottomBar
           metrics={metrics}
@@ -143,7 +287,7 @@ export function App() {
         />
       )}
 
-      {/* 4. Native Mobile Bottom Navigation Bar */}
+      {/* 4. Native Mobile Bottom Tab Navigation Bar */}
       <nav
         style={{
           position: 'fixed',
@@ -156,7 +300,7 @@ export function App() {
           borderTop: '1px solid #e5e7eb',
           display: 'flex',
           justifyContent: 'space-around',
-          padding: '6px 12px calc(6px + env(safe-area-inset-bottom))',
+          padding: '6px 8px calc(6px + env(safe-area-inset-bottom))',
           maxWidth: '680px',
           margin: '0 auto'
         }}
@@ -173,9 +317,11 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'studio' ? '#451a03' : '#9ca3af',
+            color: activeTab === 'studio' ? '#0f172a' : '#94a3b8',
             cursor: 'pointer',
-            padding: '4px 10px'
+            padding: '4px 8px',
+            minHeight: '44px',
+            justifyContent: 'center'
           }}
         >
           <Layers size={19} />
@@ -191,9 +337,11 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'batches' ? '#451a03' : '#9ca3af',
+            color: activeTab === 'batches' ? '#0f172a' : '#94a3b8',
             cursor: 'pointer',
-            padding: '4px 10px'
+            padding: '4px 8px',
+            minHeight: '44px',
+            justifyContent: 'center'
           }}
         >
           <ChefHat size={19} />
@@ -209,9 +357,11 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'marketplace' ? '#451a03' : '#9ca3af',
+            color: activeTab === 'marketplace' ? '#0f172a' : '#94a3b8',
             cursor: 'pointer',
-            padding: '4px 10px'
+            padding: '4px 8px',
+            minHeight: '44px',
+            justifyContent: 'center'
           }}
         >
           <ShoppingBag size={19} />
@@ -227,13 +377,38 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'matrix' ? '#451a03' : '#9ca3af',
+            color: activeTab === 'matrix' ? '#0f172a' : '#94a3b8',
             cursor: 'pointer',
-            padding: '4px 10px'
+            padding: '4px 8px',
+            minHeight: '44px',
+            justifyContent: 'center'
           }}
         >
           <BarChart3 size={19} />
           <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'matrix' ? 800 : 600 }}>Matrix</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab('profile')
+            setIsSpecSheetMode(false)
+          }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === 'profile' ? '#0f172a' : '#94a3b8',
+            cursor: 'pointer',
+            padding: '4px 8px',
+            minHeight: '44px',
+            justifyContent: 'center'
+          }}
+        >
+          <User size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'profile' ? 800 : 600 }}>Profile</span>
         </button>
       </nav>
 

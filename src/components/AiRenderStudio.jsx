@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Sparkles, Download, Share2, Camera, Sun, Moon, Palette, Sliders, RefreshCw, Check } from 'lucide-react'
+import { Sparkles, Download, Share2, Camera, Sun, Moon, Palette, Sliders, RefreshCw, Check, Smartphone, Monitor, QrCode, Tag } from 'lucide-react'
 
 export function AiRenderStudio({
   recipe,
@@ -9,7 +9,7 @@ export function AiRenderStudio({
   const [condensationLevel, setCondensationLevel] = useState('heavy')
   const [isGenerating, setIsGenerating] = useState(false)
   const [renderedImage, setRenderedImage] = useState(null)
-  const [aspectRatio, setAspectRatio] = useState('1:1')
+  const [exportFormat, setExportFormat] = useState('story') // 'story' (9:16) | 'table_tent' (4:6) | 'tv_menu' (16:9)
 
   const lightingPresets = [
     { id: 'cafe-daylight', name: 'Scandinavian Morning Cafe (5000K Soft Sun)', icon: Sun },
@@ -28,9 +28,9 @@ export function AiRenderStudio({
       setRenderedImage({
         timestamp: Date.now(),
         lighting: lightingMode,
-        aspectRatio
+        exportFormat
       })
-    }, 1200)
+    }, 1000)
   }
 
   return (
@@ -65,16 +65,28 @@ export function AiRenderStudio({
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              className={`btn btn-sm ${aspectRatio === '1:1' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setAspectRatio('1:1')}
+              className={`btn btn-sm ${exportFormat === 'story' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setExportFormat('story')}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem' }}
             >
-              1:1 Square
+              <Smartphone size={13} />
+              <span>9:16 Story</span>
             </button>
             <button
-              className={`btn btn-sm ${aspectRatio === '9:16' ? 'btn-primary' : 'btn-secondary'}`}
-              onClick={() => setAspectRatio('9:16')}
+              className={`btn btn-sm ${exportFormat === 'table_tent' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setExportFormat('table_tent')}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem' }}
             >
-              9:16 Story
+              <Tag size={13} />
+              <span>4x6" Table Tent</span>
+            </button>
+            <button
+              className={`btn btn-sm ${exportFormat === 'tv_menu' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setExportFormat('tv_menu')}
+              style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem' }}
+            >
+              <Monitor size={13} />
+              <span>16:9 TV Menu</span>
             </button>
           </div>
         </div>
@@ -325,21 +337,37 @@ export function AiRenderStudio({
         </div>
 
         {/* Action Controls: Download & Share */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '20px' }}>
           <button
             className="btn btn-primary btn-sm"
-            onClick={() => alert(`Saved high-res render of ${recipe.name} to Menu Asset Library!`)}
+            onClick={() => {
+              if (exportFormat === 'story') {
+                alert(`📱 Generated 9:16 Vertical Instagram Story asset for ${recipe.name}! Saved 1080x1920 PNG.`)
+              } else if (exportFormat === 'table_tent') {
+                alert(`🏷️ Generated Printable 4x6" Table Tent Card with dynamic QR code for ${recipe.name}!`)
+              } else {
+                alert(`📺 Generated 16:9 4K Digital TV Menu Board asset for ${recipe.name}! Saved 3840x2160 PNG.`)
+              }
+            }}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 800 }}
           >
             <Download size={14} />
-            <span>Export PNG for Digital Menu</span>
+            <span>
+              {exportFormat === 'story'
+                ? 'Export 9:16 Story PNG (1080x1920)'
+                : exportFormat === 'table_tent'
+                ? 'Print 4x6" Table Tent Card (with QR)'
+                : 'Export 16:9 4K TV Menu Asset'}
+            </span>
           </button>
 
           <button
             className="btn btn-secondary btn-sm"
-            onClick={() => alert('Generated 9:16 Instagram Story & TikTok Video Frame!')}
+            onClick={() => alert(`🚀 Copied instant marketing bundle link for ${recipe.name} to clipboard!`)}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700 }}
           >
             <Share2 size={14} />
-            <span>Export Social Story</span>
+            <span>Share All Marketing Formats</span>
           </button>
         </div>
       </div>

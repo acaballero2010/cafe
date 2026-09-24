@@ -1,7 +1,62 @@
-import React from 'react'
-import { BarChart3, Star, AlertCircle, ArrowUpRight, TrendingDown, DollarSign, Activity } from 'lucide-react'
+import React, { useState } from 'react'
+import { BarChart3, Star, AlertCircle, ArrowUpRight, TrendingDown, DollarSign, Activity, Truck, ShoppingBag, Store, Sparkles, Check, Download } from 'lucide-react'
 
 export function MenuMatrix({ currentRecipe, metrics }) {
+  const [selectedChannel, setSelectedChannel] = useState('grabfood') // 'instore' | 'grabfood' | 'foodpanda' | 'wholesale'
+
+  const basePrice = currentRecipe?.menuPrice || 185.00
+  const baseCogs = metrics?.totalCogs || 44.20
+  const baseProfit = basePrice - baseCogs // in-store profit
+
+  const channels = [
+    {
+      id: 'instore',
+      name: 'In-Store Dine-In / Takeout',
+      icon: Store,
+      takeRatePct: 0,
+      badge: '0% Platform Fee',
+      calcPrice: basePrice,
+      platformFeePhp: 0,
+      netProfitPhp: baseProfit,
+      netMarginPct: ((baseProfit / basePrice) * 100).toFixed(1)
+    },
+    {
+      id: 'grabfood',
+      name: 'GrabFood Delivery App',
+      icon: Truck,
+      takeRatePct: 25,
+      badge: '25% Platform Commission',
+      // To preserve identical dollar profit: (P - COGS - 0.25*P) = baseProfit => 0.75*P = baseCogs + baseProfit => P = (baseCogs + baseProfit) / 0.75
+      calcPrice: Math.ceil((baseCogs + baseProfit) / 0.75),
+      platformFeePhp: Math.ceil((baseCogs + baseProfit) / 0.75) * 0.25,
+      netProfitPhp: baseProfit,
+      netMarginPct: ((baseProfit / Math.ceil((baseCogs + baseProfit) / 0.75)) * 100).toFixed(1)
+    },
+    {
+      id: 'foodpanda',
+      name: 'Foodpanda Delivery App',
+      icon: ShoppingBag,
+      takeRatePct: 28,
+      badge: '28% Platform Commission',
+      calcPrice: Math.ceil((baseCogs + baseProfit) / 0.72),
+      platformFeePhp: Math.ceil((baseCogs + baseProfit) / 0.72) * 0.28,
+      netProfitPhp: baseProfit,
+      netMarginPct: ((baseProfit / Math.ceil((baseCogs + baseProfit) / 0.72)) * 100).toFixed(1)
+    },
+    {
+      id: 'wholesale',
+      name: 'Corporate Catering / Bulk (10+)',
+      icon: DollarSign,
+      takeRatePct: -15, // 15% discount
+      badge: '15% Volume Discount',
+      calcPrice: Math.round(basePrice * 0.85),
+      platformFeePhp: 0,
+      netProfitPhp: Math.round(basePrice * 0.85) - baseCogs,
+      netMarginPct: (((Math.round(basePrice * 0.85) - baseCogs) / Math.round(basePrice * 0.85)) * 100).toFixed(1)
+    }
+  ]
+
+  const activeCh = channels.find(c => c.id === selectedChannel) || channels[1]
   const menuItems = [
     {
       id: 'item-1',
@@ -50,8 +105,118 @@ export function MenuMatrix({ currentRecipe, metrics }) {
   ]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      {/* 2x2 Menu Engineering Matrix */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '680px', margin: '0 auto', paddingBottom: '100px' }}>
+      
+      {/* 1. Dynamic Multi-Channel Pricing & Delivery Commission Guard */}
+      <div className="card-clean" style={{ padding: '20px', background: '#ffffff', borderRadius: '20px', border: '1px solid #e2e8f0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+              <Truck size={18} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0, fontFamily: 'var(--font-display)' }}>
+                  Delivery Channel Pricing & Margin Guard
+                </h3>
+                <span style={{ background: '#dcfce7', color: '#166534', fontSize: '0.62rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                  ACTIVE
+                </span>
+              </div>
+              <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0' }}>
+                Auto-adjusts retail drink prices across GrabFood & Foodpanda to absorb 20-30% platform take-rates.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Channel Selector Pills */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '16px' }}>
+          {channels.map(ch => {
+            const isSel = ch.id === selectedChannel
+            const Icon = ch.icon
+            return (
+              <button
+                key={ch.id}
+                onClick={() => setSelectedChannel(ch.id)}
+                style={{
+                  background: isSel ? '#0f172a' : '#f8fafc',
+                  border: isSel ? '2px solid #0f172a' : '1px solid #e2e8f0',
+                  color: isSel ? '#ffffff' : '#334155',
+                  padding: '10px 12px',
+                  borderRadius: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <Icon size={14} color={isSel ? '#fbbf24' : '#64748b'} />
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800 }}>{ch.name.split(' (')[0]}</span>
+                </div>
+                <div style={{ fontSize: '0.68rem', color: isSel ? '#94a3b8' : '#64748b' }}>
+                  {ch.badge}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Selected Channel Economic Breakdown */}
+        <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '12px' }}>
+            <div>
+              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#64748b', textTransform: 'uppercase' }}>
+                Channel: {activeCh.name}
+              </span>
+              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+                {currentRecipe?.name || 'Iced Brown Sugar Shaken Espresso'}
+              </div>
+            </div>
+
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.64rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>
+                Suggested Channel Price
+              </div>
+              <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+                ₱{activeCh.calcPrice.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', textAlign: 'center' }}>
+            <div style={{ background: '#ffffff', padding: '8px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '0.64rem', color: '#94a3b8', fontWeight: 700 }}>RAW COGS</div>
+              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                ₱{baseCogs.toFixed(2)}
+              </div>
+            </div>
+
+            <div style={{ background: '#ffffff', padding: '8px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '0.64rem', color: '#94a3b8', fontWeight: 700 }}>PLATFORM CUT</div>
+              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#e11d48', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                -₱{activeCh.platformFeePhp.toFixed(2)}
+              </div>
+            </div>
+
+            <div style={{ background: '#ffffff', padding: '8px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '0.64rem', color: '#94a3b8', fontWeight: 700 }}>NET POCKET PROFIT</div>
+              <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#059669', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                +₱{activeCh.netProfitPhp.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '12px', fontSize: '0.72rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sparkles size={12} color="#059669" />
+            <span>
+              Preserves your target <strong>₱{baseProfit.toFixed(2)} net profit per cup</strong> regardless of commission rate.
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. 2x2 Menu Engineering Matrix */}
       <div className="card-clean" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
           <div>

@@ -1,7 +1,12 @@
 import React, { useState } from 'react'
-import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X } from 'lucide-react'
+import { VESSELS } from '../types/physics'
 import { PACKAGING_ITEMS } from '../data/defaultCatalog'
 import { calculateSubRecipeMetrics } from '../data/defaultSubRecipes'
+import { IngredientSupplierPickerModal } from './IngredientSupplierPickerModal'
+import { AiRecipeGeneratorModal } from './AiRecipeGeneratorModal'
+import { DrinkDiscoveryModal } from './DrinkDiscoveryModal'
+import { BenchmarkRecipesCarousel } from './BenchmarkRecipesCarousel'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -10,11 +15,21 @@ export function MobileRecipeBuilder({
   includeScrap,
   setIncludeScrap,
   onUpdateRecipe,
-  onLoadPreset
+  onLoadPreset,
+  savedMenus = [],
+  onSaveToMenu = () => {}
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showPackagingModal, setShowPackagingModal] = useState(false)
   const [showAddMenu, setShowAddMenu] = useState(false)
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [pickerTargetPortion, setPickerTargetPortion] = useState(200)
+  const [isAiGenOpen, setIsAiGenOpen] = useState(false)
+  const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false)
+  const [isSaveMenuModalOpen, setIsSaveMenuModalOpen] = useState(false)
+  const [selectedTargetMenuId, setSelectedTargetMenuId] = useState(savedMenus[0]?.id || 'new')
+  const [newMenuTitleInput, setNewMenuTitleInput] = useState('')
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState('')
 
   const vesselPills = [
     { id: 'cold-16oz', label: '16oz Cold', sub: '473ml' },
@@ -28,6 +43,8 @@ export function MobileRecipeBuilder({
     { id: 'light', label: 'Less Ice' },
     { id: 'none', label: 'No Ice' }
   ]
+
+  const currentVessel = VESSELS.find(v => v.id === recipe.vesselId) || VESSELS[0]
 
   const handleVesselSelect = (vesselId) => {
     let defaultPackaging = ['cup-16oz-pet', 'lid-sip-cold']
@@ -45,14 +62,6 @@ export function MobileRecipeBuilder({
     updated[idx] = {
       ...updated[idx],
       volumeMl: Math.max(0, currentVol + delta)
-    }
-    onUpdateRecipe({ ...recipe, layers: updated })
-  }
-
-  const handleRemoveLayer = (idx) => {
-    const updated = recipe.layers.filter((_, i) => i !== idx)
-    if (updated.length > 0 && !updated.some(l => l.isTopOff)) {
-      updated[updated.length - 1].isTopOff = true
     }
     onUpdateRecipe({ ...recipe, layers: updated })
   }
@@ -115,84 +124,291 @@ export function MobileRecipeBuilder({
     setShowAddMenu(false)
   }
 
-  // Generate clean portion label
+  // Clean, concise portion stepper string without redundancy
   const getPortionLabel = (layer) => {
-    if (layer.isTopOff) return 'Top-Off Liquid'
+    if (layer.isTopOff) return 'Top-Off'
     const vol = layer.volumeMl || 0
-    if (layer.layerType === 'espresso') {
+    if (layer.layerType === 'espresso' || layer.ingredientId?.includes('espresso')) {
       const shots = Math.round(vol / 18)
-      return `${vol}ml (${shots || 2} shots)`
+      return `${shots || 2} shots (${vol}ml)`
     }
-    if (layer.layerType === 'dense_syrup') {
+    if (layer.layerType === 'dense_syrup' || layer.ingredientId?.includes('syrup')) {
       const pumps = (vol / 12.5).toFixed(1).replace('.0', '')
       return `${pumps} pumps (${vol}ml)`
     }
-    return `${vol} ml`
+    return `${vol}ml`
   }
 
-  // Generate layer sequence label
-  const getSequenceSubtext = (idx, total, isTopOff) => {
-    if (idx === 0) return 'Poured 1st • Base foundation'
-    if (isTopOff || idx === total - 1) return `Poured ${idx + 1}${idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'} • Crown layer`
-    return `Poured ${idx + 1}${idx === 1 ? 'nd' : idx === 2 ? 'rd' : 'th'} • Middle stratum`
+  // Clean layer name without embedded measurement noise
+  const getCleanName = (name) => {
+    return name.replace(/\s*\([^)]*\)/g, '').trim()
+  }
+
+  // Clean metadata subtext
+  const getLayerSubtext = (idx, total, isTopOff) => {
+    if (idx === 0) return 'Layer 1 • Base foundation'
+    if (isTopOff || idx === total - 1) return `Layer ${idx + 1} • Crown top-off`
+    return `Layer ${idx + 1} • Middle stratum`
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '680px', margin: '0 auto', paddingBottom: '130px' }}>
-      {/* 1. Prominent Drink Title Hero Block */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div style={{ flex: 1 }}>
-            <input
-              type="text"
-              value={recipe.name}
-              onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
-              style={{
-                fontSize: '1.28rem',
-                fontWeight: 800,
-                color: '#111827',
-                fontFamily: 'var(--font-display)',
-                border: 'none',
-                borderBottom: '1px solid transparent',
-                paddingBottom: '2px',
-                width: '100%',
-                outline: 'none',
-                background: 'transparent',
-                lineHeight: 1.3
-              }}
-              placeholder="Iced Brown Sugar Shaken Espresso"
-            />
-            <div style={{ fontSize: '0.74rem', color: '#9ca3af', marginTop: '4px', fontWeight: 500 }}>
-              Tap to rename • Created Today
-            </div>
-          </div>
-
-          <button
-            onClick={onLoadPreset}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '680px', margin: '0 auto' }}>
+      
+      {/* 1. Clean Drink Title & Action Row (Stacked 2-Tier Layout - Zero Truncation!) */}
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        {/* Full-width Drink Title */}
+        <div style={{ marginBottom: '14px' }}>
+          <input
+            type="text"
+            value={recipe.name}
+            onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
             style={{
-              background: '#fffbeb',
-              border: '1px solid #fde68a',
-              color: '#d97706',
-              padding: '6px 12px',
-              borderRadius: '9999px',
+              fontSize: '1.3rem', // ~22pt bold
+              fontWeight: 800,
+              color: '#0f172a', // text-slate-900
+              fontFamily: 'var(--font-display)',
+              border: 'none',
+              padding: 0,
+              width: '100%',
+              outline: 'none',
+              background: 'transparent',
+              lineHeight: 1.3
+            }}
+            placeholder="Enter Drink Name..."
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
+              Base Spec • {currentVessel.name.split(' (')[0]}
+            </span>
+            <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#cbd5e1' }} />
+            <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 700 }}>
+              ₱{(recipe.menuPrice || 180).toFixed(2)} Target Menu Price
+            </span>
+          </div>
+        </div>
+
+        {/* Action Button Strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+          <button
+            onClick={() => setIsDiscoveryOpen(true)}
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              color: '#0f172a',
+              padding: '8px 6px',
+              borderRadius: '12px',
               fontSize: '0.74rem',
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '4px',
-              flexShrink: 0
+              minHeight: '38px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Sparkles size={12} />
+            <Search size={13} color="#2563eb" />
+            <span>Discover</span>
+          </button>
+
+          <button
+            onClick={() => setIsAiGenOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #0f172a, #334155)',
+              border: 'none',
+              color: '#ffffff',
+              padding: '8px 6px',
+              borderRadius: '12px',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              minHeight: '38px',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Sparkles size={13} color="#fbbf24" />
+            <span>AI Gen</span>
+          </button>
+
+          <button
+            onClick={onLoadPreset}
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              color: '#334155',
+              padding: '8px 6px',
+              borderRadius: '12px',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              minHeight: '38px',
+              transition: 'all 0.15s ease'
+            }}
+          >
             <span>Presets</span>
+          </button>
+
+          <button
+            onClick={() => setIsSaveMenuModalOpen(true)}
+            style={{
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              color: '#047857',
+              padding: '8px 6px',
+              borderRadius: '12px',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              minHeight: '38px',
+              boxShadow: '0 1px 3px rgba(5, 150, 105, 0.12)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <FolderPlus size={13} color="#059669" />
+            <span>+ Menu</span>
           </button>
         </div>
       </div>
 
-      {/* 2. Cup & Size (Scrollable Segmented Bar) */}
+      {/* Save Recipe to Menu Modal */}
+      {isSaveMenuModalOpen && (
+        <div className="clean-modal-overlay" onClick={() => setIsSaveMenuModalOpen(false)}>
+          <div className="clean-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+                  <FolderPlus size={16} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    Save Recipe to Menu
+                  </h3>
+                  <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0 }}>
+                    Add "{recipe.name}" to your shop lineups.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsSaveMenuModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {saveSuccessMessage ? (
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '18px', textAlign: 'center', color: '#047857', fontWeight: 800, fontSize: '0.88rem' }}>
+                <Check size={24} color="#059669" style={{ margin: '0 auto 6px' }} />
+                <div>{saveSuccessMessage}</div>
+              </div>
+            ) : (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (selectedTargetMenuId === 'new') {
+                    if (!newMenuTitleInput.trim()) return
+                    const newMenu = {
+                      id: `menu-${Date.now()}`,
+                      title: newMenuTitleInput,
+                      description: 'Custom curated drink lineup.',
+                      season: 'Core / Year-Round',
+                      updatedAt: 'Just now',
+                      drinks: [recipe]
+                    }
+                    onSaveToMenu(newMenu, true)
+                    setSaveSuccessMessage(`✓ Created "${newMenu.title}" & added "${recipe.name}"!`)
+                  } else {
+                    const targetMenu = savedMenus.find(m => m.id === selectedTargetMenuId)
+                    onSaveToMenu(recipe, false, selectedTargetMenuId)
+                    setSaveSuccessMessage(`✓ Saved to "${targetMenu?.title || 'Menu'}"!`)
+                  }
+
+                  setTimeout(() => {
+                    setIsSaveMenuModalOpen(false)
+                    setSaveSuccessMessage('')
+                    setNewMenuTitleInput('')
+                  }, 1200)
+                }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
+              >
+                <div>
+                  <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
+                    Select Target Menu Collection
+                  </label>
+                  <select
+                    value={selectedTargetMenuId}
+                    onChange={(e) => setSelectedTargetMenuId(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.84rem', background: '#ffffff', boxSizing: 'border-box' }}
+                  >
+                    {savedMenus.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.title} ({m.drinks.length} drinks)
+                      </option>
+                    ))}
+                    <option value="new">+ Create New Menu Collection...</option>
+                  </select>
+                </div>
+
+                {selectedTargetMenuId === 'new' && (
+                  <div>
+                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      New Menu Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Signature Cold Drinks, Weekend Brunch..."
+                      value={newMenuTitleInput}
+                      onChange={(e) => setNewMenuTitleInput(e.target.value)}
+                      required
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.84rem', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                )}
+
+                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.74rem', color: '#64748b' }}>
+                  <strong>Drink Spec Summary:</strong> {recipe.name} • ₱{(recipe.menuPrice || 180).toFixed(2)} retail • {recipe.layers?.length || 3} layers
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsSaveMenuModalOpen(false)}
+                    style={{ background: '#f1f5f9', border: 'none', padding: '9px 14px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{ background: '#059669', border: 'none', padding: '9px 16px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', cursor: 'pointer' }}
+                  >
+                    Confirm & Save
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 2. Cup & Size Selector */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#4b5563', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+        <label style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           Cup Vessel & Size
         </label>
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
@@ -204,37 +420,37 @@ export function MobileRecipeBuilder({
                 onClick={() => handleVesselSelect(v.id)}
                 style={{
                   flex: 1,
-                  minWidth: '105px',
-                  padding: '10px 12px',
+                  minWidth: '100px',
+                  padding: '10px 8px',
                   borderRadius: '14px',
-                  border: isSelected ? '2px solid #111827' : '1px solid #e5e7eb',
-                  background: isSelected ? '#ffffff' : '#f9fafb',
-                  color: isSelected ? '#111827' : '#4b5563',
+                  border: isSelected ? '2px solid #0f172a' : '1px solid #e2e8f0',
+                  background: isSelected ? '#ffffff' : '#f8fafc',
+                  color: isSelected ? '#0f172a' : '#475569',
                   cursor: 'pointer',
                   textAlign: 'center',
                   transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.08)' : 'none'
+                  boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
                 }}
               >
-                <div style={{ fontSize: '0.84rem', fontWeight: 800 }}>{v.label}</div>
-                <div style={{ fontSize: '0.68rem', color: '#9ca3af', marginTop: '2px' }}>{v.sub}</div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 800 }}>{v.label}</div>
+                <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>{v.sub}</div>
               </button>
             )
           })}
         </div>
       </div>
 
-      {/* 3. Ice Level (iOS 3-Segment Control) */}
+      {/* 3. Ice Level Selector (iOS Segment) */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#4b5563', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+        <label style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
           Ice Level
         </label>
         <div
           style={{
             display: 'flex',
-            background: '#f3f4f6',
+            background: '#f1f5f9',
             padding: '4px',
-            borderRadius: '12px',
+            borderRadius: '14px',
             gap: '4px'
           }}
         >
@@ -250,8 +466,8 @@ export function MobileRecipeBuilder({
                   borderRadius: '10px',
                   border: 'none',
                   background: isSelected ? '#ffffff' : 'transparent',
-                  color: isSelected ? '#111827' : '#6b7280',
-                  fontSize: '0.82rem',
+                  color: isSelected ? '#0f172a' : '#64748b',
+                  fontSize: '0.84rem',
                   fontWeight: isSelected ? 800 : 600,
                   cursor: 'pointer',
                   boxShadow: isSelected ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
@@ -266,117 +482,125 @@ export function MobileRecipeBuilder({
         </div>
       </div>
 
-      {/* 4. Streamlined Recipe Build Order */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+      {/* 4. Streamlined Recipe Build Order (Balanced 2-Row Layout, No Squishing!) */}
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <h2 style={{ fontSize: '0.92rem', fontWeight: 800, color: '#111827', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <h2 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Recipe Build Order
           </h2>
-          <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: 600 }}>
+          <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 600 }}>
             {recipe.layers.length} Layers
           </span>
         </div>
 
-        {/* Clean Ergonomic Layer Cards */}
+        {/* List of 2-Row Ingredient Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {recipe.layers.map((layer, idx) => (
             <div
               key={layer.id || idx}
               style={{
-                background: layer.isTopOff ? '#ecfdf5' : '#ffffff',
-                border: `1px solid ${layer.isTopOff ? '#a7f3d0' : '#e5e7eb'}`,
+                background: layer.isTopOff ? '#f0fdf4' : '#ffffff',
+                border: `1px solid ${layer.isTopOff ? '#bbf7d0' : '#e2e8f0'}`,
                 borderRadius: '16px',
                 padding: '12px 14px',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                flexDirection: 'column',
+                gap: '10px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
               }}
             >
-              {/* Left: Swatch & Clean Title/Subtext */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    width: '26px',
-                    height: '26px',
-                    borderRadius: '50%',
-                    background: layer.colorHex || '#d97706',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    fontSize: '0.76rem',
-                    fontWeight: 800,
-                    flexShrink: 0
-                  }}
-                >
-                  {idx + 1}
+              {/* Row 1: Number Badge + Clean Ingredient Name + Drag Handle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      background: layer.colorHex || '#d97706',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontSize: '0.74rem',
+                      fontWeight: 800,
+                      flexShrink: 0
+                    }}
+                  >
+                    {idx + 1}
+                  </div>
+
+                  <span style={{ fontSize: '0.94rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {getCleanName(layer.name)}
+                  </span>
                 </div>
 
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#111827', lineHeight: 1.25 }}>
-                    {layer.name}
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: '2px' }}>
-                    {getSequenceSubtext(idx, recipe.layers.length, layer.isTopOff)}
-                  </div>
+                {/* Drag Handle Icon (⋮⋮) */}
+                <div style={{ color: '#94a3b8', cursor: 'grab', padding: '4px 2px', display: 'flex', alignItems: 'center' }} title="Reorder Sequence">
+                  <GripVertical size={18} />
                 </div>
               </div>
 
-              {/* Right: Sleek Touch Stepper & Reorder Handle */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              {/* Row 2: Metadata Subtext (Left) + Compact Stepper (Right) */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingTop: '2px' }}>
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
+                  {getLayerSubtext(idx, recipe.layers.length, layer.isTopOff)}
+                </span>
+
+                {/* Stepper Pill or Top-Off Button */}
                 {!layer.isTopOff ? (
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      background: '#f3f4f6',
-                      borderRadius: '12px',
+                      background: '#f8fafc',
+                      borderRadius: '10px',
                       padding: '2px',
-                      border: '1px solid #e5e7eb'
+                      border: '1px solid #cbd5e1'
                     }}
                   >
                     <button
                       onClick={() => handleStepVolume(idx, -5)}
                       style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
                         border: 'none',
                         background: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: '#374151',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
+                        color: '#334155',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                       }}
+                      aria-label="Decrease volume"
                     >
-                      <Minus size={14} />
+                      <Minus size={13} />
                     </button>
 
-                    <div style={{ minWidth: '80px', textAlign: 'center', fontSize: '0.8rem', fontWeight: 800, color: '#111827', padding: '0 4px', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ minWidth: '95px', textAlign: 'center', fontSize: '0.78rem', fontWeight: 800, color: '#0f172a', padding: '0 6px', fontFamily: 'var(--font-mono)' }}>
                       {getPortionLabel(layer)}
                     </div>
 
                     <button
                       onClick={() => handleStepVolume(idx, 5)}
                       style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '10px',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
                         border: 'none',
                         background: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: '#374151',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.06)'
+                        color: '#334155',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                       }}
+                      aria-label="Increase volume"
                     >
-                      <Plus size={14} />
+                      <Plus size={13} />
                     </button>
                   </div>
                 ) : (
@@ -386,60 +610,81 @@ export function MobileRecipeBuilder({
                       background: '#059669',
                       color: '#ffffff',
                       border: 'none',
-                      padding: '8px 14px',
-                      borderRadius: '10px',
-                      fontSize: '0.76rem',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.74rem',
                       fontWeight: 800,
                       cursor: 'pointer',
-                      minHeight: '40px'
+                      minHeight: '34px'
                     }}
                   >
                     Top-Off Liquid
                   </button>
                 )}
-
-                {/* Native Drag Reorder Handle (≡) */}
-                <div style={{ color: '#9ca3af', cursor: 'grab', padding: '4px', display: 'flex', alignItems: 'center' }} title="Reorder Sequence">
-                  <GripVertical size={20} />
-                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Clean Full-Width Dashed "+ Add Ingredient" Button */}
-        <div style={{ marginTop: '14px' }}>
+        {/* 3. Missing Full-Width "+ Add Ingredient or Layer" Button + Link Supplier Action */}
+        <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {!showAddMenu ? (
-            <button
-              onClick={() => setShowAddMenu(true)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '14px',
-                border: '2px dashed #d1d5db',
-                background: '#f9fafb',
-                color: '#374151',
-                fontSize: '0.84rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                transition: 'all 0.15s ease',
-                minHeight: '44px'
-              }}
-            >
-              <Plus size={16} />
-              <span>Add Ingredient to Sequence</span>
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setShowAddMenu(true)}
+                style={{
+                  flex: 1,
+                  height: '48px',
+                  borderRadius: '14px',
+                  border: '2px dashed #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Plus size={16} />
+                <span>+ Add Layer</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setPickerTargetPortion(200)
+                  setIsPickerOpen(true)
+                }}
+                style={{
+                  height: '48px',
+                  padding: '0 14px',
+                  borderRadius: '14px',
+                  border: '1px solid #fed7aa',
+                  background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+                  color: '#b45309',
+                  fontSize: '0.82rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 1px 3px rgba(217, 119, 6, 0.08)'
+                }}
+              >
+                <Link2 size={15} />
+                <span>Link Supplier</span>
+              </button>
+            </div>
           ) : (
-            <div style={{ background: '#f9fafb', border: '1px solid #d1d5db', borderRadius: '14px', padding: '12px' }}>
+            <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#374151' }}>Select Item to Add:</span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155' }}>Select Item to Add:</span>
                 <button
                   onClick={() => setShowAddMenu(false)}
-                  style={{ background: 'transparent', border: 'none', color: '#6b7280', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
+                  style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
                 >
                   Cancel
                 </button>
@@ -451,12 +696,12 @@ export function MobileRecipeBuilder({
                 style={{
                   width: '100%',
                   background: '#ffffff',
-                  border: '1px solid #d1d5db',
+                  border: '1px solid #cbd5e1',
                   borderRadius: '10px',
                   padding: '10px 12px',
                   fontSize: '0.84rem',
                   fontWeight: 700,
-                  color: '#111827',
+                  color: '#0f172a',
                   cursor: 'pointer',
                   outline: 'none',
                   minHeight: '44px'
@@ -479,11 +724,66 @@ export function MobileRecipeBuilder({
         </div>
       </div>
 
-      {/* 5. Packaging Auto-Bundle Pill */}
+      {/* Iconic Benchmark Specs Discovery Section (Placed below Recipe Build Order for optimal ergonomic flow) */}
+      <BenchmarkRecipesCarousel
+        onLoadBenchmarkSpec={(incomingSpec) => {
+          const specToLoad = incomingSpec?.targetRecipe || incomingSpec
+          if (specToLoad && (specToLoad.layers || specToLoad.name)) {
+            onUpdateRecipe(specToLoad)
+          }
+        }}
+        onBrowseAll={() => setIsDiscoveryOpen(true)}
+      />
+
+      {/* Ingredient & Supplier Picker Modal */}
+      <IngredientSupplierPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        currentRecipeName={recipe.name}
+        currentPortionMl={pickerTargetPortion}
+        onApplyIngredient={({ ingredient, supplierSku, unitCostPerMl }) => {
+          // Update or add layer with selected supplier quote
+          const newLayer = {
+            id: `layer-${Date.now()}`,
+            ingredientId: ingredient.id,
+            name: `${ingredient.name} (${supplierSku.brand.split(' (')[0]})`,
+            volumeMl: pickerTargetPortion,
+            unitCostPerMl: unitCostPerMl,
+            colorHex: '#fef3c7',
+            densityBrix: ingredient.densityBrix || 12,
+            scrapType: 'milk_steam_pitcher',
+            isTopOff: true,
+            layerType: 'liquid'
+          }
+          let updated = recipe.layers.map(l => ({ ...l, isTopOff: false }))
+          updated.push(newLayer)
+          onUpdateRecipe({ ...recipe, layers: updated })
+        }}
+      />
+
+      {/* AI Recipe Generator & Food Science Modal */}
+      <AiRecipeGeneratorModal
+        isOpen={isAiGenOpen}
+        onClose={() => setIsAiGenOpen(false)}
+        onLoadRecipeIntoStudio={(generatedStudioRecipe) => {
+          onUpdateRecipe(generatedStudioRecipe)
+        }}
+      />
+
+      {/* Drink Recipe Discovery & Guide Modal */}
+      <DrinkDiscoveryModal
+        isOpen={isDiscoveryOpen}
+        onClose={() => setIsDiscoveryOpen(false)}
+        onLoadIntoStudio={(discoveredRecipe) => {
+          onUpdateRecipe(discoveredRecipe)
+        }}
+      />
+
+      {/* 4. Packaging Auto-Bundle Section */}
       <div style={{ background: '#ffffff', borderRadius: '18px', padding: '16px 20px', border: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Package size={18} color="#6b7280" />
-          <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#111827' }}>
+          <Package size={18} color="#64748b" />
+          <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a' }}>
             Packaging Auto-Bundled ({recipe.packagingIds?.length || 2} items)
           </span>
         </div>
@@ -510,25 +810,25 @@ export function MobileRecipeBuilder({
                 }}
                 style={{
                   background: isSelected ? '#fffbeb' : '#ffffff',
-                  border: isSelected ? '2px solid #111827' : '1px solid #e5e7eb',
+                  border: isSelected ? '2px solid #0f172a' : '1px solid #e2e8f0',
                   borderRadius: '12px',
                   padding: '10px 12px',
                   fontSize: '0.74rem',
                   textAlign: 'left',
                   cursor: 'pointer',
-                  color: isSelected ? '#111827' : '#4b5563',
+                  color: isSelected ? '#0f172a' : '#475569',
                   minHeight: '44px'
                 }}
               >
                 <div style={{ fontWeight: 800 }}>{pkg.name.split(' (')[0]}</div>
-                <div style={{ color: '#6b7280', marginTop: '2px' }}>+₱{pkg.unitCost.toFixed(2)}</div>
+                <div style={{ color: '#64748b', marginTop: '2px' }}>+₱{pkg.unitCost.toFixed(2)}</div>
               </button>
             )
           })}
         </div>
       )}
 
-      {/* 6. Collapsible Food Science Drawer */}
+      {/* 5. Food Science Accordion */}
       <div>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
@@ -537,7 +837,7 @@ export function MobileRecipeBuilder({
             border: 'none',
             fontSize: '0.76rem',
             fontWeight: 700,
-            color: '#6b7280',
+            color: '#64748b',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -554,8 +854,8 @@ export function MobileRecipeBuilder({
           <div style={{ marginTop: '8px', background: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e5e7eb', fontSize: '0.74rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <strong style={{ color: '#111827' }}>Bar Shrinkage Buffer (+8% to 18%)</strong>
-                <p style={{ color: '#6b7280', marginTop: '2px' }}>
+                <strong style={{ color: '#0f172a' }}>Bar Shrinkage Buffer (+8% to 18%)</strong>
+                <p style={{ color: '#64748b', marginTop: '2px' }}>
                   Absorbs espresso dial-in purge, milk steam pitcher loss, & boba expiration directly into COGS.
                 </p>
               </div>

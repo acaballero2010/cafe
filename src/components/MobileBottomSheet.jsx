@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Sparkles, Download, BookOpen, ShoppingBag, Sun, Moon, Layers, ChevronDown } from 'lucide-react'
+import { X, Sparkles, Wand2, BookOpen, Plus, Minus, Check } from 'lucide-react'
 import { RealTimeCanvas } from './RealTimeCanvas'
 
 export function MobileBottomSheet({
@@ -11,19 +11,42 @@ export function MobileBottomSheet({
   onOpenSopCard,
   onOpenMarketplace
 }) {
-  const [viewMode, setViewMode] = useState('live-cup') // 'live-cup' | 'ai-render'
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
 
   if (!isOpen) return null
 
-  const handlePriceChange = (newPrice) => {
+  const handlePriceStep = (delta) => {
+    const currentPrice = Number(recipe.menuPrice || 180)
+    const newPrice = Math.max(10, currentPrice + delta)
     onUpdateRecipe({
       ...recipe,
-      menuPrice: Math.max(0, Number(newPrice))
+      menuPrice: newPrice
     })
   }
 
-  const { totalCogs, grossProfit, grossMarginPct, suggestedMenuPrice } = metrics
+  const handlePriceInput = (val) => {
+    const num = Math.max(0, Number(val) || 0)
+    onUpdateRecipe({
+      ...recipe,
+      menuPrice: num
+    })
+  }
+
+  const handleGenerateAiRender = () => {
+    setIsGenerating(true)
+    setTimeout(() => {
+      setIsGenerating(false)
+      setIsSaved(true)
+      setTimeout(() => setIsSaved(false), 2500)
+    }, 1200)
+  }
+
+  const { totalCogs, grossProfit, grossMarginPct, vessel } = metrics
+
+  const vesselSubtext = vessel.id?.includes('coupe') 
+    ? '7oz Nick & Nora Glass • Cold Cocktail' 
+    : `${vessel.volumeOz}oz ${vessel.name.split(' (')[0]} • Base Spec`
 
   return (
     <div
@@ -31,7 +54,7 @@ export function MobileBottomSheet({
         position: 'fixed',
         inset: 0,
         zIndex: 100,
-        background: 'rgba(17, 24, 39, 0.65)',
+        background: 'rgba(15, 23, 42, 0.6)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         flexDirection: 'column',
@@ -44,129 +67,291 @@ export function MobileBottomSheet({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
-          maxWidth: '680px',
-          maxHeight: '90vh',
+          maxWidth: '540px',
+          maxHeight: '92vh',
           overflowY: 'auto',
           margin: '0 auto',
           background: '#ffffff',
           borderRadius: '28px 28px 0 0',
-          padding: '20px 20px 36px',
-          boxShadow: '0 -10px 40px rgba(0,0,0,0.2)',
+          padding: '16px 20px 32px',
+          boxShadow: '0 -10px 40px rgba(0,0,0,0.25)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '18px'
+          gap: '16px',
+          boxSizing: 'border-box'
         }}
       >
         {/* Grab Handle */}
-        <div style={{ width: '44px', height: '5px', background: '#d1d5db', borderRadius: '9999px', margin: '0 auto' }} />
+        <div style={{ width: '40px', height: '4px', background: '#cbd5e1', borderRadius: '9999px', margin: '0 auto 4px' }} />
 
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', fontFamily: 'var(--font-display)' }}>
-              Drink Preview & Economics
-            </h3>
-            <p style={{ fontSize: '0.72rem', color: '#6b7280' }}>
-              {recipe.name} • {metrics.vessel.name}
+        {/* 1. Header & Title Simplification */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2
+              style={{
+                fontSize: '1.18rem', // ~18pt bold
+                fontWeight: 800,
+                color: '#0f172a',
+                fontFamily: 'var(--font-display)',
+                lineHeight: 1.25,
+                margin: 0
+              }}
+            >
+              {recipe.name || 'Smoked Rosemary Agave Mezcal Sour'}
+            </h2>
+            <p style={{ fontSize: '0.81rem', color: '#64748b', marginTop: '4px', fontWeight: 500, margin: '4px 0 0 0' }}>
+              {vesselSubtext}
             </p>
           </div>
 
+          {/* Clean Circular Close Button (✕) */}
           <button
             onClick={onClose}
             style={{
-              width: '36px',
-              height: '36px',
+              width: '34px',
+              height: '34px',
               borderRadius: '50%',
-              background: '#f3f4f6',
+              background: '#f1f5f9',
               border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              flexShrink: 0,
+              color: '#475569',
+              transition: 'background 0.15s ease'
             }}
+            aria-label="Close Preview"
           >
-            <X size={18} color="#4b5563" />
+            <X size={17} />
           </button>
         </div>
 
-        {/* Realistic Drink Stage Centerpiece */}
+        {/* 2. Realistic Visual Canvas Stage */}
         <RealTimeCanvas
           metrics={metrics}
           recipe={recipe}
           onOpenSopCard={onOpenSopCard}
         />
 
-        {/* Retail Price Slider & Profit Badge (PHP ₱) */}
-        <div style={{ background: '#f8f9fb', borderRadius: '18px', padding: '16px 18px', border: '1px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <div>
-              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#374151' }}>Retail Menu Price</span>
-              <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: 600 }}>
-                Profit: +₱{grossProfit.toFixed(2)} / cup ({grossMarginPct.toFixed(0)}% Margin)
-              </div>
-            </div>
+        {/* 3. Above-the-Fold Economics Card */}
+        <div
+          style={{
+            background: '#f8fafc',
+            borderRadius: '18px',
+            padding: '14px 16px',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}
+        >
+          {/* Target Retail Price Input with Quick Stepper Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e293b' }}>
+              Target Retail Price
+            </span>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>₱</span>
-              <input
-                type="number"
-                step="5"
-                min="0"
-                value={recipe.menuPrice || 180.00}
-                onChange={(e) => handlePriceChange(e.target.value)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                onClick={() => handlePriceStep(-10)}
                 style={{
-                  width: '85px',
-                  padding: '4px 6px',
-                  fontSize: '1.2rem',
-                  fontWeight: 800,
-                  border: '1px solid #d1d5db',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '8px',
-                  textAlign: 'right',
-                  fontFamily: 'var(--font-mono)',
-                  outline: 'none'
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#334155',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                 }}
-              />
+                aria-label="Decrease price by 10"
+              >
+                <Minus size={13} />
+              </button>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '2px 8px',
+                  minWidth: '85px',
+                  height: '32px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', marginRight: '2px' }}>₱</span>
+                <input
+                  type="number"
+                  step="5"
+                  min="0"
+                  value={recipe.menuPrice || 380}
+                  onChange={(e) => handlePriceInput(e.target.value)}
+                  style={{
+                    width: '100%',
+                    fontSize: '0.94rem',
+                    fontWeight: 800,
+                    border: 'none',
+                    textAlign: 'right',
+                    fontFamily: 'var(--font-mono)',
+                    outline: 'none',
+                    color: '#0f172a',
+                    padding: 0,
+                    background: 'transparent'
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={() => handlePriceStep(10)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#334155',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                }}
+                aria-label="Increase price by 10"
+              >
+                <Plus size={13} />
+              </button>
             </div>
           </div>
 
-          <input
-            type="range"
-            min="60"
-            max="400"
-            step="5"
-            value={recipe.menuPrice || 180.00}
-            onChange={(e) => handlePriceChange(e.target.value)}
-            className="clean-slider"
-          />
+          {/* Live Margin Metrics: Horizontal 3-Column Pill Container */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1.15fr',
+              gap: '8px',
+              background: '#ffffff',
+              borderRadius: '14px',
+              padding: '10px 12px',
+              border: '1px solid #e2e8f0'
+            }}
+          >
+            {/* Column 1: Cost (COGS) */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Cost (COGS)
+              </span>
+              <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                ₱{totalCogs.toFixed(2)}
+              </span>
+            </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.68rem', color: '#6b7280' }}>
-            <span>Min: ₱60</span>
-            <span style={{ color: '#d97706', fontWeight: 700 }}>Suggested: ₱{suggestedMenuPrice.toFixed(0)} (80% GM)</span>
-            <span>Max: ₱400</span>
+            {/* Column 2: Gross Profit */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Gross Profit
+              </span>
+              <span style={{ fontSize: '0.92rem', fontWeight: 800, color: '#059669', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+                +₱{grossProfit.toFixed(2)}
+              </span>
+            </div>
+
+            {/* Column 3: Gross Margin % (Vibrant Green Badge) */}
+            <div
+              style={{
+                background: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                borderRadius: '10px',
+                padding: '4px 8px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <span style={{ fontSize: '0.60rem', fontWeight: 800, color: '#047857', textTransform: 'uppercase' }}>
+                Margin %
+              </span>
+              <span style={{ fontSize: '0.96rem', fontWeight: 900, color: '#047857', fontFamily: 'var(--font-mono)' }}>
+                {grossMarginPct.toFixed(1)}%
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div style={{ display: 'flex', gap: '10px' }}>
+        {/* 4. Primary Action Buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '2px' }}>
+          {/* Primary Action Button (Full-width, Warm Orange Accent) */}
           <button
-            className="btn-clean btn-clean-primary"
-            onClick={onOpenSopCard}
-            style={{ flex: 1, padding: '12px' }}
+            onClick={handleGenerateAiRender}
+            disabled={isGenerating}
+            style={{
+              width: '100%',
+              height: '48px',
+              borderRadius: '14px',
+              border: 'none',
+              background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+              color: '#ffffff',
+              fontSize: '0.88rem',
+              fontWeight: 800,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(217, 119, 6, 0.4)',
+              cursor: isGenerating ? 'not-allowed' : 'pointer',
+              transition: 'all 0.15s ease'
+            }}
           >
-            <BookOpen size={16} />
-            <span>Export Barista SOP</span>
+            {isGenerating ? (
+              <>
+                <Sparkles size={16} className="animate-spin" />
+                <span>Generating High-Res AI Render...</span>
+              </>
+            ) : isSaved ? (
+              <>
+                <Check size={16} />
+                <span>Render Generated & Saved!</span>
+              </>
+            ) : (
+              <>
+                <Wand2 size={16} />
+                <span>Generate High-Res AI Render</span>
+              </>
+            )}
           </button>
 
+          {/* Secondary Action Button / Link */}
           <button
-            className="btn-clean btn-clean-secondary"
-            onClick={onOpenMarketplace}
-            style={{ flex: 1, padding: '12px' }}
+            onClick={onOpenSopCard}
+            style={{
+              width: '100%',
+              height: '44px',
+              borderRadius: '12px',
+              border: '1px solid #cbd5e1',
+              background: '#ffffff',
+              color: '#334155',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer'
+            }}
           >
-            <ShoppingBag size={16} />
-            <span>Order Wholesale</span>
+            <BookOpen size={15} color="#64748b" />
+            <span>Save & Export Barista SOP</span>
           </button>
         </div>
       </div>
     </div>
   )
 }
+
