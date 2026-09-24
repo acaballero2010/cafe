@@ -649,7 +649,7 @@ export function KnowledgeBlogSupportHub({
 
       {/* SECTION 1: KNOWLEDGE BASE ARTICLES */}
       {activeSection === 'knowledge' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filteredArticles.map(article => {
             const commentsCount = (articleComments[article.id] || []).length
             return (
@@ -661,57 +661,77 @@ export function KnowledgeBlogSupportHub({
                 }}
                 style={{
                   background: '#ffffff',
-                  borderRadius: '16px',
+                  borderRadius: '18px',
                   border: '1px solid #e2e8f0',
-                  padding: '16px',
+                  padding: '12px',
                   display: 'flex',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: '12px',
+                  gap: '14px',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                  transition: 'transform 0.15s'
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                  transition: 'transform 0.15s, box-shadow 0.15s'
                 }}
               >
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 800 }}>
-                      {article.categoryName}
-                    </span>
-                    <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                      {article.readTime}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '2px', fontSize: '0.7rem', fontWeight: 800, color: '#d97706', marginLeft: 'auto' }}>
-                      <Star size={12} fill="#d97706" />
-                      <span>{article.rating} ({article.ratingsCount})</span>
+                {/* Crisp Portrait Thumbnail */}
+                <div 
+                  style={{ 
+                    width: '100px', 
+                    height: '120px', 
+                    borderRadius: '14px', 
+                    background: '#1e293b', 
+                    position: 'relative', 
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.08)'
+                  }}
+                >
+                  <img
+                    src={article.image || '/beverages/caramel-macchiato.jpg'}
+                    alt={article.title}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      e.target.onerror = null
+                      e.target.src = 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=400&q=80'
+                    }}
+                  />
+                  <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#38bdf8', padding: '2px 6px', borderRadius: '6px', fontSize: '0.62rem', fontWeight: 800 }}>
+                    {article.categoryName}
+                  </div>
+                </div>
+
+                {/* Right Side Details */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#94a3b8' }}>
+                    <span>{article.readTime} • {article.publishedDate}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#d97706', fontWeight: 800 }}>
+                      <Star size={11} fill="#d97706" />
+                      {article.rating}
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: '0 0 6px', lineHeight: 1.3 }}>
+                  <h3 style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {article.title}
                   </h3>
-                  <p style={{ fontSize: '0.76rem', color: '#64748b', margin: 0, lineHeight: 1.4 }}>
+
+                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: 0, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {article.summary}
                   </p>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', paddingTop: '4px' }}>
                     <div style={{ display: 'flex', gap: '4px' }}>
-                      {article.tags.map((t, idx) => (
-                        <span key={idx} style={{ fontSize: '0.66rem', background: '#f8fafc', color: '#475569', padding: '2px 6px', borderRadius: '6px' }}>
+                      {(article.tags || []).slice(0, 2).map((t, idx) => (
+                        <span key={idx} style={{ fontSize: '0.64rem', background: '#f8fafc', color: '#64748b', padding: '2px 5px', borderRadius: '6px' }}>
                           #{t}
                         </span>
                       ))}
                     </div>
 
-                    <span style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                      <MessageSquare size={12} />
-                      {commentsCount} comments
+                    <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <MessageSquare size={11} />
+                      <span>{commentsCount}</span>
+                      <ChevronRight size={13} />
                     </span>
                   </div>
-                </div>
-
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
-                  <ChevronRight size={16} />
                 </div>
               </div>
             )
@@ -721,7 +741,7 @@ export function KnowledgeBlogSupportHub({
 
       {/* SECTION 2: BEVERAGE SCIENCE & TRENDS BLOG */}
       {activeSection === 'blog' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {filteredBlogs.map(post => {
             const commentsCount = (articleComments[post.id] || []).length
             return (
@@ -733,16 +753,30 @@ export function KnowledgeBlogSupportHub({
                 }}
                 style={{
                   background: '#ffffff',
-                  borderRadius: '16px',
+                  borderRadius: '18px',
                   border: '1px solid #e2e8f0',
-                  overflow: 'hidden',
+                  padding: '12px',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                   display: 'flex',
-                  flexDirection: 'column',
-                  cursor: 'pointer'
+                  gap: '14px',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  transition: 'transform 0.15s, box-shadow 0.15s'
                 }}
               >
-                <div style={{ height: '140px', background: '#1e293b', position: 'relative' }}>
+                {/* Crisp Portrait Thumbnail (Shows Entire Vertical Glass Clearly) */}
+                <div 
+                  style={{ 
+                    width: '105px', 
+                    height: '125px', 
+                    borderRadius: '14px', 
+                    background: '#1e293b', 
+                    position: 'relative', 
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.08)'
+                  }}
+                >
                   <img
                     src={post.image}
                     alt={post.title}
@@ -752,32 +786,38 @@ export function KnowledgeBlogSupportHub({
                       e.target.src = 'https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=400&q=80'
                     }}
                   />
-                  <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#fbbf24', padding: '3px 8px', borderRadius: '8px', fontSize: '0.68rem', fontWeight: 800 }}>
+                  <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(6px)', color: '#fbbf24', padding: '2px 6px', borderRadius: '6px', fontSize: '0.62rem', fontWeight: 800 }}>
                     {post.category}
                   </div>
                 </div>
 
-                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: '#94a3b8' }}>
+                {/* Right Side: Editorial Content & Metadata */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.68rem', color: '#94a3b8' }}>
                     <span>{post.author} • {post.date}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '2px', color: '#d97706', fontWeight: 800 }}>
                       <Star size={11} fill="#d97706" />
-                      {post.rating} ({post.ratingsCount})
+                      {post.rating}
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0f172a', margin: 0, lineHeight: 1.3 }}>
+                  <h3 style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', margin: 0, lineHeight: 1.25, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {post.title}
                   </h3>
-                  <p style={{ fontSize: '0.78rem', color: '#64748b', margin: 0, lineHeight: 1.45 }}>
+
+                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: 0, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {post.summary || post.excerpt}
                   </p>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px', marginTop: '4px' }}>
-                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{post.readTime}</span>
-                    <span style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>Read Article & Comments ({commentsCount})</span>
-                      <ArrowRight size={13} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', paddingTop: '4px' }}>
+                    <span style={{ fontSize: '0.68rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Clock size={11} />
+                      {post.readTime}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                      <MessageSquare size={11} />
+                      <span>{commentsCount} comments</span>
+                      <ChevronRight size={13} />
                     </span>
                   </div>
                 </div>
