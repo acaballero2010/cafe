@@ -36,7 +36,7 @@ import { MASTER_RECIPE_REPOSITORY } from './data/recipeRepository'
 import { calculateDrinkMetrics } from './types/physics'
 import { triggerHaptic } from './utils/haptics'
 import { NativeToast } from './components/NativeToast'
-import { Home, Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck, LogOut, Globe, Sparkles } from 'lucide-react'
+import { Home, Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck, LogOut, Globe, Sparkles, FileText } from 'lucide-react'
 
 export function App() {
   const [appView, setAppView] = useState('app') // 'app' | 'landing' | 'auth'
