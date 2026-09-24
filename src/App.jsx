@@ -13,6 +13,10 @@ import { InvoiceOcrModal } from './components/InvoiceOcrModal'
 import { SupplierPriceAlertCard } from './components/SupplierPriceAlertCard'
 import { TrendingCommunityHubModal } from './components/TrendingCommunityHubModal'
 import { DrinkRepositoryModal } from './components/DrinkRepositoryModal'
+import { FloatingActionDock } from './components/FloatingActionDock'
+import { BeveragePhotoStudioModal } from './components/BeveragePhotoStudioModal'
+import { BaristaSOPModal } from './components/BaristaSOPModal'
+import { BatchYieldCalculatorModal } from './components/BatchYieldCalculatorModal'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
@@ -32,6 +36,15 @@ export function App() {
   const [trendingRecipes, setTrendingRecipes] = useState(INITIAL_TRENDING_RECIPES)
   const [isTrendingModalOpen, setIsTrendingModalOpen] = useState(false)
   const [isRepositoryOpen, setIsRepositoryOpen] = useState(false)
+  const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false)
+  const [isSopModalOpen, setIsSopModalOpen] = useState(false)
+  const [isYieldModalOpen, setIsYieldModalOpen] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('pourcraft_theme') === 'dark')
+
+  useEffect(() => {
+    document.body.classList.toggle('dark', isDarkMode)
+    localStorage.setItem('pourcraft_theme', isDarkMode ? 'dark' : 'light')
+  }, [isDarkMode])
 
   // Saved Menus State
   const [savedMenus, setSavedMenus] = useState([
@@ -477,6 +490,38 @@ export function App() {
           setIsSpecSheetMode(false)
         }}
         onSaveRecipeToMenu={handleSaveToMenu}
+      />
+
+      {/* Floating Thumb Quick Action Dock */}
+      <FloatingActionDock
+        onOpenStudio={() => setIsPhotoStudioOpen(true)}
+        onOpenSop={() => setIsSopModalOpen(true)}
+        onOpenYield={() => setIsYieldModalOpen(true)}
+        onOpenRepo={() => setIsRepositoryOpen(true)}
+        onOpenTrending={() => setIsTrendingModalOpen(true)}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+      />
+
+      <BeveragePhotoStudioModal
+        isOpen={isPhotoStudioOpen}
+        onClose={() => setIsPhotoStudioOpen(false)}
+        recipe={currentRecipe}
+        metrics={metrics}
+      />
+
+      <BaristaSOPModal
+        isOpen={isSopModalOpen}
+        onClose={() => setIsSopModalOpen(false)}
+        recipe={currentRecipe}
+        metrics={metrics}
+      />
+
+      <BatchYieldCalculatorModal
+        isOpen={isYieldModalOpen}
+        onClose={() => setIsYieldModalOpen(false)}
+        recipe={currentRecipe}
+        metrics={metrics}
       />
     </div>
   )

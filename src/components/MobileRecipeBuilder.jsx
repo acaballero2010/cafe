@@ -11,6 +11,7 @@ import { BenchmarkRecipesCarousel } from './BenchmarkRecipesCarousel'
 import { CommunityReviewsSection } from './CommunityReviewsSection'
 import { TrendingCommunityHubModal } from './TrendingCommunityHubModal'
 import { SensoryFlavorRadar } from './SensoryFlavorRadar'
+import { CostBreakdownRing } from './CostBreakdownRing'
 import { BaristaSOPModal } from './BaristaSOPModal'
 import { BatchYieldCalculatorModal } from './BatchYieldCalculatorModal'
 import { DrinkRepositoryModal } from './DrinkRepositoryModal'
@@ -1260,7 +1261,34 @@ export function MobileRecipeBuilder({
         </div>
       )}
 
-      {/* 5. Food Science Accordion */}
+      {/* 5. Sensory Harmony Radar & Flavor Balance */}
+      <SensoryFlavorRadar
+        recipe={recipe}
+        metrics={{ layersDetailed: recipe.layers }}
+      />
+
+      {/* 6. Ingredient Cost Distribution Donut Ring */}
+      <CostBreakdownRing
+        recipe={recipe}
+        metrics={{ layersDetailed: recipe.layers }}
+        onOpenSupplierPicker={(layerIdx) => {
+          setActivePickerLayerIndex(layerIdx)
+          setIsPickerOpen(true)
+        }}
+      />
+
+      {/* 7. Benchmark Recipes Carousel */}
+      <BenchmarkRecipesCarousel
+        currentRecipe={recipe}
+        onSelectBenchmark={onUpdateRecipe}
+      />
+
+      {/* 8. Barista Community Reviews & Ratings */}
+      <CommunityReviewsSection
+        recipe={recipe}
+      />
+
+      {/* 9. Food Science Accordion */}
       <div>
         <button
           onClick={() => setShowAdvanced(!showAdvanced)}
