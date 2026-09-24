@@ -48,7 +48,8 @@ export function App() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [showPriceAlert, setShowPriceAlert] = useState(true)
   const [activeVenue, setActiveVenue] = useState('coffee')
-  const [activeTab, setActiveTab] = useState('home') // 'home' | 'studio' | 'rnd_lab' | 'matrix' | 'profile' | 'batches' | 'marketplace'
+  const [activeTab, setActiveTab] = useState('home') // 'home' | 'studio' | 'marketplace' | 'hub' | 'profile' | 'batches' | 'matrix'
+  const [studioSubTab, setStudioSubTab] = useState('builder') // 'builder' | 'lab' | 'spec'
   const [isSpecSheetMode, setIsSpecSheetMode] = useState(false)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG)
@@ -387,7 +388,11 @@ export function App() {
               setIsSpecSheetMode(false)
               showToast('Blank Studio Ready', 'Stack layers & test ingredient costs', 'success')
             }}
-            onOpenRnDLab={() => setActiveTab('rnd_lab')}
+            onOpenRnDLab={() => {
+              setActiveTab('studio')
+              setStudioSubTab('lab')
+              setIsSpecSheetMode(false)
+            }}
             onOpenUploadRecipe={() => setIsUploadModalOpen(true)}
             onOpenTrendingModal={() => setIsTrendingModalOpen(true)}
             onOpenRepositoryModal={() => setIsRepositoryOpen(true)}
@@ -400,42 +405,140 @@ export function App() {
         )}
 
         {activeTab === 'studio' && (
-          isSpecSheetMode ? (
-            <SpecSheetView
-              recipe={syncedRecipe}
-              metrics={metrics}
-              onBackToBuilder={() => setIsSpecSheetMode(false)}
-              onOpenMarketplace={() => setActiveTab('marketplace')}
-            />
-          ) : (
-            <MobileRecipeBuilder
-              recipe={syncedRecipe}
-              catalog={catalog}
-              subRecipes={subRecipes}
-              includeScrap={includeScrap}
-              setIncludeScrap={setIncludeScrap}
-              onUpdateRecipe={setCurrentRecipe}
-              onLoadPreset={handleLoadPreset}
-              savedMenus={savedMenus}
-              onSaveToMenu={handleSaveToMenu}
-              trendingRecipes={trendingRecipes}
-              onUpdateTrendingRecipes={setTrendingRecipes}
-              onOpenTrending={() => setIsTrendingModalOpen(true)}
-              currentUser={currentUser}
-            />
-          )
-        )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Unified Studio Sub-Tab Switcher */}
+            <div 
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '4px',
+                background: isDarkMode ? '#1e293b' : '#f1f5f9',
+                padding: '4px',
+                borderRadius: '14px',
+                border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0'
+              }}
+            >
+              <button
+                onClick={() => {
+                  triggerHaptic('selection')
+                  setStudioSubTab('builder')
+                  setIsSpecSheetMode(false)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                  padding: '8px 4px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: studioSubTab === 'builder' ? (isDarkMode ? '#0f172a' : '#ffffff') : 'transparent',
+                  color: studioSubTab === 'builder' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#94a3b8' : '#64748b'),
+                  fontWeight: studioSubTab === 'builder' ? 800 : 600,
+                  fontSize: '0.74rem',
+                  cursor: 'pointer',
+                  boxShadow: studioSubTab === 'builder' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Layers size={14} />
+                <span>Recipe Builder</span>
+              </button>
 
-        {activeTab === 'rnd_lab' && (
-          <RnDLabModule
-            currentRecipe={currentRecipe}
-            onOpenStudioWithRecipe={(recipeToLoad) => {
-              setCurrentRecipe(recipeToLoad)
-              setActiveTab('studio')
-              setIsSpecSheetMode(false)
-            }}
-            onSaveToMenu={handleSaveToMenu}
-          />
+              <button
+                onClick={() => {
+                  triggerHaptic('selection')
+                  setStudioSubTab('lab')
+                  setIsSpecSheetMode(false)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                  padding: '8px 4px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: studioSubTab === 'lab' ? (isDarkMode ? '#0f172a' : '#ffffff') : 'transparent',
+                  color: studioSubTab === 'lab' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#94a3b8' : '#64748b'),
+                  fontWeight: studioSubTab === 'lab' ? 800 : 600,
+                  fontSize: '0.74rem',
+                  cursor: 'pointer',
+                  boxShadow: studioSubTab === 'lab' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <FlaskConical size={14} />
+                <span>R&D Lab</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  triggerHaptic('selection')
+                  setStudioSubTab('spec')
+                  setIsSpecSheetMode(true)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px',
+                  padding: '8px 4px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: studioSubTab === 'spec' ? (isDarkMode ? '#0f172a' : '#ffffff') : 'transparent',
+                  color: studioSubTab === 'spec' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#94a3b8' : '#64748b'),
+                  fontWeight: studioSubTab === 'spec' ? 800 : 600,
+                  fontSize: '0.74rem',
+                  cursor: 'pointer',
+                  boxShadow: studioSubTab === 'spec' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <FileText size={14} />
+                <span>Spec Sheet</span>
+              </button>
+            </div>
+
+            {/* Sub-Tab View Rendering */}
+            {studioSubTab === 'builder' && (
+              <MobileRecipeBuilder
+                recipe={syncedRecipe}
+                catalog={catalog}
+                subRecipes={subRecipes}
+                includeScrap={includeScrap}
+                setIncludeScrap={setIncludeScrap}
+                onUpdateRecipe={setCurrentRecipe}
+                onLoadPreset={handleLoadPreset}
+                savedMenus={savedMenus}
+                onSaveToMenu={handleSaveToMenu}
+                trendingRecipes={trendingRecipes}
+                onUpdateTrendingRecipes={setTrendingRecipes}
+                onOpenTrending={() => setIsTrendingModalOpen(true)}
+                currentUser={currentUser}
+              />
+            )}
+
+            {studioSubTab === 'lab' && (
+              <RnDLabModule
+                currentRecipe={syncedRecipe}
+                onOpenStudioWithRecipe={(recipeToLoad) => {
+                  setCurrentRecipe(recipeToLoad)
+                  setStudioSubTab('builder')
+                }}
+                onSaveToMenu={handleSaveToMenu}
+              />
+            )}
+
+            {studioSubTab === 'spec' && (
+              <SpecSheetView
+                recipe={syncedRecipe}
+                metrics={metrics}
+                onBackToBuilder={() => setStudioSubTab('builder')}
+                onOpenMarketplace={() => setActiveTab('marketplace')}
+              />
+            )}
+          </div>
         )}
 
         {activeTab === 'batches' && (
@@ -486,7 +589,11 @@ export function App() {
               setActiveTab('studio')
               setIsSpecSheetMode(false)
             }}
-            onOpenRnDLab={() => setActiveTab('rnd_lab')}
+            onOpenRnDLab={() => {
+              setActiveTab('studio')
+              setStudioSubTab('lab')
+              setIsSpecSheetMode(false)
+            }}
           />
         )}
 
@@ -645,32 +752,6 @@ export function App() {
             )}
           </div>
           <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'marketplace' ? 800 : 600 }}>Market</span>
-        </button>
-
-        <button
-          onClick={() => {
-            triggerHaptic('tap')
-            setActiveTab('rnd_lab')
-            setIsSpecSheetMode(false)
-          }}
-          className="mobile-nav-clean-item"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '2px',
-            background: 'transparent',
-            border: 'none',
-            color: activeTab === 'rnd_lab' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
-            cursor: 'pointer',
-            padding: '4px 6px',
-            minHeight: '44px',
-            justifyContent: 'center',
-            flex: 1
-          }}
-        >
-          <FlaskConical size={18} />
-          <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'rnd_lab' ? 800 : 600 }}>R&D Lab</span>
         </button>
 
         <button
