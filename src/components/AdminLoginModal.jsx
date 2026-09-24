@@ -21,7 +21,8 @@ export function AdminLoginModal({
   onClose = () => {},
   currentUser,
   onLoginSuccess = () => {},
-  onOpenAdminPortal = () => {}
+  onOpenAdminPortal = () => {},
+  onOpenOnboardingWizard = () => {}
 }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -362,6 +363,35 @@ export function AdminLoginModal({
             </button>
           </form>
         )}
+
+        {/* Setup Wizard Footer Trigger */}
+        <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #e2e8f0', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => {
+              onClose()
+              onOpenOnboardingWizard()
+            }}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              borderRadius: '10px',
+              background: '#fffbeb',
+              border: '1px dashed #d97706',
+              color: '#92400e',
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}
+          >
+            <Sparkles size={14} color="#d97706" />
+            <span>Setup New Cafe Brand (4-Step Wizard)</span>
+          </button>
+        </div>
       </div>
     </div>
   )

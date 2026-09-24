@@ -19,6 +19,7 @@ import { BaristaSOPModal } from './components/BaristaSOPModal'
 import { BatchYieldCalculatorModal } from './components/BatchYieldCalculatorModal'
 import { AdminLoginModal } from './components/AdminLoginModal'
 import { PlatformAdminPortal } from './components/PlatformAdminPortal'
+import { CafeOnboardingWizardModal } from './components/CafeOnboardingWizardModal'
 import { AuthDatabase } from './utils/authDatabase'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
@@ -33,6 +34,7 @@ export function App() {
   const [currentUser, setCurrentUser] = useState(() => AuthDatabase.getCurrentUser())
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
   const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false)
+  const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false)
   const [showPriceAlert, setShowPriceAlert] = useState(true)
   const [activeVenue, setActiveVenue] = useState('coffee')
   const [activeTab, setActiveTab] = useState('studio') // 'studio' | 'batches' | 'marketplace' | 'matrix' | 'profile'
@@ -322,6 +324,7 @@ export function App() {
             currentUser={currentUser}
             onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
             onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
+            onOpenOnboardingWizard={() => setIsOnboardingWizardOpen(true)}
             onLoadRecipeIntoStudio={(recipeToLoad) => {
               setCurrentRecipe(recipeToLoad)
             }}
@@ -586,6 +589,7 @@ export function App() {
           showToast(`Logged in as ${user.name}`, `${user.shopName} • ${user.role}`, 'success')
         }}
         onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
+        onOpenOnboardingWizard={() => setIsOnboardingWizardOpen(true)}
       />
 
       {/* Platform Admin Console & Supplier Pricelist Uploader */}
@@ -602,6 +606,43 @@ export function App() {
           setCurrentUser(user)
           AuthDatabase.setCurrentUser(user)
           showToast(`Switched to ${user.name}`, user.shopName, 'info')
+        }}
+      />
+
+      {/* 4-Step Commercial Cafe Onboarding Wizard */}
+      <CafeOnboardingWizardModal
+        isOpen={isOnboardingWizardOpen}
+        onClose={() => setIsOnboardingWizardOpen(false)}
+        onCompleteOnboarding={(data) => {
+          const updatedUser = {
+            ...currentUser,
+            shopName: data.shopName,
+            branch: data.branchLocation,
+            region: data.region,
+            name: data.ownerName
+          }
+          setCurrentUser(updatedUser)
+          AuthDatabase.setCurrentUser(updatedUser)
+          AuthDatabase.updateUser(updatedUser.id, updatedUser)
+
+          setActiveRegion(data.region)
+          setIncludeScrap(data.includeWasteScrap)
+
+          if (data.seedRecipes && data.seedRecipes.length > 0) {
+            setCurrentRecipe(data.seedRecipes[0])
+
+            const newSeededMenu = {
+              id: `menu-${Date.now()}`,
+              title: `✨ ${data.shopName} Launch Lineup`,
+              description: `Target ${data.targetMarginPct}% Gross Margin • Commercial Formulations`,
+              season: 'Launch Season',
+              updatedAt: 'Just now',
+              drinks: data.seedRecipes
+            }
+            setSavedMenus(prev => [newSeededMenu, ...prev])
+          }
+
+          showToast(`Welcome, ${data.shopName}!`, `Seeded ${data.seedRecipes.length} formulations with ${data.targetMarginPct}% margin`, 'sparkle', 4000)
         }}
       />
 

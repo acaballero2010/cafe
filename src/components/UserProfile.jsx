@@ -39,6 +39,7 @@ export function UserProfile({
   currentUser,
   onOpenAdminLogin = () => {},
   onOpenAdminPortal = () => {},
+  onOpenOnboardingWizard = () => {},
   onLoadRecipeIntoStudio,
   onOpenStudio
 }) {
@@ -250,6 +251,27 @@ export function UserProfile({
                 <span>👑 Admin Console</span>
               </button>
             )}
+
+            <button
+              onClick={onOpenOnboardingWizard}
+              style={{
+                background: '#fffbeb',
+                color: '#b45309',
+                border: '1px solid #fde68a',
+                padding: '6px 10px',
+                borderRadius: '10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Launch 4-Step Cafe Setup Wizard"
+            >
+              <Sparkles size={12} color="#d97706" />
+              <span>Wizard</span>
+            </button>
 
             <button
               onClick={onOpenAdminLogin}
