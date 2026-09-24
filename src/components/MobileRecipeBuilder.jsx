@@ -1,12 +1,16 @@
 import React, { useState } from 'react'
-import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X } from 'lucide-react'
+import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X, Camera, RefreshCw, BookOpen, Lightbulb, Trash2, Edit3, Wrench, Flame, Star, MessageSquare } from 'lucide-react'
 import { VESSELS } from '../types/physics'
 import { PACKAGING_ITEMS } from '../data/defaultCatalog'
 import { calculateSubRecipeMetrics } from '../data/defaultSubRecipes'
 import { IngredientSupplierPickerModal } from './IngredientSupplierPickerModal'
 import { AiRecipeGeneratorModal } from './AiRecipeGeneratorModal'
 import { DrinkDiscoveryModal } from './DrinkDiscoveryModal'
+import { BeveragePhotoStudioModal } from './BeveragePhotoStudioModal'
 import { BenchmarkRecipesCarousel } from './BenchmarkRecipesCarousel'
+import { CommunityReviewsSection } from './CommunityReviewsSection'
+import { TrendingCommunityHubModal } from './TrendingCommunityHubModal'
+import { SensoryFlavorRadar } from './SensoryFlavorRadar'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -17,19 +21,82 @@ export function MobileRecipeBuilder({
   onUpdateRecipe,
   onLoadPreset,
   savedMenus = [],
-  onSaveToMenu = () => {}
+  onSaveToMenu = () => {},
+  trendingRecipes = [],
+  onUpdateTrendingRecipes = () => {},
+  onOpenTrending = () => {}
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showPackagingModal, setShowPackagingModal] = useState(false)
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [activePickerLayerIndex, setActivePickerLayerIndex] = useState(null)
   const [pickerTargetPortion, setPickerTargetPortion] = useState(200)
   const [isAiGenOpen, setIsAiGenOpen] = useState(false)
   const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false)
+  const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false)
+  const [isTrendingHubOpen, setIsTrendingHubOpen] = useState(false)
   const [isSaveMenuModalOpen, setIsSaveMenuModalOpen] = useState(false)
   const [selectedTargetMenuId, setSelectedTargetMenuId] = useState(savedMenus[0]?.id || 'new')
   const [newMenuTitleInput, setNewMenuTitleInput] = useState('')
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('')
+  const [newStepText, setNewStepText] = useState('')
+  const [isAddingStep, setIsAddingStep] = useState(false)
+  const [editingStepIndex, setEditingStepIndex] = useState(null)
+
+  const handleAddSopStep = (stepText) => {
+    if (!stepText.trim()) return
+    const currentSteps = recipe.sopSteps && recipe.sopSteps.length > 0 
+      ? recipe.sopSteps 
+      : [
+          'Pump base syrup/flavoring into vessel or shaker.',
+          'Extract espresso shot or steep tea base.',
+          'Add calibrated ice and shake or stir evenly.',
+          'Top off with fresh milk or foam to rim line.'
+        ]
+    onUpdateRecipe({ ...recipe, sopSteps: [...currentSteps, stepText.trim()] })
+    setNewStepText('')
+    setIsAddingStep(false)
+  }
+
+  const handleUpdateSopStep = (idx, updatedText) => {
+    const currentSteps = [...(recipe.sopSteps || [
+      'Pump base syrup/flavoring into vessel or shaker.',
+      'Extract espresso shot or steep tea base.',
+      'Add calibrated ice and shake or stir evenly.',
+      'Top off with fresh milk or foam to rim line.'
+    ])]
+    currentSteps[idx] = updatedText
+    onUpdateRecipe({ ...recipe, sopSteps: currentSteps })
+  }
+
+  const handleDeleteSopStep = (idx) => {
+    const currentSteps = (recipe.sopSteps || [
+      'Pump base syrup/flavoring into vessel or shaker.',
+      'Extract espresso shot or steep tea base.',
+      'Add calibrated ice and shake or stir evenly.',
+      'Top off with fresh milk or foam to rim line.'
+    ]).filter((_, i) => i !== idx)
+    onUpdateRecipe({ ...recipe, sopSteps: currentSteps })
+  }
+
+  const handleUpdateProTip = (tipText) => {
+    onUpdateRecipe({ ...recipe, proTips: tipText, baristaNotes: tipText })
+  }
+
+  const handleApplySupplierSwap = (data) => {
+    if (activePickerLayerIndex !== null && recipe.layers[activePickerLayerIndex]) {
+      const updated = [...recipe.layers]
+      updated[activePickerLayerIndex] = {
+        ...updated[activePickerLayerIndex],
+        name: data.name || data.supplierSku?.brand || updated[activePickerLayerIndex].name,
+        unitCostPerMl: data.unitCostPerMl || data.supplierSku?.unitCostPerMl || updated[activePickerLayerIndex].unitCostPerMl,
+        ingredientId: data.supplierSku?.id || updated[activePickerLayerIndex].ingredientId
+      }
+      onUpdateRecipe({ ...recipe, layers: updated })
+      setActivePickerLayerIndex(null)
+    }
+  }
 
   const vesselPills = [
     { id: 'cold-16oz', label: '16oz Cold', sub: '473ml' },
@@ -188,28 +255,28 @@ export function MobileRecipeBuilder({
         </div>
 
         {/* Action Button Strip */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
           <button
             onClick={() => setIsDiscoveryOpen(true)}
             style={{
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               color: '#0f172a',
-              padding: '8px 6px',
+              padding: '8px 4px',
               borderRadius: '12px',
-              fontSize: '0.74rem',
+              fontSize: '0.70rem',
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '4px',
+              gap: '3px',
               minHeight: '38px',
               boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
               transition: 'all 0.15s ease'
             }}
           >
-            <Search size={13} color="#2563eb" />
+            <Search size={12} color="#2563eb" />
             <span>Discover</span>
           </button>
 
@@ -219,22 +286,46 @@ export function MobileRecipeBuilder({
               background: 'linear-gradient(135deg, #0f172a, #334155)',
               border: 'none',
               color: '#ffffff',
-              padding: '8px 6px',
+              padding: '8px 4px',
               borderRadius: '12px',
-              fontSize: '0.74rem',
+              fontSize: '0.70rem',
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '4px',
+              gap: '3px',
               minHeight: '38px',
               boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
               transition: 'all 0.15s ease'
             }}
           >
-            <Sparkles size={13} color="#fbbf24" />
+            <Sparkles size={12} color="#fbbf24" />
             <span>AI Gen</span>
+          </button>
+
+          <button
+            onClick={() => setIsPhotoStudioOpen(true)}
+            style={{
+              background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+              border: 'none',
+              color: '#ffffff',
+              padding: '8px 4px',
+              borderRadius: '12px',
+              fontSize: '0.70rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px',
+              minHeight: '38px',
+              boxShadow: '0 2px 6px rgba(236, 72, 153, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Camera size={12} color="#ffffff" />
+            <span>Studio</span>
           </button>
 
           <button
@@ -243,15 +334,15 @@ export function MobileRecipeBuilder({
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               color: '#334155',
-              padding: '8px 6px',
+              padding: '8px 4px',
               borderRadius: '12px',
-              fontSize: '0.74rem',
+              fontSize: '0.70rem',
               fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '4px',
+              gap: '3px',
               minHeight: '38px',
               transition: 'all 0.15s ease'
             }}
@@ -265,21 +356,21 @@ export function MobileRecipeBuilder({
               background: '#ecfdf5',
               border: '1px solid #a7f3d0',
               color: '#047857',
-              padding: '8px 6px',
+              padding: '8px 4px',
               borderRadius: '12px',
-              fontSize: '0.74rem',
+              fontSize: '0.70rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '4px',
+              gap: '3px',
               minHeight: '38px',
               boxShadow: '0 1px 3px rgba(5, 150, 105, 0.12)',
               transition: 'all 0.15s ease'
             }}
           >
-            <FolderPlus size={13} color="#059669" />
+            <FolderPlus size={12} color="#059669" />
             <span>+ Menu</span>
           </button>
         </div>
@@ -381,8 +472,14 @@ export function MobileRecipeBuilder({
                   </div>
                 )}
 
-                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.74rem', color: '#64748b' }}>
-                  <strong>Drink Spec Summary:</strong> {recipe.name} • ₱{(recipe.menuPrice || 180).toFixed(2)} retail • {recipe.layers?.length || 3} layers
+                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.74rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div>
+                    <strong>Drink Spec Summary:</strong> {recipe.name} • ₱{(recipe.menuPrice || 180).toFixed(2)} retail • {recipe.layers?.length || 3} layers
+                  </div>
+                  <div style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Check size={12} color="#059669" />
+                    <span>Includes {(recipe.sopSteps?.length || 4)} Preparation Steps, Barista Pro Tips & SOP</span>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
@@ -622,6 +719,45 @@ export function MobileRecipeBuilder({
                   </button>
                 )}
               </div>
+
+              {/* Row 3: Supplier SKU Info & Instant "Swap Vendor" Action */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '6px', borderTop: '1px dashed #f1f5f9' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', color: '#64748b' }}>
+                  <span style={{ fontSize: '0.66rem', background: layer.isSubRecipe ? '#fef3c7' : '#f1f5f9', color: layer.isSubRecipe ? '#b45309' : '#475569', padding: '2px 6px', borderRadius: '6px', fontWeight: 700 }}>
+                    {layer.isSubRecipe ? 'HOUSE PREP BATCH' : 'WHOLESALE SKU'}
+                  </span>
+                  <span style={{ fontWeight: 600, color: '#334155' }}>
+                    ₱{((layer.unitCostPerMl || 0.1) * (layer.volumeMl || 30)).toFixed(2)} portion cost
+                  </span>
+                </div>
+
+                {!layer.isSubRecipe && (
+                  <button
+                    onClick={() => {
+                      setActivePickerLayerIndex(idx)
+                      setPickerTargetPortion(layer.volumeMl || 30)
+                      setIsPickerOpen(true)
+                    }}
+                    style={{
+                      background: '#f0fdf4',
+                      border: '1px solid #bbf7d0',
+                      color: '#047857',
+                      fontSize: '0.70rem',
+                      fontWeight: 800,
+                      padding: '4px 8px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      boxShadow: '0 1px 2px rgba(5, 150, 105, 0.08)'
+                    }}
+                  >
+                    <RefreshCw size={11} />
+                    <span>Swap Vendor</span>
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -723,6 +859,235 @@ export function MobileRecipeBuilder({
           )}
         </div>
       </div>
+
+      {/* 4.4 Sensory Flavor Profile Radar & Balance Matrix */}
+      <SensoryFlavorRadar
+        recipe={recipe}
+        metrics={{ layersDetailed: recipe.layers }}
+      />
+
+      {/* 4.5 Barista Preparation Instructions & Pro Tips SOP Card */}
+      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BookOpen size={16} />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0 }}>
+                Preparation Instructions & SOP
+              </h2>
+              <span style={{ fontSize: '0.70rem', color: '#64748b' }}>
+                Step-by-step method and barista technique for this recipe.
+              </span>
+            </div>
+          </div>
+
+          <span style={{ fontSize: '0.72rem', background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+            {(recipe.sopSteps && recipe.sopSteps.length > 0 ? recipe.sopSteps.length : 4)} Steps
+          </span>
+        </div>
+
+        {/* Step by Step List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {(recipe.sopSteps && recipe.sopSteps.length > 0
+            ? recipe.sopSteps
+            : [
+                `Pump ${recipe.layers[0]?.name || 'base syrup'} into vessel or stainless shaker.`,
+                `Add ${recipe.layers[1]?.name || 'espresso/tea base'} and combine evenly.`,
+                `Add calibrated regular ice (35% displacement) and shake vigorously for 10-12s.`,
+                `Top off with ${recipe.layers[2]?.name || 'fresh cold milk'} to rim line and garnish.`
+              ]
+          ).map((step, idx) => (
+            <div
+              key={idx}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '10px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                padding: '10px 12px'
+              }}
+            >
+              <div
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  borderRadius: '50%',
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  fontSize: '0.70rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '1px'
+                }}
+              >
+                {idx + 1}
+              </div>
+
+              {editingStepIndex === idx ? (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <input
+                    type="text"
+                    defaultValue={step}
+                    autoFocus
+                    onBlur={(e) => {
+                      handleUpdateSopStep(idx, e.target.value)
+                      setEditingStepIndex(null)
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleUpdateSopStep(idx, e.currentTarget.value)
+                        setEditingStepIndex(null)
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid #059669',
+                      fontSize: '0.80rem',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  <span style={{ fontSize: '0.66rem', color: '#64748b' }}>Press Enter or tap outside to save</span>
+                </div>
+              ) : (
+                <div
+                  onClick={() => setEditingStepIndex(idx)}
+                  style={{
+                    flex: 1,
+                    fontSize: '0.80rem',
+                    color: '#334155',
+                    lineHeight: '1.4',
+                    cursor: 'text',
+                    fontWeight: 500
+                  }}
+                  title="Click to edit step"
+                >
+                  {step}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button
+                  onClick={() => setEditingStepIndex(idx)}
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px' }}
+                  title="Edit Step"
+                >
+                  <Edit3 size={13} />
+                </button>
+                <button
+                  onClick={() => handleDeleteSopStep(idx)}
+                  style={{ background: 'transparent', border: 'none', color: '#cbd5e1', cursor: 'pointer', padding: '2px' }}
+                  title="Delete Step"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Add Step Action */}
+        {isAddingStep ? (
+          <div style={{ display: 'flex', gap: '6px', marginTop: '2px' }}>
+            <input
+              type="text"
+              placeholder="e.g. Strain over regular ice and dust with cinnamon..."
+              value={newStepText}
+              onChange={(e) => setNewStepText(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleAddSopStep(newStepText)
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: '10px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.80rem'
+              }}
+            />
+            <button
+              onClick={() => handleAddSopStep(newStepText)}
+              style={{ background: '#059669', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Add
+            </button>
+            <button
+              onClick={() => setIsAddingStep(false)}
+              style={{ background: '#f1f5f9', color: '#64748b', border: 'none', padding: '8px 10px', borderRadius: '10px', fontSize: '0.78rem', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setIsAddingStep(true)}
+            style={{
+              background: '#f8fafc',
+              border: '1px dashed #cbd5e1',
+              borderRadius: '10px',
+              padding: '8px 12px',
+              color: '#059669',
+              fontSize: '0.76rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px'
+            }}
+          >
+            <Plus size={13} />
+            <span>+ Add Preparation Step</span>
+          </button>
+        )}
+
+        {/* Barista Pro Tip & Commercial Secret Box */}
+        <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '14px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Lightbulb size={15} color="#d97706" />
+            <span style={{ fontSize: '0.76rem', fontWeight: 800, color: '#92400e', textTransform: 'uppercase' }}>
+              Barista Pro Tip & Food Science Secret
+            </span>
+          </div>
+
+          <textarea
+            rows={2}
+            value={recipe.proTips || recipe.baristaNotes || 'Coat cup walls with syrup swirl before pouring for signature marble drizzle. Shake with large dense cubes for 10-12s to aerate velvety microfoam without over-diluting.'}
+            onChange={(e) => handleUpdateProTip(e.target.value)}
+            style={{
+              width: '100%',
+              background: '#ffffff',
+              border: '1px solid #fde68a',
+              borderRadius: '8px',
+              padding: '8px 10px',
+              fontSize: '0.78rem',
+              color: '#78350f',
+              lineHeight: '1.4',
+              resize: 'none',
+              boxSizing: 'border-box'
+            }}
+            placeholder="Enter commercial technique tips for your staff..."
+          />
+        </div>
+      </div>
+
+      {/* 4.6 Community Ratings & Barista Reviews */}
+      <CommunityReviewsSection
+        recipe={recipe}
+        onOpenTrendingHub={() => setIsTrendingHubOpen(true)}
+        onFeatureRecipe={() => setIsTrendingHubOpen(true)}
+      />
 
       {/* Iconic Benchmark Specs Discovery Section (Placed below Recipe Build Order for optimal ergonomic flow) */}
       <BenchmarkRecipesCarousel
@@ -869,6 +1234,56 @@ export function MobileRecipeBuilder({
           </div>
         )}
       </div>
+
+      {/* 6. Studio Modals */}
+      <DrinkDiscoveryModal
+        isOpen={isDiscoveryOpen}
+        onClose={() => setIsDiscoveryOpen(false)}
+        onLoadRecipe={(loadedRecipe) => {
+          onUpdateRecipe(loadedRecipe)
+          setIsDiscoveryOpen(false)
+        }}
+      />
+
+      <AiRecipeGeneratorModal
+        isOpen={isAiGenOpen}
+        onClose={() => setIsAiGenOpen(false)}
+        onApplyRecipe={(generatedRecipe) => {
+          onUpdateRecipe(generatedRecipe)
+          setIsAiGenOpen(false)
+        }}
+      />
+
+      <IngredientSupplierPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => {
+          setIsPickerOpen(false)
+          setActivePickerLayerIndex(null)
+        }}
+        onApplyIngredient={handleApplySupplierSwap}
+        currentRecipeName={recipe.name}
+        currentPortionMl={pickerTargetPortion}
+      />
+
+      <BeveragePhotoStudioModal
+        isOpen={isPhotoStudioOpen}
+        onClose={() => setIsPhotoStudioOpen(false)}
+        recipe={recipe}
+        metrics={{ layersDetailed: recipe.layers }}
+      />
+
+      <TrendingCommunityHubModal
+        isOpen={isTrendingHubOpen}
+        onClose={() => setIsTrendingHubOpen(false)}
+        trendingRecipes={trendingRecipes}
+        onUpdateTrendingRecipes={onUpdateTrendingRecipes}
+        currentRecipe={recipe}
+        onLoadRecipeIntoStudio={(recipeToLoad) => {
+          onUpdateRecipe(recipeToLoad)
+          setIsTrendingHubOpen(false)
+        }}
+        onSaveRecipeToMenu={onSaveToMenu}
+      />
     </div>
   )
 }

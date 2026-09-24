@@ -12,7 +12,8 @@ export function MobileHeader({
   onOpenCart,
   onCreateBatch,
   onOpenSop,
-  onOpenOcr
+  onOpenOcr,
+  onOpenTrending = () => {}
 }) {
   const categories = [
     { id: 'coffee', label: 'Coffee' },
@@ -195,7 +196,8 @@ export function MobileHeader({
             padding: '4px 16px 10px',
             scrollbarWidth: 'none',
             maxWidth: '680px',
-            margin: '0 auto'
+            margin: '0 auto',
+            alignItems: 'center'
           }}
         >
           {categories.map(cat => {
@@ -221,6 +223,27 @@ export function MobileHeader({
               </button>
             )
           })}
+
+          <button
+            onClick={onOpenTrending}
+            style={{
+              flexShrink: 0,
+              padding: '6px 14px',
+              borderRadius: '9999px',
+              border: '1px solid #fde68a',
+              background: '#fffbeb',
+              color: '#d97706',
+              fontSize: '0.78rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              marginLeft: 'auto'
+            }}
+          >
+            <span>🔥 Trending Hub</span>
+          </button>
         </div>
       )}
     </div>

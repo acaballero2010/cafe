@@ -600,8 +600,13 @@ export function UserProfile({
                                 <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                   {drink.name}
                                 </div>
-                                <div style={{ fontSize: '0.70rem', color: '#64748b' }}>
-                                  COGS: ₱{drinkCogs.toFixed(2)} • Retail: ₱{(drink.menuPrice || 180).toFixed(2)} • <strong style={{ color: '#059669' }}>{drinkMargin}% GM</strong>
+                                <div style={{ fontSize: '0.70rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
+                                  <span>COGS: ₱{drinkCogs.toFixed(2)}</span>
+                                  <span>•</span>
+                                  <span>Retail: ₱{(drink.menuPrice || 180).toFixed(2)}</span>
+                                  <span>•</span>
+                                  <strong style={{ color: '#059669' }}>{drinkMargin}% GM</strong>
+                                  <span style={{ color: '#2563eb', fontWeight: 600 }}>📋 {(drink.sopSteps?.length || 4)} SOP Steps</span>
                                 </div>
                               </div>
                             </div>
