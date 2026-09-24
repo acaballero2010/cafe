@@ -338,12 +338,12 @@ Crafted for true specialty coffee lovers. Handcrafted with precision layers of $
         position: 'fixed',
         inset: 0,
         zIndex: 110,
-        background: 'rgba(15, 23, 42, 0.8)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(15, 23, 42, 0.82)',
+        backdropFilter: 'blur(14px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '12px',
+        padding: '16px',
         boxSizing: 'border-box',
         animation: 'fadeIn 0.2s ease-out'
       }}
@@ -354,24 +354,24 @@ Crafted for true specialty coffee lovers. Handcrafted with precision layers of $
         style={{
           width: '100%',
           maxWidth: '520px',
-          maxHeight: '94vh',
-          overflowY: 'auto',
+          maxHeight: '90vh',
+          borderRadius: '28px',
+          overflow: 'hidden',
           background: '#ffffff',
-          borderRadius: '24px',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.4)',
+          boxShadow: '0 25px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.1)',
           display: 'flex',
           flexDirection: 'column',
           boxSizing: 'border-box'
         }}
       >
-        {/* 1. Modal Header */}
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* 1. Modal Header (Top Rounded Corners) */}
+        <div style={{ padding: '15px 18px', borderBottom: '1px solid #f1f5f9', background: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
                 width: '36px',
                 height: '36px',
-                borderRadius: '10px',
+                borderRadius: '12px',
                 background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
                 display: 'flex',
                 alignItems: 'center',
@@ -403,13 +403,13 @@ Crafted for true specialty coffee lovers. Handcrafted with precision layers of $
           </button>
         </div>
 
-        {/* 2. Refined Segmented Tabs (Clean single-line layout) */}
-        <div style={{ display: 'flex', background: '#f8fafc', padding: '5px 12px', borderBottom: '1px solid #e2e8f0', gap: '6px' }}>
+        {/* 2. Responsive Segmented Tabs (Equal width, 1-word mobile-friendly labels) */}
+        <div style={{ display: 'flex', background: '#f8fafc', padding: '6px 12px', borderBottom: '1px solid #e2e8f0', gap: '4px' }}>
           {[
-            { id: 'preview', label: 'Photo Studio', icon: Camera },
-            { id: 'branding', label: 'Cup Branding', icon: Palette },
+            { id: 'preview', label: 'Studio', icon: Camera },
+            { id: 'branding', label: 'Branding', icon: Palette },
             { id: 'prompt', label: 'AI Prompt', icon: Sparkles },
-            { id: 'copy', label: 'Social Copy', icon: FileText }
+            { id: 'copy', label: 'Copy', icon: FileText }
           ].map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -419,12 +419,12 @@ Crafted for true specialty coffee lovers. Handcrafted with precision layers of $
                 onClick={() => setActiveTab(tab.id)}
                 style={{
                   flex: 1,
-                  padding: '7px 4px',
-                  borderRadius: '9px',
+                  padding: '7px 2px',
+                  borderRadius: '10px',
                   border: 'none',
                   background: isActive ? '#0f172a' : 'transparent',
                   color: isActive ? '#ffffff' : '#64748b',
-                  fontSize: '0.70rem',
+                  fontSize: '0.72rem',
                   fontWeight: 800,
                   cursor: 'pointer',
                   display: 'flex',
@@ -441,8 +441,8 @@ Crafted for true specialty coffee lovers. Handcrafted with precision layers of $
           })}
         </div>
 
-        {/* 3. Main Modal Content */}
-        <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* 3. Scrollable Modal Content */}
+        <div style={{ padding: '14px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
           {/* TAB 1: Photo Studio & Live Preview */}
           {activeTab === 'preview' && (
