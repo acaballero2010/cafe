@@ -36,9 +36,12 @@ import { MASTER_RECIPE_REPOSITORY } from './data/recipeRepository'
 import { calculateDrinkMetrics } from './types/physics'
 import { triggerHaptic } from './utils/haptics'
 import { NativeToast } from './components/NativeToast'
+import { OfflineBarBanner } from './components/OfflineBarBanner'
+import { useOnlineStatus } from './utils/useOnlineStatus'
 import { Home, Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck, LogOut, Globe, Sparkles, FileText } from 'lucide-react'
 
 export function App() {
+  const { isOnline, canInstall, isInstalled, promptInstall } = useOnlineStatus()
   const [appView, setAppView] = useState('app') // 'app' | 'landing' | 'auth'
   const [authInitialMode, setAuthInitialMode] = useState('signin')
   const [currentUser, setCurrentUser] = useState(() => AuthDatabase.getCurrentUser())
@@ -357,6 +360,13 @@ export function App() {
         onOpenTrending={() => setIsTrendingModalOpen(true)}
         onOpenRepository={() => setIsRepositoryOpen(true)}
         onExitToLanding={() => setAppView('landing')}
+      />
+
+      {/* Offline Status & Tablet PWA Install Banner */}
+      <OfflineBarBanner
+        isOnline={isOnline}
+        canInstall={canInstall}
+        onInstall={promptInstall}
       />
 
       {/* 2. Main Scrollable Container with 160px Bottom Scroll Clearance */}

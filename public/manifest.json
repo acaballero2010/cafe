@@ -1,0 +1,36 @@
+{
+  "short_name": "PourCraft",
+  "name": "PourCraft OS | Beverage Costing & Bar Operating System",
+  "description": "High-precision commercial beverage engineering, live ingredient costing, SOPs, and barista operating system.",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%230f172a'><rect width='512' height='512' rx='128' fill='%230f172a'/><path d='M360 180h24a80 80 0 0 1 0 160h-24' fill='none' stroke='%23fbbf24' stroke-width='40' stroke-linecap='round' stroke-linejoin='round'/><path d='M80 180h280v180a80 80 0 0 1-80 80H160a80 80 0 0 1-80-80Z' fill='none' stroke='%23fbbf24' stroke-width='40' stroke-linecap='round' stroke-linejoin='round'/><line x1='140' y1='60' x2='140' y2='100' stroke='%23fbbf24' stroke-width='40' stroke-linecap='round'/><line x1='220' y1='60' x2='220' y2='100' stroke='%23fbbf24' stroke-width='40' stroke-linecap='round'/><line x1='300' y1='60' x2='300' y2='100' stroke='%23fbbf24' stroke-width='40' stroke-linecap='round'/></svg>",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "orientation": "any",
+  "categories": ["business", "food", "productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Recipe Studio",
+      "url": "/?tab=studio",
+      "description": "Open Recipe Studio & Physics Stack"
+    },
+    {
+      "name": "Barista SOP Cards",
+      "url": "/?modal=sop",
+      "description": "View Barista Station Instructions"
+    },
+    {
+      "name": "Wholesale Market",
+      "url": "/?tab=marketplace",
+      "description": "Check wholesale supplier ingredients"
+    }
+  ]
+}
