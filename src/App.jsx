@@ -13,7 +13,6 @@ import { InvoiceOcrModal } from './components/InvoiceOcrModal'
 import { SupplierPriceAlertCard } from './components/SupplierPriceAlertCard'
 import { TrendingCommunityHubModal } from './components/TrendingCommunityHubModal'
 import { DrinkRepositoryModal } from './components/DrinkRepositoryModal'
-import { FloatingActionDock } from './components/FloatingActionDock'
 import { BeveragePhotoStudioModal } from './components/BeveragePhotoStudioModal'
 import { BaristaSOPModal } from './components/BaristaSOPModal'
 import { BatchYieldCalculatorModal } from './components/BatchYieldCalculatorModal'
@@ -350,6 +349,14 @@ export function App() {
         cartCount={totalCartCount}
         activeRegion={activeRegion}
         currentUser={currentUser}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => {
+          const nextMode = !isDarkMode
+          setIsDarkMode(nextMode)
+          showToast(nextMode ? '🌙 Barista Night Mode' : '☀️ High-Contrast Day Mode', 'Visual theme switched', 'info', 2000)
+        }}
+        onOpenPhotoStudio={() => setIsPhotoStudioOpen(true)}
+        onOpenYield={() => setIsYieldModalOpen(true)}
         onOpenRegion={() => setIsRegionModalOpen(true)}
         onOpenCart={() => setIsCartOpen(true)}
         onCreateBatch={handleCreateNewBatch}
@@ -873,21 +880,6 @@ export function App() {
           setIsRepositoryOpen(false)
         }}
         onSaveRecipeToMenu={handleSaveToMenu}
-      />
-
-      {/* Floating Thumb Quick Action Dock */}
-      <FloatingActionDock
-        onOpenStudio={() => setIsPhotoStudioOpen(true)}
-        onOpenSop={() => setIsSopModalOpen(true)}
-        onOpenYield={() => setIsYieldModalOpen(true)}
-        onOpenRepo={() => setIsRepositoryOpen(true)}
-        onOpenTrending={() => setIsTrendingModalOpen(true)}
-        isDarkMode={isDarkMode}
-        onToggleTheme={() => {
-          const nextMode = !isDarkMode
-          setIsDarkMode(nextMode)
-          showToast(nextMode ? '🌙 Barista Night Mode' : '☀️ High-Contrast Day Mode', 'Visual theme switched', 'info', 2000)
-        }}
       />
 
       <BeveragePhotoStudioModal

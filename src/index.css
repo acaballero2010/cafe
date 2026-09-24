@@ -84,6 +84,23 @@ body.dark,
   --margin-green-border: rgba(5, 150, 105, 0.3);
 }
 
+/* Hide scrollbars across mobile, tablet, and touch screens for native app aesthetic */
+*, *::before, *::after {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Opera */
+  width: 0px !important;
+  height: 0px !important;
+}
+
+body {
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
 @keyframes slideUpFade {
   from {
     opacity: 0;

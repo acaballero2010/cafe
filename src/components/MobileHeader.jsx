@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { 
   ChevronDown, Crown, User, ShieldCheck, LogOut, FileText, 
-  Sparkles, ExternalLink, Moon, Sun, ShoppingBag, Plus
+  Sparkles, ExternalLink, Moon, Sun, ShoppingBag, Plus, Camera, Scale
 } from 'lucide-react'
 import { triggerHaptic } from '../utils/haptics'
 
@@ -13,6 +13,10 @@ export function MobileHeader({
   cartCount = 2,
   activeRegion = 'Metro Manila',
   currentUser,
+  isDarkMode = false,
+  onToggleTheme = () => {},
+  onOpenPhotoStudio = () => {},
+  onOpenYield = () => {},
   onOpenRegion,
   onOpenCart,
   onCreateBatch,
@@ -269,6 +273,58 @@ export function MobileHeader({
                 </button>
               )}
 
+              {/* 8K Beverage Photo Studio */}
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false)
+                  triggerHaptic('tap')
+                  onOpenPhotoStudio()
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#334155',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <Camera size={14} color="#0284c7" />
+                <span>8K Photo Studio</span>
+              </button>
+
+              {/* Batch Yield Preps */}
+              <button
+                onClick={() => {
+                  setIsUserMenuOpen(false)
+                  triggerHaptic('tap')
+                  onOpenYield()
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#334155',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <Scale size={14} color="#059669" />
+                <span>Batch Yield Preps</span>
+              </button>
+
               {/* Barista SOP Sheet */}
               <button
                 onClick={() => {
@@ -293,6 +349,34 @@ export function MobileHeader({
               >
                 <FileText size={14} color="#64748b" />
                 <span>Barista Station SOP</span>
+              </button>
+
+              {/* Theme Toggle (Day / Night) */}
+              <button
+                onClick={() => {
+                  triggerHaptic('selection')
+                  onToggleTheme()
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 10px',
+                  borderRadius: '10px',
+                  background: isDarkMode ? '#1e293b' : '#f8fafc',
+                  border: isDarkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+                  color: isDarkMode ? '#38bdf8' : '#334155',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  textAlign: 'left'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {isDarkMode ? <Moon size={14} color="#38bdf8" /> : <Sun size={14} color="#d97706" />}
+                  <span>{isDarkMode ? 'Night Bar Mode' : 'Day Sunlight Mode'}</span>
+                </div>
+                <span style={{ fontSize: '0.64rem', color: '#64748b' }}>Switch</span>
               </button>
 
               {/* Persona Switcher */}
