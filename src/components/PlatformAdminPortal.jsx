@@ -35,10 +35,15 @@ import {
   Lock,
   Terminal,
   Activity,
-  CheckCheck
+  CheckCheck,
+  ShoppingBag,
+  Share2,
+  ExternalLink,
+  Percent
 } from 'lucide-react'
 import { AuthDatabase } from '../utils/authDatabase'
 import { MASTER_SUPPLIERS, SAMPLE_PRICELISTS } from '../data/suppliersData'
+import { AFFILIATE_CONFIG, generateAffiliateLink } from '../data/affiliateStoresData'
 import { triggerHaptic } from '../utils/haptics'
 
 export function PlatformAdminPortal({
@@ -48,7 +53,7 @@ export function PlatformAdminPortal({
   onPublishPricelistUpdates = () => {},
   onSwitchUser = () => {}
 }) {
-  const [activeTab, setActiveTab] = useState('pricelists') // 'pricelists' | 'api_sync' | 'users' | 'suppliers'
+  const [activeTab, setActiveTab] = useState('pricelists') // 'pricelists' | 'api_sync' | 'affiliates' | 'users' | 'suppliers'
   const [users, setUsers] = useState(() => AuthDatabase.getUsers())
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all') // 'all' | 'admin' | 'user'
@@ -69,6 +74,13 @@ export function PlatformAdminPortal({
   const [apiSyncLog, setApiSyncLog] = useState(null)
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true)
   const [webhookUrl, setWebhookUrl] = useState('https://pourcraft-os.web.app/api/webhooks/supplier-prices')
+
+  // Affiliate Program Settings State
+  const [shopeeTag, setShopeeTag] = useState(AFFILIATE_CONFIG.shopeeAffiliateId)
+  const [lazadaTag, setLazadaTag] = useState(AFFILIATE_CONFIG.lazadaAffiliateId)
+  const [tiktokTag, setTiktokTag] = useState(AFFILIATE_CONFIG.tiktokAffiliateId)
+  const [commRate, setCommRate] = useState(AFFILIATE_CONFIG.defaultCommissionRatePct)
+  const [affiliateSaveMsg, setAffiliateSaveMsg] = useState('')
 
   // New User Modal State
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false)
@@ -168,7 +180,6 @@ export function PlatformAdminPortal({
         }
       })
 
-      // Broadcast live sync
       const updates = stagedPricelist.map(item => ({
         skuId: item.skuId,
         name: item.name,
@@ -179,6 +190,18 @@ export function PlatformAdminPortal({
       onPublishPricelistUpdates(updates, selectedApiSupplier.name)
       triggerHaptic('success')
     }, 1200)
+  }
+
+  // Save Affiliate Settings
+  const handleSaveAffiliateSettings = (e) => {
+    e.preventDefault()
+    triggerHaptic('success')
+    AFFILIATE_CONFIG.shopeeAffiliateId = shopeeTag
+    AFFILIATE_CONFIG.lazadaAffiliateId = lazadaTag
+    AFFILIATE_CONFIG.tiktokAffiliateId = tiktokTag
+    AFFILIATE_CONFIG.defaultCommissionRatePct = Number(commRate)
+    setAffiliateSaveMsg('✓ Affiliate partner IDs & commission rates updated successfully!')
+    setTimeout(() => setAffiliateSaveMsg(''), 3000)
   }
 
   // Create new user
@@ -231,7 +254,7 @@ export function PlatformAdminPortal({
       <div 
         className="clean-modal-card" 
         onClick={(e) => e.stopPropagation()} 
-        style={{ maxWidth: '880px', width: '96%', maxHeight: '92vh', padding: '24px', overflowY: 'auto' }}
+        style={{ maxWidth: '920px', width: '96%', maxHeight: '92vh', padding: '24px', overflowY: 'auto' }}
       >
         <div className="modal-drag-handle" />
 
@@ -273,7 +296,7 @@ export function PlatformAdminPortal({
                 </span>
               </div>
               <p style={{ fontSize: '0.76rem', color: '#64748b', margin: '2px 0 0' }}>
-                Wholesale CSV uploader, supplier REST API sync & creator user administration
+                CSV pricelist ingestion, supplier REST API sync, Shopee/Lazada affiliate hub & creator user management
               </p>
             </div>
           </div>
@@ -314,13 +337,13 @@ export function PlatformAdminPortal({
             onClick={() => setActiveTab('pricelists')}
             style={{
               flex: '1 0 auto',
-              padding: '10px 14px',
+              padding: '9px 12px',
               borderRadius: '10px',
               border: 'none',
               background: activeTab === 'pricelists' ? '#ffffff' : 'transparent',
               color: activeTab === 'pricelists' ? '#0f172a' : '#64748b',
               fontWeight: 800,
-              fontSize: '0.78rem',
+              fontSize: '0.76rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -329,21 +352,21 @@ export function PlatformAdminPortal({
               boxShadow: activeTab === 'pricelists' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
             }}
           >
-            <FileSpreadsheet size={16} color={activeTab === 'pricelists' ? '#d97706' : '#64748b'} />
-            <span>📁 CSV Pricelist Ingestion</span>
+            <FileSpreadsheet size={15} color={activeTab === 'pricelists' ? '#d97706' : '#64748b'} />
+            <span>📁 CSV Ingestion</span>
           </button>
 
           <button
             onClick={() => setActiveTab('api_sync')}
             style={{
               flex: '1 0 auto',
-              padding: '10px 14px',
+              padding: '9px 12px',
               borderRadius: '10px',
               border: 'none',
               background: activeTab === 'api_sync' ? '#ffffff' : 'transparent',
               color: activeTab === 'api_sync' ? '#0f172a' : '#64748b',
               fontWeight: 800,
-              fontSize: '0.78rem',
+              fontSize: '0.76rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -352,21 +375,44 @@ export function PlatformAdminPortal({
               boxShadow: activeTab === 'api_sync' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
             }}
           >
-            <Radio size={16} color={activeTab === 'api_sync' ? '#0284c7' : '#64748b'} />
-            <span>⚡ Supplier API Connectors</span>
+            <Radio size={15} color={activeTab === 'api_sync' ? '#0284c7' : '#64748b'} />
+            <span>⚡ Supplier APIs</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('affiliates')}
+            style={{
+              flex: '1 0 auto',
+              padding: '9px 12px',
+              borderRadius: '10px',
+              border: 'none',
+              background: activeTab === 'affiliates' ? '#ffffff' : 'transparent',
+              color: activeTab === 'affiliates' ? '#0f172a' : '#64748b',
+              fontWeight: 800,
+              fontSize: '0.76rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: activeTab === 'affiliates' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
+            }}
+          >
+            <ShoppingBag size={15} color={activeTab === 'affiliates' ? '#ea580c' : '#64748b'} />
+            <span>🛒 Affiliate Partners & Comm</span>
           </button>
 
           <button
             onClick={() => setActiveTab('users')}
             style={{
               flex: '1 0 auto',
-              padding: '10px 14px',
+              padding: '9px 12px',
               borderRadius: '10px',
               border: 'none',
               background: activeTab === 'users' ? '#ffffff' : 'transparent',
               color: activeTab === 'users' ? '#0f172a' : '#64748b',
               fontWeight: 800,
-              fontSize: '0.78rem',
+              fontSize: '0.76rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -375,21 +421,21 @@ export function PlatformAdminPortal({
               boxShadow: activeTab === 'users' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
             }}
           >
-            <Users size={16} color={activeTab === 'users' ? '#16a34a' : '#64748b'} />
-            <span>👥 Creators & Users ({users.length})</span>
+            <Users size={15} color={activeTab === 'users' ? '#16a34a' : '#64748b'} />
+            <span>👥 Creators ({users.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('suppliers')}
             style={{
               flex: '1 0 auto',
-              padding: '10px 14px',
+              padding: '9px 12px',
               borderRadius: '10px',
               border: 'none',
               background: activeTab === 'suppliers' ? '#ffffff' : 'transparent',
               color: activeTab === 'suppliers' ? '#0f172a' : '#64748b',
               fontWeight: 800,
-              fontSize: '0.78rem',
+              fontSize: '0.76rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -398,8 +444,8 @@ export function PlatformAdminPortal({
               boxShadow: activeTab === 'suppliers' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
             }}
           >
-            <Store size={16} color={activeTab === 'suppliers' ? '#9333ea' : '#64748b'} />
-            <span>🏬 Master Suppliers ({MASTER_SUPPLIERS.length})</span>
+            <Store size={15} color={activeTab === 'suppliers' ? '#9333ea' : '#64748b'} />
+            <span>🏬 Suppliers ({MASTER_SUPPLIERS.length})</span>
           </button>
         </div>
 
@@ -767,7 +813,192 @@ export function PlatformAdminPortal({
         )}
 
         {/* ============================================================ */}
-        {/* TAB 3: USER & CREATOR MANAGEMENT                             */}
+        {/* TAB 3: AFFILIATE PARTNERS & EARNINGS HUB                     */}
+        {/* ============================================================ */}
+        {activeTab === 'affiliates' && (
+          <div>
+            <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '14px', padding: '14px 16px', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <ShoppingBag size={24} color="#ea580c" style={{ flexShrink: 0 }} />
+              <div>
+                <h3 style={{ fontSize: '0.84rem', fontWeight: 800, color: '#9a3412', margin: 0 }}>
+                  Shopee & Lazada Affiliate Monetization Hub
+                </h3>
+                <p style={{ fontSize: '0.72rem', color: '#c2410c', margin: '2px 0 0' }}>
+                  When baristas and beverage creators explore ingredients in recipes and click through to buy on Shopee or Lazada, your affiliate tag is automatically injected for verified referral revenue.
+                </p>
+              </div>
+            </div>
+
+            {/* Metrics Overview Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Referral Clicks</span>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', margin: '4px 0 0', fontFamily: 'var(--font-display)' }}>1,482</div>
+                <span style={{ fontSize: '0.65rem', color: '#16a34a', fontWeight: 700 }}>+18.4% this week</span>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Converted Orders</span>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', margin: '4px 0 0', fontFamily: 'var(--font-display)' }}>184</div>
+                <span style={{ fontSize: '0.65rem', color: '#0284c7', fontWeight: 700 }}>12.4% Conv. Rate</span>
+              </div>
+
+              <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '14px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>Gross Sourcing GMV</span>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#0f172a', margin: '4px 0 0', fontFamily: 'var(--font-display)' }}>₱142,850</div>
+                <span style={{ fontSize: '0.65rem', color: '#64748b' }}>Estimated GMV</span>
+              </div>
+
+              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '14px', padding: '14px' }}>
+                <span style={{ fontSize: '0.68rem', color: '#b45309', fontWeight: 700, textTransform: 'uppercase' }}>Est. Affiliate Payout</span>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#d97706', margin: '4px 0 0', fontFamily: 'var(--font-display)' }}>₱9,285.25</div>
+                <span style={{ fontSize: '0.65rem', color: '#b45309', fontWeight: 700 }}>6.5% Net Commission</span>
+              </div>
+            </div>
+
+            {/* Affiliate Partner Config Form */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '18px', marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Key size={16} color="#ea580c" />
+                <span>Affiliate Partner Credentials & Tracking IDs</span>
+              </h4>
+
+              {affiliateSaveMsg && (
+                <div style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#15803d', padding: '8px 12px', borderRadius: '8px', fontSize: '0.74rem', marginBottom: '12px' }}>
+                  {affiliateSaveMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveAffiliateSettings} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>
+                    Shopee Affiliate Partner Tag / ID
+                  </label>
+                  <input
+                    type="text"
+                    value={shopeeTag}
+                    onChange={(e) => setShopeeTag(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>
+                    Lazada Affiliate Partner Tag / ID
+                  </label>
+                  <input
+                    type="text"
+                    value={lazadaTag}
+                    onChange={(e) => setLazadaTag(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>
+                    TikTok Shop Affiliate Tag / ID
+                  </label>
+                  <input
+                    type="text"
+                    value={tiktokTag}
+                    onChange={(e) => setTiktokTag(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, color: '#334155', marginBottom: '3px' }}>
+                    Avg Commission Payout (%)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={commRate}
+                    onChange={(e) => setCommRate(e.target.value)}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #ea580c, #c2410c)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '0.8rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 2px 8px rgba(234, 88, 12, 0.3)'
+                    }}
+                  >
+                    <Check size={14} />
+                    <span>Save Affiliate Credentials</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Top Converting Ingredients Table */}
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <h4 style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Top Sourced Ingredients Across Community
+                </h4>
+              </div>
+
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9', color: '#475569', fontWeight: 700 }}>
+                    <th style={{ padding: '10px 14px' }}>Ingredient</th>
+                    <th style={{ padding: '10px 14px' }}>Top Converting Store</th>
+                    <th style={{ padding: '10px 14px' }}>Clicks</th>
+                    <th style={{ padding: '10px 14px' }}>Orders</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'right' }}>Est. Commission</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#0f172a' }}>Oatly Barista Edition (1L)</td>
+                    <td style={{ padding: '10px 14px', color: '#ee4d2d', fontWeight: 700 }}>Shopee Mall • Oatly Official</td>
+                    <td style={{ padding: '10px 14px', color: '#64748b' }}>412</td>
+                    <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700 }}>58</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: '#d97706' }}>₱3,120.00</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#0f172a' }}>Kyoto Uji Ceremonial Matcha (100g)</td>
+                    <td style={{ padding: '10px 14px', color: '#0f146d', fontWeight: 700 }}>Lazada Flagship • Kyoto Uji PH</td>
+                    <td style={{ padding: '10px 14px', color: '#64748b' }}>285</td>
+                    <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700 }}>34</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: '#d97706' }}>₱2,450.00</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#0f172a' }}>Monin Salted Caramel Syrup (700ml)</td>
+                    <td style={{ padding: '10px 14px', color: '#ee4d2d', fontWeight: 700 }}>Shopee Mall • Monin PH</td>
+                    <td style={{ padding: '10px 14px', color: '#64748b' }}>198</td>
+                    <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700 }}>26</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: '#d97706' }}>₱1,180.00</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '10px 14px', fontWeight: 700, color: '#0f172a' }}>Top Creamery Tapioca Pearls (1kg)</td>
+                    <td style={{ padding: '10px 14px', color: '#ee4d2d', fontWeight: 700 }}>Shopee Mall • Top Creamery</td>
+                    <td style={{ padding: '10px 14px', color: '#64748b' }}>340</td>
+                    <td style={{ padding: '10px 14px', color: '#059669', fontWeight: 700 }}>42</td>
+                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 800, color: '#d97706' }}>₱940.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* TAB 4: USER & CREATOR MANAGEMENT                             */}
         {/* ============================================================ */}
         {activeTab === 'users' && (
           <div>
@@ -919,7 +1150,7 @@ export function PlatformAdminPortal({
         )}
 
         {/* ============================================================ */}
-        {/* TAB 4: MASTER WHOLESALE SUPPLIERS DIRECTORY                  */}
+        {/* TAB 5: MASTER WHOLESALE SUPPLIERS DIRECTORY                  */}
         {/* ============================================================ */}
         {activeTab === 'suppliers' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>

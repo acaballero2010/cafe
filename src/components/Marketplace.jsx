@@ -21,8 +21,10 @@ import {
   Sparkles, 
   ArrowRight, 
   CheckCircle2, 
-  FileText 
+  FileText,
+  ExternalLink
 } from 'lucide-react'
+import { IngredientAffiliateSourcingModal } from './IngredientAffiliateSourcingModal'
 
 export function Marketplace({
   catalog = [],
@@ -40,6 +42,7 @@ export function Marketplace({
   const [activeCategory, setActiveCategory] = useState('all')
   const [sortBy, setSortBy] = useState('featured') // 'featured' | 'price-asc' | 'rating'
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [affiliateModalProduct, setAffiliateModalProduct] = useState(null)
   const [selectedPool, setSelectedPool] = useState(null)
   const [showAllPoolsModal, setShowAllPoolsModal] = useState(false)
   const [showFiltersModal, setShowFiltersModal] = useState(false)
@@ -707,27 +710,56 @@ export function Marketplace({
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleAddToCart(item)}
-                    style={{
-                      background: inCart ? '#059669' : '#0f172a',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '6px 10px',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all 0.15s ease'
-                    }}
-                    title="Add to Cart"
-                  >
-                    {inCart ? <Check size={12} /> : <Plus size={12} />}
-                    <span>{inCart ? `${inCart.qty} In Cart` : 'Order'}</span>
-                  </button>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button
+                      onClick={() => setAffiliateModalProduct({
+                        id: item.skuId || item.id,
+                        name: item.name,
+                        unitCostPerMl: item.price / 1000,
+                        packSize: item.packSize,
+                        supplier: item.supplier
+                      })}
+                      style={{
+                        background: '#fff7ed',
+                        color: '#ea580c',
+                        border: '1px solid #fed7aa',
+                        borderRadius: '8px',
+                        padding: '6px 8px',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '3px'
+                      }}
+                      title="Compare Shopee, Lazada & Wholesale Stores"
+                    >
+                      <ShoppingBag size={11} />
+                      <span>Stores</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleAddToCart(item)}
+                      style={{
+                        background: inCart ? '#059669' : '#0f172a',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        padding: '6px 10px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Add to Cart"
+                    >
+                      {inCart ? <Check size={12} /> : <Plus size={12} />}
+                      <span>{inCart ? `${inCart.qty} In Cart` : 'Order'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )
@@ -1658,6 +1690,22 @@ export function Marketplace({
         </div>
       )}
 
+      {/* MODAL: Multi-Store Affiliate Comparison */}
+      <IngredientAffiliateSourcingModal
+        isOpen={Boolean(affiliateModalProduct)}
+        onClose={() => setAffiliateModalProduct(null)}
+        ingredient={affiliateModalProduct}
+        allIngredients={catalog}
+        onApplyStorePriceToLayer={(appliedData) => {
+          if (affiliateModalProduct && onUpdateCatalogPrice) {
+            onUpdateCatalogPrice([{
+              skuId: affiliateModalProduct.id,
+              newPrice: appliedData.appliedPrice,
+              newUnitCost: appliedData.unitCostPerMl
+            }])
+          }
+        }}
+      />
     </div>
   )
 }

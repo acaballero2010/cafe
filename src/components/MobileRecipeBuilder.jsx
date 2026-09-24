@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X, Camera, RefreshCw, BookOpen, Lightbulb, Trash2, Edit3, Wrench, Flame, Star, MessageSquare, FileText, Scale } from 'lucide-react'
+import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X, Camera, RefreshCw, BookOpen, Lightbulb, Trash2, Edit3, Wrench, Flame, Star, MessageSquare, FileText, Scale, ShoppingBag } from 'lucide-react'
 import { VESSELS } from '../types/physics'
 import { PACKAGING_ITEMS } from '../data/defaultCatalog'
 import { calculateSubRecipeMetrics } from '../data/defaultSubRecipes'
 import { IngredientSupplierPickerModal } from './IngredientSupplierPickerModal'
+import { IngredientAffiliateSourcingModal } from './IngredientAffiliateSourcingModal'
 import { AiRecipeGeneratorModal } from './AiRecipeGeneratorModal'
 import { DrinkDiscoveryModal } from './DrinkDiscoveryModal'
 import { BeveragePhotoStudioModal } from './BeveragePhotoStudioModal'
@@ -44,6 +45,8 @@ export function MobileRecipeBuilder({
   const [isSaveMenuModalOpen, setIsSaveMenuModalOpen] = useState(false)
   const [isSopModalOpen, setIsSopModalOpen] = useState(false)
   const [isYieldModalOpen, setIsYieldModalOpen] = useState(false)
+  const [isAffiliateModalOpen, setIsAffiliateModalOpen] = useState(false)
+  const [activeAffiliateIngredient, setActiveAffiliateIngredient] = useState(null)
   const [recipeVersionTag, setRecipeVersionTag] = useState(recipe.version || 'v1.0')
   const [recipeStatus, setRecipeStatus] = useState(recipe.status || 'rnd') // 'rnd' | 'menu'
   const [selectedTargetMenuId, setSelectedTargetMenuId] = useState(savedMenus[0]?.id || 'new')
@@ -52,6 +55,33 @@ export function MobileRecipeBuilder({
   const [newStepText, setNewStepText] = useState('')
   const [isAddingStep, setIsAddingStep] = useState(false)
   const [editingStepIndex, setEditingStepIndex] = useState(null)
+
+  const handleOpenAffiliateModal = (layer, idx) => {
+    setActiveAffiliateIngredient({
+      id: layer.ingredientId || layer.id,
+      name: layer.name,
+      unitCostPerMl: layer.unitCostPerMl,
+      packSize: layer.packSize,
+      supplier: layer.supplier,
+      layerIndex: idx
+    })
+    setIsAffiliateModalOpen(true)
+  }
+
+  const handleApplyAffiliatePriceToLayer = (data) => {
+    if (activeAffiliateIngredient && activeAffiliateIngredient.layerIndex !== undefined) {
+      const idx = activeAffiliateIngredient.layerIndex
+      const updated = [...recipe.layers]
+      if (updated[idx]) {
+        updated[idx] = {
+          ...updated[idx],
+          unitCostPerMl: data.unitCostPerMl || updated[idx].unitCostPerMl,
+          supplier: data.supplier || updated[idx].supplier
+        }
+        onUpdateRecipe({ ...recipe, layers: updated })
+      }
+    }
+  }
 
   const handleAddSopStep = (stepText) => {
     if (!stepText.trim()) return
@@ -800,30 +830,54 @@ export function MobileRecipeBuilder({
                 </div>
 
                 {!layer.isSubRecipe && (
-                  <button
-                    onClick={() => {
-                      setActivePickerLayerIndex(idx)
-                      setPickerTargetPortion(layer.volumeMl || 30)
-                      setIsPickerOpen(true)
-                    }}
-                    style={{
-                      background: '#f0fdf4',
-                      border: '1px solid #bbf7d0',
-                      color: '#047857',
-                      fontSize: '0.70rem',
-                      fontWeight: 800,
-                      padding: '4px 8px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      boxShadow: '0 1px 2px rgba(5, 150, 105, 0.08)'
-                    }}
-                  >
-                    <RefreshCw size={11} />
-                    <span>Swap Vendor</span>
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => handleOpenAffiliateModal(layer, idx)}
+                      style={{
+                        background: '#fff7ed',
+                        border: '1px solid #fed7aa',
+                        color: '#ea580c',
+                        fontSize: '0.70rem',
+                        fontWeight: 800,
+                        padding: '4px 8px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 1px 2px rgba(234, 88, 12, 0.08)'
+                      }}
+                      title="Compare Shopee, Lazada & Wholesale Prices & Buy"
+                    >
+                      <ShoppingBag size={11} />
+                      <span>Compare Stores & Buy</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setActivePickerLayerIndex(idx)
+                        setPickerTargetPortion(layer.volumeMl || 30)
+                        setIsPickerOpen(true)
+                      }}
+                      style={{
+                        background: '#f0fdf4',
+                        border: '1px solid #bbf7d0',
+                        color: '#047857',
+                        fontSize: '0.70rem',
+                        fontWeight: 800,
+                        padding: '4px 8px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        boxShadow: '0 1px 2px rgba(5, 150, 105, 0.08)'
+                      }}
+                    >
+                      <RefreshCw size={11} />
+                      <span>Swap</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -1402,6 +1456,14 @@ export function MobileRecipeBuilder({
           setIsRepositoryModalOpen(false)
         }}
         onSaveRecipeToMenu={onSaveToMenu}
+      />
+
+      <IngredientAffiliateSourcingModal
+        isOpen={isAffiliateModalOpen}
+        onClose={() => setIsAffiliateModalOpen(false)}
+        ingredient={activeAffiliateIngredient}
+        allIngredients={catalog}
+        onApplyStorePriceToLayer={handleApplyAffiliatePriceToLayer}
       />
     </div>
   )
