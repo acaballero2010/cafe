@@ -211,26 +211,6 @@ export function App() {
 
       {/* 2. Main Scrollable Container with 160px Bottom Scroll Clearance */}
       <main style={{ flex: 1, padding: '16px 16px 160px', maxWidth: '680px', width: '100%', margin: '0 auto' }}>
-        {/* Supplier Price Shift & Margin Impact Alert Card */}
-        {showPriceAlert && (
-          <SupplierPriceAlertCard
-            onAutoAdjustPrices={(impacted) => {
-              // Update current recipe menuPrice if it's one of the impacted
-              const match = impacted.find(i => currentRecipe.name.toLowerCase().includes(i.name.toLowerCase()))
-              if (match) {
-                setCurrentRecipe(prev => ({ ...prev, menuPrice: match.suggestedPrice }))
-              }
-            }}
-            onCompareSuppliers={() => {
-              setActiveTab('marketplace')
-            }}
-            onAcceptMargins={() => {
-              // Updates catalog unit cost for fresh milk
-              setCatalog(prev => prev.map(item => item.id.includes('milk') ? { ...item, unitCostPerMl: 0.110 } : item))
-            }}
-            onDismiss={() => setShowPriceAlert(false)}
-          />
-        )}
         {activeTab === 'studio' && (
           isSpecSheetMode ? (
             <SpecSheetView
@@ -266,18 +246,40 @@ export function App() {
         )}
 
         {activeTab === 'marketplace' && (
-          <Marketplace
-            catalog={catalog}
-            onUpdateCatalogPrice={handleApplyPriceUpdates}
-            activeRegion={activeRegion}
-            setActiveRegion={setActiveRegion}
-            isCartOpen={isCartOpen}
-            setIsCartOpen={setIsCartOpen}
-            isRegionModalOpen={isRegionModalOpen}
-            setIsRegionModalOpen={setIsRegionModalOpen}
-            cartItems={cartItems}
-            setCartItems={setCartItems}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Supplier Price Shift & Margin Impact Alert Card (Market Page Only) */}
+            {showPriceAlert && (
+              <SupplierPriceAlertCard
+                onAutoAdjustPrices={(impacted) => {
+                  // Update current recipe menuPrice if it's one of the impacted
+                  const match = impacted.find(i => currentRecipe.name.toLowerCase().includes(i.name.toLowerCase()))
+                  if (match) {
+                    setCurrentRecipe(prev => ({ ...prev, menuPrice: match.suggestedPrice }))
+                  }
+                }}
+                onCompareSuppliers={() => {
+                  // Already on marketplace
+                }}
+                onAcceptMargins={() => {
+                  // Updates catalog unit cost for fresh milk
+                  setCatalog(prev => prev.map(item => item.id.includes('milk') ? { ...item, unitCostPerMl: 0.110 } : item))
+                }}
+                onDismiss={() => setShowPriceAlert(false)}
+              />
+            )}
+            <Marketplace
+              catalog={catalog}
+              onUpdateCatalogPrice={handleApplyPriceUpdates}
+              activeRegion={activeRegion}
+              setActiveRegion={setActiveRegion}
+              isCartOpen={isCartOpen}
+              setIsCartOpen={setIsCartOpen}
+              isRegionModalOpen={isRegionModalOpen}
+              setIsRegionModalOpen={setIsRegionModalOpen}
+              cartItems={cartItems}
+              setCartItems={setCartItems}
+            />
+          </div>
         )}
 
         {activeTab === 'matrix' && (
