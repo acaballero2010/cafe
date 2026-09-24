@@ -21,7 +21,24 @@ export function BenchmarkRecipesCarousel({
   const handleLoad = (item) => {
     triggerHaptic('selection')
     setLoadedSpecId(item.id)
-    onLoadBenchmarkSpec(item)
+    const clonedRecipe = {
+      ...item,
+      id: `rec_var_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name: item.name.includes('Twist') ? item.name : `${item.name} (My Twist)`,
+      version: 'v1.1 (Draft)',
+      forkedFrom: {
+        id: item.id,
+        name: item.name,
+        authorName: item.authorName || 'PourCraft Master Specs',
+        authorCafe: item.authorCafe || 'Master Repository',
+        category: item.category,
+        menuPrice: item.menuPrice,
+        layers: JSON.parse(JSON.stringify(item.layers || []))
+      },
+      isCustomVariation: true,
+      isUserUploaded: false
+    }
+    onLoadBenchmarkSpec(clonedRecipe)
     setTimeout(() => setLoadedSpecId(null), 2500)
   }
 

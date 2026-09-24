@@ -26,7 +26,8 @@ import {
   Scale,
   FlaskConical,
   BookmarkCheck,
-  Award
+  Award,
+  GitFork
 } from 'lucide-react'
 import { BeveragePhotoStudioModal } from './BeveragePhotoStudioModal'
 import { BaristaSOPModal } from './BaristaSOPModal'
@@ -727,13 +728,26 @@ export function UserProfile({
                                   </button>
                                 </div>
 
-                                <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', gap: '6px', marginTop: '2px' }}>
+                                <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                                   <span>COGS: ₱{drinkCogs.toFixed(2)}</span>
                                   <span>•</span>
                                   <span>Retail: ₱{drinkPrice.toFixed(2)}</span>
                                   <span>•</span>
                                   <strong style={{ color: '#059669' }}>{drinkMargin}% GM</strong>
                                 </div>
+
+                                {drink.forkedFrom && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px', fontSize: '0.66rem', color: '#2563eb', background: '#eff6ff', padding: '2px 6px', borderRadius: '6px', width: 'fit-content' }}>
+                                    <GitFork size={11} />
+                                    <span>Fork of <strong>{drink.forkedFrom.name}</strong></span>
+                                  </div>
+                                )}
+
+                                {drink.variationNote && (
+                                  <div style={{ fontSize: '0.66rem', color: '#475569', fontStyle: 'italic', marginTop: '2px', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px' }}>
+                                    "{drink.variationNote}"
+                                  </div>
+                                )}
                               </div>
 
                               <button

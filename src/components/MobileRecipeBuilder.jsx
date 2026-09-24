@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X, Camera, RefreshCw, BookOpen, Lightbulb, Trash2, Edit3, Wrench, Flame, Star, MessageSquare, FileText, Scale, ShoppingBag } from 'lucide-react'
+import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X, Camera, RefreshCw, BookOpen, Lightbulb, Trash2, Edit3, Wrench, Flame, Star, MessageSquare, FileText, Scale, ShoppingBag, GitFork } from 'lucide-react'
 import { VESSELS } from '../types/physics'
 import { PACKAGING_ITEMS } from '../data/defaultCatalog'
 import { calculateSubRecipeMetrics } from '../data/defaultSubRecipes'
@@ -16,6 +16,7 @@ import { CostBreakdownRing } from './CostBreakdownRing'
 import { BaristaSOPModal } from './BaristaSOPModal'
 import { BatchYieldCalculatorModal } from './BatchYieldCalculatorModal'
 import { DrinkRepositoryModal } from './DrinkRepositoryModal'
+import { SaveVariationModal } from './SaveVariationModal'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -29,7 +30,8 @@ export function MobileRecipeBuilder({
   onSaveToMenu = () => {},
   trendingRecipes = [],
   onUpdateTrendingRecipes = () => {},
-  onOpenTrending = () => {}
+  onOpenTrending = () => {},
+  currentUser
 }) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [showPackagingModal, setShowPackagingModal] = useState(false)
@@ -260,8 +262,46 @@ export function MobileRecipeBuilder({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', margin: '0 auto' }}>
       
-      {/* 1. Clean Drink Title & Action Row (Stacked 2-Tier Layout - Zero Truncation!) */}
+      {/* 1. Clean Drink Title & Action Row (Stacked 2-Tier Layout with Lineage Tracking) */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        
+        {/* Lineage Fork Chip */}
+        {recipe.forkedFrom && (
+          <div style={{
+            background: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            borderRadius: '12px',
+            padding: '8px 12px',
+            marginBottom: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <GitFork size={14} color="#16a34a" />
+              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#15803d' }}>
+                Custom Variation of <span style={{ textDecoration: 'underline' }}>{recipe.forkedFrom.name}</span>
+              </span>
+            </div>
+            <button
+              onClick={() => setIsSaveMenuModalOpen(true)}
+              style={{
+                background: '#15803d',
+                color: '#ffffff',
+                border: 'none',
+                padding: '4px 9px',
+                borderRadius: '6px',
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              Save Twist
+            </button>
+          </div>
+        )}
+
         {/* Full-width Drink Title */}
         <div style={{ marginBottom: '14px' }}>
           <input
@@ -409,196 +449,19 @@ export function MobileRecipeBuilder({
         </div>
       </div>
 
-      {/* Save Recipe / R&D Formulation Modal */}
-      {isSaveMenuModalOpen && (
-        <div className="clean-modal-overlay" onClick={() => setIsSaveMenuModalOpen(false)}>
-          <div className="clean-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fbbf24' }}>
-                  <BookmarkCheck size={16} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Save Recipe to R&D Lab
-                  </h3>
-                  <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0 }}>
-                    Save formulation checkpoints, version trials & menu status.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsSaveMenuModalOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {saveSuccessMessage ? (
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', padding: '18px', textAlign: 'center', color: '#047857', fontWeight: 800, fontSize: '0.88rem' }}>
-                <Check size={24} color="#059669" style={{ margin: '0 auto 6px' }} />
-                <div>{saveSuccessMessage}</div>
-              </div>
-            ) : (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  const recipeToSave = {
-                    ...recipe,
-                    version: recipeVersionTag,
-                    status: recipeStatus,
-                    savedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                  }
-
-                  if (selectedTargetMenuId === 'new') {
-                    if (!newMenuTitleInput.trim()) return
-                    const newMenu = {
-                      id: `menu-${Date.now()}`,
-                      title: newMenuTitleInput,
-                      description: 'Custom curated drink lineup.',
-                      season: 'Core / Year-Round',
-                      updatedAt: 'Just now',
-                      drinks: [recipeToSave]
-                    }
-                    onSaveToMenu(newMenu, true)
-                    setSaveSuccessMessage(`✓ Created "${newMenu.title}" & saved "${recipe.name} (${recipeVersionTag})"!`)
-                  } else {
-                    const targetMenu = savedMenus.find(m => m.id === selectedTargetMenuId)
-                    onSaveToMenu(recipeToSave, false, selectedTargetMenuId)
-                    setSaveSuccessMessage(`✓ Saved "${recipe.name} (${recipeVersionTag})" to "${targetMenu?.title || 'R&D Lab'}"!`)
-                  }
-
-                  setTimeout(() => {
-                    setIsSaveMenuModalOpen(false)
-                    setSaveSuccessMessage('')
-                    setNewMenuTitleInput('')
-                  }, 1200)
-                }}
-                style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
-              >
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                      Recipe Name
-                    </label>
-                    <input
-                      type="text"
-                      value={recipe.name}
-                      onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
-                      style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.80rem', fontWeight: 700, boxSizing: 'border-box' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                      Version Tag
-                    </label>
-                    <input
-                      type="text"
-                      value={recipeVersionTag}
-                      onChange={(e) => setRecipeVersionTag(e.target.value)}
-                      placeholder="e.g. v1.0, v1.1 Oat"
-                      style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.80rem', boxSizing: 'border-box' }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                    Formulation Status
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-                    <button
-                      type="button"
-                      onClick={() => setRecipeStatus('rnd')}
-                      style={{
-                        padding: '8px',
-                        borderRadius: '8px',
-                        border: `1.5px solid ${recipeStatus === 'rnd' ? '#0f172a' : '#cbd5e1'}`,
-                        background: recipeStatus === 'rnd' ? '#f1f5f9' : '#ffffff',
-                        fontSize: '0.74rem',
-                        fontWeight: 800,
-                        color: recipeStatus === 'rnd' ? '#0f172a' : '#64748b',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      🧪 Active R&D Trial
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecipeStatus('menu')}
-                      style={{
-                        padding: '8px',
-                        borderRadius: '8px',
-                        border: `1.5px solid ${recipeStatus === 'menu' ? '#059669' : '#cbd5e1'}`,
-                        background: recipeStatus === 'menu' ? '#ecfdf5' : '#ffffff',
-                        fontSize: '0.74rem',
-                        fontWeight: 800,
-                        color: recipeStatus === 'menu' ? '#059669' : '#64748b',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      🚀 Live Bar Menu
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
-                    Target Menu / Collection Lineup
-                  </label>
-                  <select
-                    value={selectedTargetMenuId}
-                    onChange={(e) => setSelectedTargetMenuId(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.84rem', background: '#ffffff', boxSizing: 'border-box' }}
-                  >
-                    {savedMenus.map(m => (
-                      <option key={m.id} value={m.id}>
-                        {m.title} ({m.drinks.length} drinks)
-                      </option>
-                    ))}
-                    <option value="new">+ Create New Menu Collection...</option>
-                  </select>
-                </div>
-
-                {selectedTargetMenuId === 'new' && (
-                  <div>
-                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                      New Menu Title
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Q4 Signature Launch, Cold Foam Series..."
-                      value={newMenuTitleInput}
-                      onChange={(e) => setNewMenuTitleInput(e.target.value)}
-                      required
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.84rem', boxSizing: 'border-box' }}
-                    />
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsSaveMenuModalOpen(false)}
-                    style={{ background: '#f1f5f9', border: 'none', padding: '9px 14px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    style={{ background: '#0f172a', border: 'none', padding: '9px 16px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', cursor: 'pointer' }}
-                  >
-                    Save Formulation
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Save Formulation & Variation Lineage Modal */}
+      <SaveVariationModal
+        isOpen={isSaveMenuModalOpen}
+        onClose={() => setIsSaveMenuModalOpen(false)}
+        recipe={recipe}
+        onUpdateRecipe={onUpdateRecipe}
+        savedMenus={savedMenus}
+        onSaveToMenu={onSaveToMenu}
+        onPublishToCommunity={(communityRecipe) => {
+          onUpdateTrendingRecipes([communityRecipe, ...trendingRecipes])
+        }}
+        currentUser={currentUser}
+      />
 
 
       {/* 2. Cup & Size Selector */}

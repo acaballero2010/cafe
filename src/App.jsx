@@ -235,6 +235,46 @@ export function App() {
     }
   }
 
+  const handleCloneRecipeIntoStudio = (baseRecipe) => {
+    // If it's already an active user custom variation being reopened, preserve it
+    const isAlreadyCustomDraft = baseRecipe.isCustomVariation && !baseRecipe.isMaster
+    
+    let cloned
+    if (isAlreadyCustomDraft) {
+      cloned = { ...baseRecipe }
+    } else {
+      const parentName = baseRecipe.name
+      cloned = {
+        ...baseRecipe,
+        id: `rec_var_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        name: baseRecipe.name.includes('(My Twist)') || baseRecipe.name.includes('Twist')
+          ? baseRecipe.name
+          : `${baseRecipe.name} (My Twist)`,
+        version: baseRecipe.version || 'v1.1 (Draft)',
+        forkedFrom: {
+          id: baseRecipe.id,
+          name: parentName,
+          authorName: baseRecipe.authorName || 'PourCraft Master Specs',
+          authorCafe: baseRecipe.authorCafe || 'Master Repository',
+          category: baseRecipe.category,
+          menuPrice: baseRecipe.menuPrice,
+          layers: JSON.parse(JSON.stringify(baseRecipe.layers || []))
+        },
+        isCustomVariation: true,
+        isUserUploaded: false
+      }
+    }
+
+    setCurrentRecipe(cloned)
+    setActiveTab('studio')
+    setIsSpecSheetMode(false)
+    showToast(
+      `Cloned ${baseRecipe.name}`,
+      `Editing your custom copy in Studio (Forked from ${baseRecipe.name})`,
+      'sparkle'
+    )
+  }
+
   const totalCartCount = cartItems.reduce((sum, item) => sum + item.qty, 0)
 
   if (appView === 'landing') {
@@ -303,10 +343,7 @@ export function App() {
         {activeTab === 'home' && (
           <ExploreHomeDashboard
             onOpenStudioWithRecipe={(recipeToLoad) => {
-              setCurrentRecipe(recipeToLoad)
-              setActiveTab('studio')
-              setIsSpecSheetMode(false)
-              showToast(`Loaded ${recipeToLoad.name}`, 'Formulation ready in Studio', 'sparkle')
+              handleCloneRecipeIntoStudio(recipeToLoad)
             }}
             onOpenBlankStudio={() => {
               setCurrentRecipe({
@@ -364,6 +401,7 @@ export function App() {
               trendingRecipes={trendingRecipes}
               onUpdateTrendingRecipes={setTrendingRecipes}
               onOpenTrending={() => setIsTrendingModalOpen(true)}
+              currentUser={currentUser}
             />
           )
         )}
@@ -649,10 +687,8 @@ export function App() {
         onUpdateTrendingRecipes={setTrendingRecipes}
         currentRecipe={currentRecipe}
         onLoadRecipeIntoStudio={(recipeToLoad) => {
-          setCurrentRecipe(recipeToLoad)
-          setActiveTab('studio')
-          setIsSpecSheetMode(false)
-          showToast(`Loaded ${recipeToLoad.name}`, 'Swapped active recipe in Studio', 'sparkle')
+          handleCloneRecipeIntoStudio(recipeToLoad)
+          setIsTrendingModalOpen(false)
         }}
         onSaveRecipeToMenu={handleSaveToMenu}
       />
@@ -661,10 +697,8 @@ export function App() {
         isOpen={isRepositoryOpen}
         onClose={() => setIsRepositoryOpen(false)}
         onLoadRecipeIntoStudio={(recipeToLoad) => {
-          setCurrentRecipe(recipeToLoad)
-          setActiveTab('studio')
-          setIsSpecSheetMode(false)
-          showToast(`Cloned ${recipeToLoad.name}`, 'Swapped active recipe in Studio', 'sparkle')
+          handleCloneRecipeIntoStudio(recipeToLoad)
+          setIsRepositoryOpen(false)
         }}
         onSaveRecipeToMenu={handleSaveToMenu}
       />
