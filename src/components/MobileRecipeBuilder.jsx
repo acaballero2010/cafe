@@ -1315,12 +1315,6 @@ export function MobileRecipeBuilder({
         </div>
       )}
 
-      {/* 5. Sensory Harmony Radar & Flavor Balance */}
-      <SensoryFlavorRadar
-        recipe={recipe}
-        metrics={{ layersDetailed: recipe.layers }}
-      />
-
       {/* 6. Ingredient Cost Distribution Donut Ring */}
       <CostBreakdownRing
         recipe={recipe}
@@ -1329,17 +1323,6 @@ export function MobileRecipeBuilder({
           setActivePickerLayerIndex(layerIdx)
           setIsPickerOpen(true)
         }}
-      />
-
-      {/* 7. Benchmark Recipes Carousel */}
-      <BenchmarkRecipesCarousel
-        currentRecipe={recipe}
-        onSelectBenchmark={onUpdateRecipe}
-      />
-
-      {/* 8. Barista Community Reviews & Ratings */}
-      <CommunityReviewsSection
-        recipe={recipe}
       />
 
       {/* 9. Food Science Accordion */}
