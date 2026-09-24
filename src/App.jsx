@@ -148,18 +148,38 @@ export function App() {
     }))
   }, [currentRecipe.packagingIds])
 
+  // Automatically sync recipe layer unit costs to the live Marketplace Catalog in real-time
+  const syncedRecipe = useMemo(() => {
+    if (!currentRecipe?.layers) return currentRecipe
+    let hasChanges = false
+    const syncedLayers = currentRecipe.layers.map(layer => {
+      if (!layer.ingredientId) return layer
+      const catMatch = catalog.find(c => c.id === layer.ingredientId)
+      if (catMatch && catMatch.unitCostPerMl && layer.unitCostPerMl !== catMatch.unitCostPerMl) {
+        hasChanges = true
+        return {
+          ...layer,
+          unitCostPerMl: catMatch.unitCostPerMl,
+          supplier: catMatch.supplier || layer.supplier
+        }
+      }
+      return layer
+    })
+    return hasChanges ? { ...currentRecipe, layers: syncedLayers } : currentRecipe
+  }, [currentRecipe, catalog])
+
   // Compute live physics & economics in PHP ₱
   const metrics = useMemo(() => {
     return calculateDrinkMetrics({
-      vesselId: currentRecipe.vesselId,
-      iceTypeId: currentRecipe.iceTypeId,
-      layers: currentRecipe.layers,
+      vesselId: syncedRecipe.vesselId,
+      iceTypeId: syncedRecipe.iceTypeId,
+      layers: syncedRecipe.layers,
       packagingItems: activePackagingItems,
       includeScrap: includeScrap,
-      targetMarginPct: currentRecipe.targetMarginPct || 75,
-      menuPrice: currentRecipe.menuPrice || 180.00
+      targetMarginPct: syncedRecipe.targetMarginPct || 75,
+      menuPrice: syncedRecipe.menuPrice || 180.00
     })
-  }, [currentRecipe, activePackagingItems, includeScrap])
+  }, [syncedRecipe, activePackagingItems, includeScrap])
 
   const handleLoadPreset = () => {
     triggerHaptic('selection')
@@ -382,14 +402,14 @@ export function App() {
         {activeTab === 'studio' && (
           isSpecSheetMode ? (
             <SpecSheetView
-              recipe={currentRecipe}
+              recipe={syncedRecipe}
               metrics={metrics}
               onBackToBuilder={() => setIsSpecSheetMode(false)}
               onOpenMarketplace={() => setActiveTab('marketplace')}
             />
           ) : (
             <MobileRecipeBuilder
-              recipe={currentRecipe}
+              recipe={syncedRecipe}
               catalog={catalog}
               subRecipes={subRecipes}
               includeScrap={includeScrap}
@@ -540,13 +560,14 @@ export function App() {
             border: 'none',
             color: activeTab === 'home' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
-            padding: '4px 8px',
+            padding: '4px 6px',
             minHeight: '44px',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flex: 1
           }}
         >
-          <Home size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'home' ? 800 : 600 }}>Home</span>
+          <Home size={18} />
+          <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'home' ? 800 : 600 }}>Home</span>
         </button>
 
         <button
@@ -565,13 +586,65 @@ export function App() {
             border: 'none',
             color: activeTab === 'studio' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
-            padding: '4px 8px',
+            padding: '4px 6px',
             minHeight: '44px',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flex: 1
           }}
         >
-          <Layers size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'studio' ? 800 : 600 }}>Studio</span>
+          <Layers size={18} />
+          <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'studio' ? 800 : 600 }}>Studio</span>
+        </button>
+
+        <button
+          onClick={() => {
+            triggerHaptic('tap')
+            setActiveTab('marketplace')
+            setIsSpecSheetMode(false)
+          }}
+          className="mobile-nav-clean-item"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === 'marketplace' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
+            cursor: 'pointer',
+            padding: '4px 6px',
+            minHeight: '44px',
+            justifyContent: 'center',
+            position: 'relative',
+            flex: 1
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <ShoppingBag size={18} />
+            {totalCartCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-4px',
+                  right: '-6px',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  background: '#d97706',
+                  color: '#ffffff',
+                  fontSize: '0.58rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1.5px solid #ffffff'
+                }}
+              >
+                {totalCartCount}
+              </span>
+            )}
+          </div>
+          <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'marketplace' ? 800 : 600 }}>Market</span>
         </button>
 
         <button
@@ -590,13 +663,14 @@ export function App() {
             border: 'none',
             color: activeTab === 'rnd_lab' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
-            padding: '4px 8px',
+            padding: '4px 6px',
             minHeight: '44px',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flex: 1
           }}
         >
-          <FlaskConical size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'rnd_lab' ? 800 : 600 }}>R&D Lab</span>
+          <FlaskConical size={18} />
+          <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'rnd_lab' ? 800 : 600 }}>R&D Lab</span>
         </button>
 
         <button
@@ -614,13 +688,14 @@ export function App() {
             border: 'none',
             color: activeTab === 'hub' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
-            padding: '4px 8px',
+            padding: '4px 6px',
             minHeight: '44px',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flex: 1
           }}
         >
-          <BookOpen size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'hub' ? 800 : 600 }}>Academy</span>
+          <BookOpen size={18} />
+          <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'hub' ? 800 : 600 }}>Academy</span>
         </button>
 
         <button
@@ -639,13 +714,14 @@ export function App() {
             border: 'none',
             color: activeTab === 'profile' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
-            padding: '4px 8px',
+            padding: '4px 6px',
             minHeight: '44px',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flex: 1
           }}
         >
-          <User size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'profile' ? 800 : 600 }}>Account</span>
+          <User size={18} />
+          <span style={{ fontSize: '0.64rem', fontWeight: activeTab === 'profile' ? 800 : 600 }}>Account</span>
         </button>
       </nav>
 
