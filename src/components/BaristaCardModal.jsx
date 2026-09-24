@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react'
-import { X, Printer, Download, Sparkles, Check, Flame, ShieldAlert, Award, QrCode, Play, Pause, RotateCcw, Clock, Volume2, Tablet, Smartphone } from 'lucide-react'
+import { X, Printer, Download, Sparkles, Check, Flame, ShieldAlert, Award, QrCode, Play, Pause, RotateCcw, Clock, Volume2, Tablet, Smartphone, Tag } from 'lucide-react'
+import { ThermalCupLabelModal } from './ThermalCupLabelModal'
+import { PrintableTableTentModal } from './PrintableTableTentModal'
+import { triggerHaptic } from '../utils/haptics'
 
 export function BaristaCardModal({
   isOpen,
   onClose,
   recipe,
-  metrics
+  metrics,
+  currentUser
 }) {
   const [activeSide, setActiveSide] = useState('front') // 'front' | 'back' | 'station'
   const [shotSeconds, setShotSeconds] = useState(25)
@@ -13,6 +17,8 @@ export function BaristaCardModal({
   const [shakeSeconds, setShakeSeconds] = useState(12)
   const [isShakeRunning, setIsShakeRunning] = useState(false)
   const [showQrModal, setShowQrModal] = useState(false)
+  const [isCupLabelOpen, setIsCupLabelOpen] = useState(false)
+  const [isTableTentOpen, setIsTableTentOpen] = useState(false)
 
   // Shot Timer Effect
   useEffect(() => {
@@ -450,18 +456,62 @@ export function BaristaCardModal({
         )}
 
         {/* Modal Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px' }}>
-          <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-            Station URL: <span style={{ fontFamily: 'var(--font-mono)', color: '#2563eb' }}>{stationUrl}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '18px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => {
+                triggerHaptic('tap')
+                setIsCupLabelOpen(true)
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: '#0f172a',
+                color: '#ffffff',
+                border: 'none',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              <Tag size={13} color="#38bdf8" />
+              <span>Cup Sticker</span>
+            </button>
+
+            <button
+              onClick={() => {
+                triggerHaptic('tap')
+                setIsTableTentOpen(true)
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 10px',
+                borderRadius: '8px',
+                background: '#fffbeb',
+                color: '#92400e',
+                border: '1px solid #fde68a',
+                fontSize: '0.72rem',
+                fontWeight: 800,
+                cursor: 'pointer'
+              }}
+            >
+              <QrCode size={13} color="#d97706" />
+              <span>Table Standee</span>
+            </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <button
               className="btn-clean btn-clean-secondary btn-clean-sm"
               onClick={() => window.print()}
             >
               <Printer size={14} />
-              <span>Print Station Card</span>
+              <span>Print Station</span>
             </button>
 
             <button
@@ -472,11 +522,26 @@ export function BaristaCardModal({
               }}
             >
               <Download size={14} />
-              <span>Download PDF</span>
+              <span>Export PDF</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <ThermalCupLabelModal
+        isOpen={isCupLabelOpen}
+        onClose={() => setIsCupLabelOpen(false)}
+        recipe={recipe}
+        currentUser={currentUser}
+      />
+
+      <PrintableTableTentModal
+        isOpen={isTableTentOpen}
+        onClose={() => setIsTableTentOpen(false)}
+        recipe={recipe}
+        currentUser={currentUser}
+      />
     </div>
   )
 }

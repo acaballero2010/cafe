@@ -547,6 +547,7 @@ export function App() {
                 metrics={metrics}
                 onBackToBuilder={() => setStudioSubTab('builder')}
                 onOpenMarketplace={() => setActiveTab('marketplace')}
+                currentUser={currentUser}
               />
             )}
           </div>
@@ -842,6 +843,7 @@ export function App() {
         onClose={() => setIsBaristaCardOpen(false)}
         recipe={currentRecipe}
         metrics={metrics}
+        currentUser={currentUser}
       />
 
       <InvoiceOcrModal
