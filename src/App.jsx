@@ -620,6 +620,7 @@ export function App() {
             }}
             onOpenStudio={() => {
               setActiveTab('studio')
+              setStudioSubTab('builder')
               setIsSpecSheetMode(false)
             }}
           />
@@ -681,6 +682,7 @@ export function App() {
           onClick={() => {
             triggerHaptic('tap')
             setActiveTab('studio')
+            setStudioSubTab('builder')
             setIsSpecSheetMode(false)
           }}
           className="mobile-nav-clean-item"

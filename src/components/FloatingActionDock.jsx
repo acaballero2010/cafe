@@ -44,7 +44,7 @@ export function FloatingActionDock({
         animation: 'slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
-      {/* 1. 8K Photo Studio */}
+      {/* 1. 8K Photo Generator */}
       <button
         onClick={() => {
           triggerHaptic('light')
@@ -67,7 +67,7 @@ export function FloatingActionDock({
         }}
       >
         <Camera size={13} />
-        <span>Studio</span>
+        <span>Photo 8K</span>
       </button>
 
       {/* 2. Barista Station SOP */}

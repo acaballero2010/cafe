@@ -377,7 +377,7 @@ export function MobileRecipeBuilder({
             }}
           >
             <Camera size={12} color="#ffffff" />
-            <span>Studio</span>
+            <span>Photo 8K</span>
           </button>
 
           <button
