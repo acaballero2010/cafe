@@ -29,11 +29,14 @@ export function MobileHeader({
 
   const getTitle = () => {
     switch (activeTab) {
+      case 'home': return 'PourCraft Home'
+      case 'studio': return 'Recipe Studio'
+      case 'rnd_lab': return 'R&D Formulation Lab'
       case 'batches': return 'Batch Preps'
       case 'marketplace': return 'Wholesale Market'
       case 'matrix': return 'Menu Matrix'
-      case 'profile': return 'Shop Profile & Menus'
-      default: return 'Recipe Studio'
+      case 'profile': return 'My Account & Studio'
+      default: return 'PourCraft OS'
     }
   }
 

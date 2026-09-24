@@ -20,6 +20,9 @@ import { BatchYieldCalculatorModal } from './components/BatchYieldCalculatorModa
 import { AdminLoginModal } from './components/AdminLoginModal'
 import { PlatformAdminPortal } from './components/PlatformAdminPortal'
 import { CafeOnboardingWizardModal } from './components/CafeOnboardingWizardModal'
+import { ExploreHomeDashboard } from './components/ExploreHomeDashboard'
+import { RnDLabModule } from './components/RnDLabModule'
+import { UploadRecipeModal } from './components/UploadRecipeModal'
 import { LandingPage } from './components/LandingPage'
 import { AuthPage } from './components/AuthPage'
 import { AuthDatabase } from './utils/authDatabase'
@@ -28,10 +31,11 @@ import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
 import { INITIAL_TRENDING_RECIPES } from './data/trendingRecipes'
+import { MASTER_RECIPE_REPOSITORY } from './data/recipeRepository'
 import { calculateDrinkMetrics } from './types/physics'
 import { triggerHaptic } from './utils/haptics'
 import { NativeToast } from './components/NativeToast'
-import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck, LogOut, Globe } from 'lucide-react'
+import { Home, Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical, ShieldCheck, LogOut, Globe, Sparkles } from 'lucide-react'
 
 export function App() {
   const [appView, setAppView] = useState('app') // 'app' | 'landing' | 'auth'
@@ -40,9 +44,10 @@ export function App() {
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState(false)
   const [isAdminPortalOpen, setIsAdminPortalOpen] = useState(false)
   const [isOnboardingWizardOpen, setIsOnboardingWizardOpen] = useState(false)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [showPriceAlert, setShowPriceAlert] = useState(true)
   const [activeVenue, setActiveVenue] = useState('coffee')
-  const [activeTab, setActiveTab] = useState('studio') // 'studio' | 'batches' | 'marketplace' | 'matrix' | 'profile'
+  const [activeTab, setActiveTab] = useState('home') // 'home' | 'studio' | 'rnd_lab' | 'matrix' | 'profile' | 'batches' | 'marketplace'
   const [isSpecSheetMode, setIsSpecSheetMode] = useState(false)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [catalog, setCatalog] = useState(DEFAULT_CATALOG)
@@ -294,6 +299,48 @@ export function App() {
 
       {/* 2. Main Scrollable Container with 160px Bottom Scroll Clearance */}
       <main className="app-responsive-frame" style={{ flex: 1, padding: '16px 16px 160px' }}>
+        {activeTab === 'home' && (
+          <ExploreHomeDashboard
+            onOpenStudioWithRecipe={(recipeToLoad) => {
+              setCurrentRecipe(recipeToLoad)
+              setActiveTab('studio')
+              setIsSpecSheetMode(false)
+              showToast(`Loaded ${recipeToLoad.name}`, 'Formulation ready in Studio', 'sparkle')
+            }}
+            onOpenBlankStudio={() => {
+              setCurrentRecipe({
+                id: `blank-${Date.now()}`,
+                name: 'New Craft Experiment',
+                category: 'espresso',
+                categoryName: 'Specialty Espresso',
+                temp: 'iced',
+                vesselId: 'cold-16oz',
+                vesselName: '16oz Glass Tumbler',
+                menuPrice: 180.00,
+                targetMarginPct: 75,
+                layers: [
+                  { id: 'l1', name: 'Raw Cane Sugar Syrup', volumeMl: 20, unitCostPerMl: 0.12, colorHex: '#fde68a', densityBrix: 65 },
+                  { id: 'l2', name: 'Fresh Milk Body', volumeMl: 150, unitCostPerMl: 0.10, colorHex: '#ffffff', densityBrix: 12 },
+                  { id: 'l3', name: 'Espresso Double Shot', volumeMl: 36, unitCostPerMl: 0.65, colorHex: '#422415', densityBrix: 9.5 }
+                ],
+                sopSteps: ['Build layers in order over crystal ice.']
+              })
+              setActiveTab('studio')
+              setIsSpecSheetMode(false)
+              showToast('Blank Studio Ready', 'Stack layers & test ingredient costs', 'success')
+            }}
+            onOpenRnDLab={() => setActiveTab('rnd_lab')}
+            onOpenUploadRecipe={() => setIsUploadModalOpen(true)}
+            onOpenTrendingModal={() => setIsTrendingModalOpen(true)}
+            onOpenRepositoryModal={() => setIsRepositoryOpen(true)}
+            onSaveToCollection={(recipeToSave) => {
+              handleSaveToMenu(recipeToSave, false, savedMenus[0]?.id)
+            }}
+            currentUser={currentUser}
+            savedRecipeIds={savedMenus.flatMap(m => m.drinks.map(d => d.id))}
+          />
+        )}
+
         {activeTab === 'studio' && (
           isSpecSheetMode ? (
             <SpecSheetView
@@ -320,6 +367,18 @@ export function App() {
           )
         )}
 
+        {activeTab === 'rnd_lab' && (
+          <RnDLabModule
+            currentRecipe={currentRecipe}
+            onOpenStudioWithRecipe={(recipeToLoad) => {
+              setCurrentRecipe(recipeToLoad)
+              setActiveTab('studio')
+              setIsSpecSheetMode(false)
+            }}
+            onSaveToMenu={handleSaveToMenu}
+          />
+        )}
+
         {activeTab === 'batches' && (
           <SubRecipeManager
             subRecipes={subRecipes}
@@ -334,17 +393,13 @@ export function App() {
             {showPriceAlert && (
               <SupplierPriceAlertCard
                 onAutoAdjustPrices={(impacted) => {
-                  // Update current recipe menuPrice if it's one of the impacted
                   const match = impacted.find(i => currentRecipe.name.toLowerCase().includes(i.name.toLowerCase()))
                   if (match) {
                     setCurrentRecipe(prev => ({ ...prev, menuPrice: match.suggestedPrice }))
                   }
                 }}
-                onCompareSuppliers={() => {
-                  // Already on marketplace
-                }}
+                onCompareSuppliers={() => {}}
                 onAcceptMargins={() => {
-                  // Updates catalog unit cost for fresh milk
                   setCatalog(prev => prev.map(item => item.id.includes('milk') ? { ...item, unitCostPerMl: 0.110 } : item))
                 }}
                 onDismiss={() => setShowPriceAlert(false)}
@@ -381,6 +436,7 @@ export function App() {
             onOpenAdminLogin={() => setIsAdminLoginOpen(true)}
             onOpenAdminPortal={() => setIsAdminPortalOpen(true)}
             onOpenOnboardingWizard={() => setIsOnboardingWizardOpen(true)}
+            onOpenUploadRecipe={() => setIsUploadModalOpen(true)}
             onExitToLanding={() => setAppView('landing')}
             onLoadRecipeIntoStudio={(recipeToLoad) => {
               setCurrentRecipe(recipeToLoad)
@@ -401,7 +457,7 @@ export function App() {
         />
       )}
 
-      {/* 4. Native Mobile Bottom Tab Navigation Bar */}
+      {/* 4. Native Mobile Bottom Tab Navigation Bar (5 Core Tabs) */}
       <nav
         className="app-responsive-frame"
         style={{
@@ -418,6 +474,31 @@ export function App() {
           padding: '6px 8px calc(6px + env(safe-area-inset-bottom))'
         }}
       >
+        <button
+          onClick={() => {
+            triggerHaptic('tap')
+            setActiveTab('home')
+            setIsSpecSheetMode(false)
+          }}
+          className="mobile-nav-clean-item"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '2px',
+            background: 'transparent',
+            border: 'none',
+            color: activeTab === 'home' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
+            cursor: 'pointer',
+            padding: '4px 8px',
+            minHeight: '44px',
+            justifyContent: 'center'
+          }}
+        >
+          <Home size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'home' ? 800 : 600 }}>Home</span>
+        </button>
+
         <button
           onClick={() => {
             triggerHaptic('tap')
@@ -446,7 +527,8 @@ export function App() {
         <button
           onClick={() => {
             triggerHaptic('tap')
-            setActiveTab('batches')
+            setActiveTab('rnd_lab')
+            setIsSpecSheetMode(false)
           }}
           className="mobile-nav-clean-item"
           style={{
@@ -456,39 +538,15 @@ export function App() {
             gap: '2px',
             background: 'transparent',
             border: 'none',
-            color: activeTab === 'batches' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
+            color: activeTab === 'rnd_lab' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
             cursor: 'pointer',
             padding: '4px 8px',
             minHeight: '44px',
             justifyContent: 'center'
           }}
         >
-          <ChefHat size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'batches' ? 800 : 600 }}>Batches</span>
-        </button>
-
-        <button
-          onClick={() => {
-            triggerHaptic('tap')
-            setActiveTab('marketplace')
-          }}
-          className="mobile-nav-clean-item"
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '2px',
-            background: 'transparent',
-            border: 'none',
-            color: activeTab === 'marketplace' ? (isDarkMode ? '#38bdf8' : '#0f172a') : (isDarkMode ? '#64748b' : '#94a3b8'),
-            cursor: 'pointer',
-            padding: '4px 8px',
-            minHeight: '44px',
-            justifyContent: 'center'
-          }}
-        >
-          <ShoppingBag size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'marketplace' ? 800 : 600 }}>Market</span>
+          <FlaskConical size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'rnd_lab' ? 800 : 600 }}>R&D Lab</span>
         </button>
 
         <button
@@ -536,8 +594,8 @@ export function App() {
             justifyContent: 'center'
           }}
         >
-          <FlaskConical size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'profile' ? 800 : 600 }}>R&D Lab</span>
+          <User size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'profile' ? 800 : 600 }}>Account</span>
         </button>
       </nav>
 
@@ -699,6 +757,21 @@ export function App() {
           }
 
           showToast(`Welcome, ${data.shopName}!`, `Seeded ${data.seedRecipes.length} formulations with ${data.targetMarginPct}% margin`, 'sparkle', 4000)
+        }}
+      />
+
+      {/* Custom Barista Recipe Upload & Community Sharing Modal */}
+      <UploadRecipeModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        currentUser={currentUser}
+        onSaveRecipe={(newUploadedRecipe) => {
+          // Save to active recipe, add to master catalog, and add to saved collection
+          setCurrentRecipe(newUploadedRecipe)
+          handleSaveToMenu(newUploadedRecipe, false, savedMenus[0]?.id)
+          setActiveTab('studio')
+          setIsSpecSheetMode(false)
+          showToast(`Uploaded ${newUploadedRecipe.name}!`, 'Recipe published & active in Studio', 'sparkle', 4000)
         }}
       />
 

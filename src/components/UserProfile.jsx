@@ -41,6 +41,7 @@ export function UserProfile({
   onOpenAdminPortal = () => {},
   onOpenOnboardingWizard = () => {},
   onExitToLanding = () => {},
+  onOpenUploadRecipe,
   onLoadRecipeIntoStudio,
   onOpenStudio
 }) {
@@ -418,26 +419,50 @@ export function UserProfile({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsCreateMenuOpen(true)}
-          style={{
-            background: '#0f172a',
-            border: 'none',
-            color: '#ffffff',
-            padding: '8px 12px',
-            borderRadius: '12px',
-            fontSize: '0.74rem',
-            fontWeight: 800,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)'
-          }}
-        >
-          <Plus size={13} color="#fbbf24" />
-          <span>New Collection</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {onOpenUploadRecipe && (
+            <button
+              onClick={onOpenUploadRecipe}
+              style={{
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                color: '#0f172a',
+                padding: '8px 12px',
+                borderRadius: '12px',
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              <Plus size={13} color="#2563eb" />
+              <span>Upload Recipe</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setIsCreateMenuOpen(true)}
+            style={{
+              background: '#0f172a',
+              border: 'none',
+              color: '#ffffff',
+              padding: '8px 12px',
+              borderRadius: '12px',
+              fontSize: '0.74rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)'
+            }}
+          >
+            <FolderPlus size={13} color="#fbbf24" />
+            <span>New Collection</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Tabs */}
