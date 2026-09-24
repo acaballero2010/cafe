@@ -17,7 +17,7 @@ import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
 import { INITIAL_TRENDING_RECIPES } from './data/trendingRecipes'
 import { calculateDrinkMetrics } from './types/physics'
-import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame } from 'lucide-react'
+import { Layers, ChefHat, ShoppingBag, BarChart3, Receipt, BookOpen, User, Flame, FlaskConical } from 'lucide-react'
 
 export function App() {
   const [activeVenue, setActiveVenue] = useState('coffee')
@@ -415,8 +415,8 @@ export function App() {
             justifyContent: 'center'
           }}
         >
-          <User size={19} />
-          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'profile' ? 800 : 600 }}>Profile</span>
+          <FlaskConical size={19} />
+          <span style={{ fontSize: '0.68rem', fontWeight: activeTab === 'profile' ? 800 : 600 }}>R&D Lab</span>
         </button>
       </nav>
 

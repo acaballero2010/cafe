@@ -21,8 +21,16 @@ import {
   Clock, 
   FileText, 
   ChevronRight,
-  ExternalLink
+  ExternalLink,
+  Camera,
+  Scale,
+  FlaskConical,
+  BookmarkCheck,
+  Award
 } from 'lucide-react'
+import { BeveragePhotoStudioModal } from './BeveragePhotoStudioModal'
+import { BaristaSOPModal } from './BaristaSOPModal'
+import { BatchYieldCalculatorModal } from './BatchYieldCalculatorModal'
 
 export function UserProfile({
   savedMenus,
@@ -32,6 +40,7 @@ export function UserProfile({
   onOpenStudio
 }) {
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [activeTab, setActiveTab] = useState('all') // 'all' | 'rnd' | 'menu'
   const [profileData, setProfileData] = useState({
     shopName: 'Kape Craft Studio & Bar',
     branch: 'Bonifacio Global City, Taguig',
@@ -42,7 +51,13 @@ export function UserProfile({
     joinedDate: 'Member since Aug 2025'
   })
 
-  // Modal for creating new menu collection
+  // Modals for recipe actions
+  const [activeDrinkForModal, setActiveDrinkForModal] = useState(null)
+  const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false)
+  const [isSopModalOpen, setIsSopModalOpen] = useState(false)
+  const [isYieldModalOpen, setIsYieldModalOpen] = useState(false)
+
+  // Modal for creating new collection
   const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false)
   const [newMenuTitle, setNewMenuTitle] = useState('')
   const [newMenuDescription, setNewMenuDescription] = useState('')
@@ -81,7 +96,7 @@ export function UserProfile({
       alert('You must keep at least one saved menu.')
       return
     }
-    if (confirm('Are you sure you want to delete this menu collection?')) {
+    if (confirm('Are you sure you want to delete this collection?')) {
       const updated = savedMenus.filter(m => m.id !== menuId)
       onUpdateSavedMenus(updated)
       if (expandedMenuId === menuId) {
@@ -103,31 +118,52 @@ export function UserProfile({
     onUpdateSavedMenus(updated)
   }
 
-  const handleAddCurrentDrinkToMenu = (menuId) => {
-    if (!currentRecipe) return
+  const handleToggleDrinkStatus = (menuId, drinkId) => {
     const updated = savedMenus.map(menu => {
       if (menu.id === menuId) {
-        // Prevent exact duplicate ID
-        const exists = menu.drinks.some(d => d.id === currentRecipe.id || d.name === currentRecipe.name)
-        if (exists) {
-          alert(`"${currentRecipe.name}" is already in this menu.`)
-          return menu
-        }
         return {
           ...menu,
-          drinks: [...menu.drinks, currentRecipe]
+          drinks: menu.drinks.map(d => {
+            if (d.id === drinkId) {
+              const nextStatus = d.status === 'menu' ? 'rnd' : 'menu'
+              return { ...d, status: nextStatus }
+            }
+            return d
+          })
         }
       }
       return menu
     })
     onUpdateSavedMenus(updated)
-    alert(`✓ Added "${currentRecipe.name}" to menu!`)
   }
 
-  // Calculate overall stats across all saved menus
+  const handleAddCurrentDrinkToMenu = (menuId) => {
+    if (!currentRecipe) return
+    const updated = savedMenus.map(menu => {
+      if (menu.id === menuId) {
+        const exists = menu.drinks.some(d => d.id === currentRecipe.id || d.name === currentRecipe.name)
+        if (exists) {
+          alert(`"${currentRecipe.name}" is already in this collection.`)
+          return menu
+        }
+        return {
+          ...menu,
+          drinks: [...menu.drinks, { ...currentRecipe, status: currentRecipe.status || 'rnd' }]
+        }
+      }
+      return menu
+    })
+    onUpdateSavedMenus(updated)
+    alert(`✓ Added "${currentRecipe.name}" to collection!`)
+  }
+
+  // Calculate overall stats across all saved formulations
   const allDrinks = savedMenus.flatMap(m => m.drinks)
+  const rndCount = allDrinks.filter(d => d.status === 'rnd').length
+  const menuCount = allDrinks.filter(d => d.status === 'menu' || !d.status).length
+
   const avgCogs = allDrinks.length > 0 
-    ? allDrinks.reduce((acc, d) => acc + (d.layers?.reduce((lAcc, l) => lAcc + (l.volumeMl * l.unitCostPerMl), 0) || 42), 0) / allDrinks.length
+    ? allDrinks.reduce((acc, d) => acc + (d.layers?.reduce((lAcc, l) => lAcc + (l.volumeMl * (l.unitCostPerMl || 0.25)), 0) || 42), 0) / allDrinks.length
     : 44.20
   const avgPrice = allDrinks.length > 0
     ? allDrinks.reduce((acc, d) => acc + (d.menuPrice || 180), 0) / allDrinks.length
@@ -135,18 +171,17 @@ export function UserProfile({
   const avgMargin = (((avgPrice - avgCogs) / avgPrice) * 100).toFixed(1)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '680px', margin: '0 auto', paddingBottom: '120px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '680px', margin: '0 auto', paddingBottom: '120px' }}>
       
       {/* 1. Shop & Operator Profile Header Card */}
-      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+      <div style={{ background: '#ffffff', borderRadius: '24px', padding: '18px 20px', border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-            {/* Avatar / Shop Icon */}
             <div
               style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '18px',
+                width: '52px',
+                height: '52px',
+                borderRadius: '16px',
                 background: 'linear-gradient(135deg, #0f172a, #334155)',
                 display: 'flex',
                 alignItems: 'center',
@@ -156,42 +191,40 @@ export function UserProfile({
                 flexShrink: 0
               }}
             >
-              <Store size={26} color="#fbbf24" />
+              <FlaskConical size={24} color="#fbbf24" />
             </div>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.01em' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
                   {profileData.shopName}
                 </h2>
-                <span style={{ background: '#ecfdf5', color: '#059669', fontSize: '0.62rem', fontWeight: 800, padding: '2px 6px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>
-                  PRO SHOP
+                <span style={{ fontSize: '0.64rem', background: '#ecfdf5', color: '#059669', padding: '2px 8px', borderRadius: '999px', fontWeight: 800 }}>
+                  R&D Verified
                 </span>
               </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
-                <MapPin size={12} color="#64748b" />
-                <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                  {profileData.branch}
-                </span>
-              </div>
-
-              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
-                {profileData.ownerName} • {profileData.role}
-              </div>
+              <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>{profileData.ownerName}</span>
+                <span>•</span>
+                <span>{profileData.role}</span>
+              </p>
+              <p style={{ fontSize: '0.70rem', color: '#94a3b8', margin: '2px 0 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <MapPin size={11} />
+                <span>{profileData.branch}</span>
+              </p>
             </div>
           </div>
 
           <button
             onClick={() => setIsEditingProfile(!isEditingProfile)}
             style={{
-              background: '#f8fafc',
+              background: isEditingProfile ? '#0f172a' : '#f8fafc',
+              color: isEditingProfile ? '#ffffff' : '#334155',
               border: '1px solid #e2e8f0',
-              padding: '6px 10px',
+              padding: '6px 12px',
               borderRadius: '10px',
               fontSize: '0.72rem',
               fontWeight: 700,
-              color: '#334155',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -199,70 +232,37 @@ export function UserProfile({
             }}
           >
             <Edit3 size={12} />
-            <span>{isEditingProfile ? 'Cancel' : 'Edit'}</span>
+            <span>{isEditingProfile ? 'Done' : 'Edit'}</span>
           </button>
         </div>
 
-        {/* Profile Edit Form Drawer */}
+        {/* Edit Profile Drawer */}
         {isEditingProfile && (
-          <form onSubmit={handleSaveProfile} style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <form onSubmit={handleSaveProfile} style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div>
-                <label style={{ fontSize: '0.70rem', fontWeight: 700, color: '#64748b' }}>Shop / Café Name</label>
+                <label style={{ fontSize: '0.68rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>Shop Name</label>
                 <input
                   type="text"
                   value={profileData.shopName}
                   onChange={(e) => setProfileData({ ...profileData, shopName: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.80rem', fontWeight: 600, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }}
                 />
               </div>
-
               <div>
-                <label style={{ fontSize: '0.70rem', fontWeight: 700, color: '#64748b' }}>Branch / City</label>
+                <label style={{ fontSize: '0.68rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '2px' }}>Branch Location</label>
                 <input
                   type="text"
                   value={profileData.branch}
                   onChange={(e) => setProfileData({ ...profileData, branch: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.80rem', fontWeight: 600, boxSizing: 'border-box' }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div>
-                <label style={{ fontSize: '0.70rem', fontWeight: 700, color: '#64748b' }}>Operator Name</label>
-                <input
-                  type="text"
-                  value={profileData.ownerName}
-                  onChange={(e) => setProfileData({ ...profileData, ownerName: e.target.value })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.80rem', fontWeight: 600, boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.70rem', fontWeight: 700, color: '#64748b' }}>Target Gross Margin (%)</label>
-                <input
-                  type="number"
-                  value={profileData.targetMarginPct}
-                  onChange={(e) => setProfileData({ ...profileData, targetMarginPct: Number(e.target.value) })}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.80rem', fontWeight: 600, boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.78rem', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              style={{
-                background: '#0f172a',
-                color: '#ffffff',
-                border: 'none',
-                padding: '9px',
-                borderRadius: '10px',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                marginTop: '6px'
-              }}
+              style={{ background: '#0f172a', color: '#ffffff', border: 'none', padding: '8px', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 800, cursor: 'pointer' }}
             >
               Save Shop Settings
             </button>
@@ -270,45 +270,48 @@ export function UserProfile({
         )}
 
         {/* Key Store KPIs Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginTop: '16px' }}>
-          <div style={{ background: '#f8fafc', padding: '10px 8px', borderRadius: '14px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>SAVED MENUS</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
-              {savedMenus.length}
-            </div>
-          </div>
-
-          <div style={{ background: '#f8fafc', padding: '10px 8px', borderRadius: '14px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>DRINK SPECS</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', marginTop: '14px' }}>
+          <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '12px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.60rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>R&D RECIPES</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>
               {allDrinks.length}
             </div>
           </div>
 
-          <div style={{ background: '#f8fafc', padding: '10px 8px', borderRadius: '14px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.62rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase' }}>AVG MARGIN</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#059669', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+          <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '12px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.60rem', color: '#0284c7', fontWeight: 700, textTransform: 'uppercase' }}>ON LIVE MENU</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0284c7', marginTop: '2px' }}>
+              {menuCount}
+            </div>
+          </div>
+
+          <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '12px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.60rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase' }}>AVG MARGIN</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#059669', marginTop: '2px' }}>
               {avgMargin}%
             </div>
           </div>
 
-          <div style={{ background: '#f8fafc', padding: '10px 8px', borderRadius: '14px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.62rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>AVG COGS</div>
-            <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', fontFamily: 'var(--font-mono)', marginTop: '2px' }}>
+          <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '12px', border: '1px solid #f1f5f9', textAlign: 'center' }}>
+            <div style={{ fontSize: '0.60rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>AVG COGS</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>
               ₱{avgCogs.toFixed(0)}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Saved Menus Section Header & Create Action */}
+      {/* 2. R&D Lab Formulation Collections Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
         <div>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0, fontFamily: 'var(--font-display)' }}>
-            Saved Menus & Lineups ({savedMenus.length})
+          <h3 style={{ fontSize: '1.02rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🧪 Beverage R&D Lab & Formulations</span>
+            <span style={{ fontSize: '0.66rem', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
+              {savedMenus.length} Collections
+            </span>
           </h3>
-          <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0' }}>
-            Curate, organize, and export customized drink lineups for your café.
+          <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '2px 0 0 0' }}>
+            Manage recipe iterations, station SOP sheets & batch yields.
           </p>
         </div>
 
@@ -318,23 +321,51 @@ export function UserProfile({
             background: '#0f172a',
             border: 'none',
             color: '#ffffff',
-            padding: '8px 14px',
+            padding: '8px 12px',
             borderRadius: '12px',
-            fontSize: '0.76rem',
+            fontSize: '0.74rem',
             fontWeight: 800,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '4px',
             boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)'
           }}
         >
-          <Plus size={14} color="#fbbf24" />
-          <span>New Menu</span>
+          <Plus size={13} color="#fbbf24" />
+          <span>New Collection</span>
         </button>
       </div>
 
-      {/* Create New Menu Modal */}
+      {/* Filter Tabs */}
+      <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '3px', borderRadius: '10px' }}>
+        {[
+          { id: 'all', label: `All Formulations (${allDrinks.length})` },
+          { id: 'rnd', label: `🧪 In R&D (${rndCount})` },
+          { id: 'menu', label: `🚀 Active Menu (${menuCount})` }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              padding: '6px 4px',
+              borderRadius: '8px',
+              border: 'none',
+              background: activeTab === tab.id ? '#ffffff' : 'transparent',
+              color: activeTab === tab.id ? '#0f172a' : '#64748b',
+              fontSize: '0.70rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: activeTab === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none'
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Create New Collection Modal */}
       {isCreateMenuOpen && (
         <div className="clean-modal-overlay" onClick={() => setIsCreateMenuOpen(false)}>
           <div className="clean-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
@@ -345,10 +376,10 @@ export function UserProfile({
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Create New Menu Collection
+                    Create R&D Collection
                   </h3>
                   <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0 }}>
-                    Group drink recipes into a seasonal or branch-specific lineup.
+                    Group formulations for seasonal releases or testing.
                   </p>
                 </div>
               </div>
@@ -356,62 +387,48 @@ export function UserProfile({
 
             <form onSubmit={handleCreateMenu} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Menu Title
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                  Collection Title
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Summer 2026 Refreshers, Late Night Mocktails..."
+                  placeholder="e.g. Q4 Signature Cold Foams, Artisanal Matcha R&D..."
                   value={newMenuTitle}
                   onChange={(e) => setNewMenuTitle(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.84rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.82rem', boxSizing: 'border-box' }}
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Season / Schedule
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                  Category / Schedule
                 </label>
                 <select
                   value={newMenuSeason}
                   onChange={(e) => setNewMenuSeason(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.84rem', background: '#ffffff', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.82rem', background: '#ffffff', boxSizing: 'border-box' }}
                 >
                   <option value="Core / Year-Round">Core / Year-Round Menu</option>
+                  <option value="R&D Formulation">Active R&D Formulation</option>
                   <option value="Summer Season">Summer Season</option>
                   <option value="Holiday / Winter">Holiday / Christmas Lineup</option>
-                  <option value="Late Night Specials">Late Night Specials</option>
-                  <option value="Pop-up / Event">Pop-Up & Catering</option>
                 </select>
               </div>
 
-              <div>
-                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                  Description / Notes
-                </label>
-                <textarea
-                  placeholder="e.g. High-margin signatures optimized for fast rush bar workflow."
-                  value={newMenuDescription}
-                  onChange={(e) => setNewMenuDescription(e.target.value)}
-                  rows={2}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.80rem', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
                 <button
                   type="button"
                   onClick={() => setIsCreateMenuOpen(false)}
-                  style={{ background: '#f1f5f9', border: 'none', padding: '9px 14px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
+                  style={{ background: '#f1f5f9', border: 'none', padding: '8px 14px', borderRadius: '10px', fontSize: '0.76rem', fontWeight: 700, color: '#475569', cursor: 'pointer' }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ background: '#0f172a', border: 'none', padding: '9px 16px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', cursor: 'pointer' }}
+                  style={{ background: '#0f172a', border: 'none', padding: '8px 16px', borderRadius: '10px', fontSize: '0.76rem', fontWeight: 800, color: '#ffffff', cursor: 'pointer' }}
                 >
-                  Create Menu
+                  Create Collection
                 </button>
               </div>
             </form>
@@ -419,12 +436,19 @@ export function UserProfile({
         </div>
       )}
 
-      {/* 3. List of Saved Menus (Expandable Cards) */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      {/* 3. List of R&D Formulation Collections */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {savedMenus.map(menu => {
           const isExpanded = expandedMenuId === menu.id
+          
+          const filteredDrinks = menu.drinks.filter(d => {
+            if (activeTab === 'rnd') return d.status === 'rnd'
+            if (activeTab === 'menu') return d.status === 'menu' || !d.status
+            return true
+          })
+
           const menuCogs = menu.drinks.length > 0
-            ? menu.drinks.reduce((acc, d) => acc + (d.layers?.reduce((lAcc, l) => lAcc + (l.volumeMl * l.unitCostPerMl), 0) || 42), 0) / menu.drinks.length
+            ? menu.drinks.reduce((acc, d) => acc + (d.layers?.reduce((lAcc, l) => lAcc + (l.volumeMl * (l.unitCostPerMl || 0.25)), 0) || 42), 0) / menu.drinks.length
             : 40.00
           const menuPrice = menu.drinks.length > 0
             ? menu.drinks.reduce((acc, d) => acc + (d.menuPrice || 180), 0) / menu.drinks.length
@@ -438,96 +462,67 @@ export function UserProfile({
                 background: '#ffffff',
                 borderRadius: '20px',
                 border: isExpanded ? '2px solid #0f172a' : '1px solid #e2e8f0',
-                padding: '18px 20px',
+                padding: '16px 18px',
                 boxShadow: isExpanded ? '0 4px 16px rgba(15, 23, 42, 0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
                 transition: 'all 0.2s ease'
               }}
             >
-              {/* Menu Card Header */}
+              {/* Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ cursor: 'pointer', flex: 1 }} onClick={() => setExpandedMenuId(isExpanded ? null : menu.id)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    <h4 style={{ fontSize: '1.0rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
                       {menu.title}
                     </h4>
-                    <span style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.64rem', fontWeight: 800, padding: '2px 8px', borderRadius: '9999px' }}>
+                    <span style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.62rem', fontWeight: 800, padding: '2px 8px', borderRadius: '999px' }}>
                       {menu.season}
                     </span>
                   </div>
 
-                  <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '4px 0 0 0' }}>
-                    {menu.description} • <strong>{menu.drinks.length} Drinks</strong> • Updated {menu.updatedAt}
+                  <p style={{ fontSize: '0.72rem', color: '#64748b', margin: '3px 0 0 0' }}>
+                    {menu.description} • <strong>{menu.drinks.length} Formulations</strong> • Updated {menu.updatedAt}
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <button
-                    onClick={() => {
-                      alert(`Exported Master Menu PDF & Spec Sheet for "${menu.title}"!`)
-                    }}
-                    style={{
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      padding: '6px 10px',
-                      borderRadius: '8px',
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      color: '#0f172a',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                    title="Export Full Menu PDF"
-                  >
-                    <Download size={12} />
-                    <span>Export</span>
-                  </button>
-
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <button
                     onClick={() => handleDeleteMenu(menu.id)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#94a3b8',
-                      cursor: 'pointer',
-                      padding: '6px'
-                    }}
-                    title="Delete Menu"
+                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '6px' }}
+                    title="Delete Collection"
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
 
-              {/* Menu Economics Pill Summary */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '12px', background: '#f8fafc', padding: '8px 12px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
+              {/* Formulation Metrics Pill */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px', background: '#f8fafc', padding: '8px 12px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>AVG COGS</span>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-mono)' }}>
+                  <span style={{ fontSize: '0.60rem', color: '#94a3b8', fontWeight: 700 }}>AVG COGS</span>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a' }}>
                     ₱{menuCogs.toFixed(2)}
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: '0.62rem', color: '#94a3b8', fontWeight: 700 }}>AVG RETAIL</span>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-mono)' }}>
+                  <span style={{ fontSize: '0.60rem', color: '#94a3b8', fontWeight: 700 }}>AVG RETAIL</span>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a' }}>
                     ₱{menuPrice.toFixed(2)}
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontSize: '0.62rem', color: '#059669', fontWeight: 700 }}>WEIGHTED MARGIN</span>
-                  <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#059669', fontFamily: 'var(--font-mono)' }}>
+                  <span style={{ fontSize: '0.60rem', color: '#059669', fontWeight: 700 }}>GROSS MARGIN</span>
+                  <div style={{ fontSize: '0.84rem', fontWeight: 900, color: '#059669' }}>
                     {menuMargin}%
                   </div>
                 </div>
               </div>
 
-              {/* Expanded Menu Drinks List */}
+              {/* Expanded Recipes List */}
               {isExpanded && (
-                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Drinks in this Lineup ({menu.drinks.length})
+                <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.70rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Recipe Formulations ({filteredDrinks.length})
                     </span>
 
                     {currentRecipe && (
@@ -537,9 +532,9 @@ export function UserProfile({
                           background: '#f0fdf4',
                           border: '1px solid #bbf7d0',
                           color: '#059669',
-                          padding: '4px 10px',
+                          padding: '4px 8px',
                           borderRadius: '8px',
-                          fontSize: '0.72rem',
+                          fontSize: '0.68rem',
                           fontWeight: 800,
                           cursor: 'pointer',
                           display: 'flex',
@@ -547,21 +542,23 @@ export function UserProfile({
                           gap: '4px'
                         }}
                       >
-                        <Plus size={12} />
+                        <Plus size={11} />
                         <span>+ Add Current Studio Drink</span>
                       </button>
                     )}
                   </div>
 
-                  {menu.drinks.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '20px 0', color: '#94a3b8', fontSize: '0.78rem' }}>
-                      No drinks in this menu yet. Click "+ Add Current Studio Drink" or create recipes in Studio.
+                  {filteredDrinks.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '16px 0', color: '#94a3b8', fontSize: '0.74rem' }}>
+                      No recipes matching "{activeTab}" filter in this collection.
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {menu.drinks.map((drink, dIdx) => {
-                        const drinkCogs = drink.layers?.reduce((acc, l) => acc + (l.volumeMl * l.unitCostPerMl), 0) || 44.20
-                        const drinkMargin = ((( (drink.menuPrice || 180) - drinkCogs) / (drink.menuPrice || 180)) * 100).toFixed(0)
+                      {filteredDrinks.map((drink, dIdx) => {
+                        const drinkCogs = drink.layers?.reduce((acc, l) => acc + (l.volumeMl * (l.unitCostPerMl || 0.25)), 0) || 44.20
+                        const drinkPrice = drink.menuPrice || 180.00
+                        const drinkMargin = (((drinkPrice - drinkCogs) / drinkPrice) * 100).toFixed(0)
+                        const isMenu = drink.status === 'menu'
 
                         return (
                           <div
@@ -569,49 +566,59 @@ export function UserProfile({
                             style={{
                               background: '#f8fafc',
                               border: '1px solid #e2e8f0',
-                              borderRadius: '12px',
-                              padding: '10px 12px',
+                              borderRadius: '14px',
+                              padding: '12px',
                               display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '10px'
+                              flexDirection: 'column',
+                              gap: '8px'
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-                              <div
-                                style={{
-                                  width: '28px',
-                                  height: '28px',
-                                  borderRadius: '8px',
-                                  background: '#0f172a',
-                                  color: '#ffffff',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '0.72rem',
-                                  fontWeight: 800,
-                                  flexShrink: 0
-                                }}
-                              >
-                                #{dIdx + 1}
-                              </div>
-
-                              <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {drink.name}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>
+                                    {drink.name}
+                                  </span>
+                                  <span style={{ fontSize: '0.62rem', background: '#e2e8f0', color: '#334155', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                                    {drink.version || 'v1.0'}
+                                  </span>
+                                  <button
+                                    onClick={() => handleToggleDrinkStatus(menu.id, drink.id)}
+                                    style={{
+                                      border: 'none',
+                                      fontSize: '0.62rem',
+                                      fontWeight: 800,
+                                      padding: '2px 8px',
+                                      borderRadius: '999px',
+                                      cursor: 'pointer',
+                                      background: isMenu ? '#ecfdf5' : '#f1f5f9',
+                                      color: isMenu ? '#059669' : '#64748b'
+                                    }}
+                                  >
+                                    {isMenu ? '🚀 Live on Menu' : '🧪 In R&D'}
+                                  </button>
                                 </div>
-                                <div style={{ fontSize: '0.70rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
+
+                                <div style={{ fontSize: '0.68rem', color: '#64748b', display: 'flex', gap: '6px', marginTop: '2px' }}>
                                   <span>COGS: ₱{drinkCogs.toFixed(2)}</span>
                                   <span>•</span>
-                                  <span>Retail: ₱{(drink.menuPrice || 180).toFixed(2)}</span>
+                                  <span>Retail: ₱{drinkPrice.toFixed(2)}</span>
                                   <span>•</span>
                                   <strong style={{ color: '#059669' }}>{drinkMargin}% GM</strong>
-                                  <span style={{ color: '#2563eb', fontWeight: 600 }}>📋 {(drink.sopSteps?.length || 4)} SOP Steps</span>
                                 </div>
                               </div>
+
+                              <button
+                                onClick={() => handleRemoveDrinkFromMenu(menu.id, drink.id)}
+                                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+                                title="Remove"
+                              >
+                                <Trash2 size={13} />
+                              </button>
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {/* 4 Action Buttons for this specific Recipe */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', paddingTop: '6px', borderTop: '1px solid #e2e8f0' }}>
                               <button
                                 onClick={() => {
                                   onLoadRecipeIntoStudio(drink)
@@ -619,34 +626,92 @@ export function UserProfile({
                                 }}
                                 style={{
                                   background: '#0f172a',
-                                  border: 'none',
                                   color: '#ffffff',
-                                  padding: '5px 10px',
+                                  border: 'none',
+                                  padding: '5px 4px',
                                   borderRadius: '8px',
-                                  fontSize: '0.70rem',
+                                  fontSize: '0.66rem',
                                   fontWeight: 800,
                                   cursor: 'pointer',
                                   display: 'flex',
                                   alignItems: 'center',
-                                  gap: '4px'
+                                  justifyContent: 'center',
+                                  gap: '2px'
                                 }}
                               >
-                                <span>Load in Studio</span>
-                                <ArrowRight size={11} />
+                                <span>Edit Studio</span>
                               </button>
 
                               <button
-                                onClick={() => handleRemoveDrinkFromMenu(menu.id, drink.id)}
-                                style={{
-                                  background: 'transparent',
-                                  border: 'none',
-                                  color: '#94a3b8',
-                                  cursor: 'pointer',
-                                  padding: '4px'
+                                onClick={() => {
+                                  setActiveDrinkForModal(drink)
+                                  setIsPhotoStudioOpen(true)
                                 }}
-                                title="Remove from Menu"
+                                style={{
+                                  background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  padding: '5px 4px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '2px'
+                                }}
                               >
-                                <Trash2 size={13} />
+                                <Camera size={11} />
+                                <span>Photo 8K</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setActiveDrinkForModal(drink)
+                                  setIsSopModalOpen(true)
+                                }}
+                                style={{
+                                  background: '#f0f9ff',
+                                  border: '1px solid #bae6fd',
+                                  color: '#0369a1',
+                                  padding: '5px 4px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <FileText size={11} />
+                                <span>SOP Card</span>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setActiveDrinkForModal(drink)
+                                  setIsYieldModalOpen(true)
+                                }}
+                                style={{
+                                  background: '#f0fdf4',
+                                  border: '1px solid #bbf7d0',
+                                  color: '#15803d',
+                                  padding: '5px 4px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.66rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <Scale size={11} />
+                                <span>Prep Yield</span>
                               </button>
                             </div>
                           </div>
@@ -660,6 +725,32 @@ export function UserProfile({
           )
         })}
       </div>
+
+      {/* Embedded Modals for R&D Actions */}
+      {activeDrinkForModal && (
+        <>
+          <BeveragePhotoStudioModal
+            isOpen={isPhotoStudioOpen}
+            onClose={() => setIsPhotoStudioOpen(false)}
+            recipe={activeDrinkForModal}
+            metrics={{ layersDetailed: activeDrinkForModal.layers }}
+          />
+
+          <BaristaSOPModal
+            isOpen={isSopModalOpen}
+            onClose={() => setIsSopModalOpen(false)}
+            recipe={activeDrinkForModal}
+            metrics={{ layersDetailed: activeDrinkForModal.layers }}
+          />
+
+          <BatchYieldCalculatorModal
+            isOpen={isYieldModalOpen}
+            onClose={() => setIsYieldModalOpen(false)}
+            recipe={activeDrinkForModal}
+            metrics={{ layersDetailed: activeDrinkForModal.layers }}
+          />
+        </>
+      )}
 
     </div>
   )

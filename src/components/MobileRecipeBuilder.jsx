@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X, Camera, RefreshCw, BookOpen, Lightbulb, Trash2, Edit3, Wrench, Flame, Star, MessageSquare } from 'lucide-react'
+import { Plus, Minus, GripVertical, Package, Sparkles, Sliders, ChevronDown, ChevronUp, Link2, Search, FolderPlus, BookmarkCheck, Check, X, Camera, RefreshCw, BookOpen, Lightbulb, Trash2, Edit3, Wrench, Flame, Star, MessageSquare, FileText, Scale } from 'lucide-react'
 import { VESSELS } from '../types/physics'
 import { PACKAGING_ITEMS } from '../data/defaultCatalog'
 import { calculateSubRecipeMetrics } from '../data/defaultSubRecipes'
@@ -11,6 +11,8 @@ import { BenchmarkRecipesCarousel } from './BenchmarkRecipesCarousel'
 import { CommunityReviewsSection } from './CommunityReviewsSection'
 import { TrendingCommunityHubModal } from './TrendingCommunityHubModal'
 import { SensoryFlavorRadar } from './SensoryFlavorRadar'
+import { BaristaSOPModal } from './BaristaSOPModal'
+import { BatchYieldCalculatorModal } from './BatchYieldCalculatorModal'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -37,6 +39,10 @@ export function MobileRecipeBuilder({
   const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false)
   const [isTrendingHubOpen, setIsTrendingHubOpen] = useState(false)
   const [isSaveMenuModalOpen, setIsSaveMenuModalOpen] = useState(false)
+  const [isSopModalOpen, setIsSopModalOpen] = useState(false)
+  const [isYieldModalOpen, setIsYieldModalOpen] = useState(false)
+  const [recipeVersionTag, setRecipeVersionTag] = useState(recipe.version || 'v1.0')
+  const [recipeStatus, setRecipeStatus] = useState(recipe.status || 'rnd') // 'rnd' | 'menu'
   const [selectedTargetMenuId, setSelectedTargetMenuId] = useState(savedMenus[0]?.id || 'new')
   const [newMenuTitleInput, setNewMenuTitleInput] = useState('')
   const [saveSuccessMessage, setSaveSuccessMessage] = useState('')
@@ -255,53 +261,27 @@ export function MobileRecipeBuilder({
         </div>
 
         {/* Action Button Strip */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
           <button
             onClick={() => setIsDiscoveryOpen(true)}
             style={{
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               color: '#0f172a',
-              padding: '8px 4px',
-              borderRadius: '12px',
-              fontSize: '0.70rem',
-              fontWeight: 700,
+              padding: '7px 2px',
+              borderRadius: '10px',
+              fontSize: '0.68rem',
+              fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '3px',
-              minHeight: '38px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
-              transition: 'all 0.15s ease'
+              minHeight: '36px'
             }}
           >
             <Search size={12} color="#2563eb" />
             <span>Discover</span>
-          </button>
-
-          <button
-            onClick={() => setIsAiGenOpen(true)}
-            style={{
-              background: 'linear-gradient(135deg, #0f172a, #334155)',
-              border: 'none',
-              color: '#ffffff',
-              padding: '8px 4px',
-              borderRadius: '12px',
-              fontSize: '0.70rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3px',
-              minHeight: '38px',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <Sparkles size={12} color="#fbbf24" />
-            <span>AI Gen</span>
           </button>
 
           <button
@@ -310,18 +290,17 @@ export function MobileRecipeBuilder({
               background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
               border: 'none',
               color: '#ffffff',
-              padding: '8px 4px',
-              borderRadius: '12px',
-              fontSize: '0.70rem',
+              padding: '7px 2px',
+              borderRadius: '10px',
+              fontSize: '0.68rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '3px',
-              minHeight: '38px',
-              boxShadow: '0 2px 6px rgba(236, 72, 153, 0.25)',
-              transition: 'all 0.15s ease'
+              minHeight: '36px',
+              boxShadow: '0 2px 6px rgba(236, 72, 153, 0.25)'
             }}
           >
             <Camera size={12} color="#ffffff" />
@@ -329,68 +308,89 @@ export function MobileRecipeBuilder({
           </button>
 
           <button
-            onClick={onLoadPreset}
+            onClick={() => setIsSopModalOpen(true)}
             style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              color: '#334155',
-              padding: '8px 4px',
-              borderRadius: '12px',
-              fontSize: '0.70rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3px',
-              minHeight: '38px',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <span>Presets</span>
-          </button>
-
-          <button
-            onClick={() => setIsSaveMenuModalOpen(true)}
-            style={{
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              color: '#047857',
-              padding: '8px 4px',
-              borderRadius: '12px',
-              fontSize: '0.70rem',
+              background: '#f0f9ff',
+              border: '1px solid #bae6fd',
+              color: '#0369a1',
+              padding: '7px 2px',
+              borderRadius: '10px',
+              fontSize: '0.68rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '3px',
-              minHeight: '38px',
-              boxShadow: '0 1px 3px rgba(5, 150, 105, 0.12)',
-              transition: 'all 0.15s ease'
+              minHeight: '36px'
             }}
           >
-            <FolderPlus size={12} color="#059669" />
-            <span>+ Menu</span>
+            <FileText size={12} color="#0284c7" />
+            <span>SOP</span>
+          </button>
+
+          <button
+            onClick={() => setIsYieldModalOpen(true)}
+            style={{
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              color: '#15803d',
+              padding: '7px 2px',
+              borderRadius: '10px',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px',
+              minHeight: '36px'
+            }}
+          >
+            <Scale size={12} color="#16a34a" />
+            <span>Yield</span>
+          </button>
+
+          <button
+            onClick={() => setIsSaveMenuModalOpen(true)}
+            style={{
+              background: '#0f172a',
+              border: 'none',
+              color: '#ffffff',
+              padding: '7px 2px',
+              borderRadius: '10px',
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px',
+              minHeight: '36px',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)'
+            }}
+          >
+            <FolderPlus size={12} color="#fbbf24" />
+            <span>Save R&D</span>
           </button>
         </div>
       </div>
 
-      {/* Save Recipe to Menu Modal */}
+      {/* Save Recipe / R&D Formulation Modal */}
       {isSaveMenuModalOpen && (
         <div className="clean-modal-overlay" onClick={() => setIsSaveMenuModalOpen(false)}>
           <div className="clean-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
-                  <FolderPlus size={16} />
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fbbf24' }}>
+                  <BookmarkCheck size={16} />
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    Save Recipe to Menu
+                    Save Recipe to R&D Lab
                   </h3>
                   <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0 }}>
-                    Add "{recipe.name}" to your shop lineups.
+                    Save formulation checkpoints, version trials & menu status.
                   </p>
                 </div>
               </div>
@@ -412,6 +412,13 @@ export function MobileRecipeBuilder({
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
+                  const recipeToSave = {
+                    ...recipe,
+                    version: recipeVersionTag,
+                    status: recipeStatus,
+                    savedAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  }
+
                   if (selectedTargetMenuId === 'new') {
                     if (!newMenuTitleInput.trim()) return
                     const newMenu = {
@@ -420,14 +427,14 @@ export function MobileRecipeBuilder({
                       description: 'Custom curated drink lineup.',
                       season: 'Core / Year-Round',
                       updatedAt: 'Just now',
-                      drinks: [recipe]
+                      drinks: [recipeToSave]
                     }
                     onSaveToMenu(newMenu, true)
-                    setSaveSuccessMessage(`✓ Created "${newMenu.title}" & added "${recipe.name}"!`)
+                    setSaveSuccessMessage(`✓ Created "${newMenu.title}" & saved "${recipe.name} (${recipeVersionTag})"!`)
                   } else {
                     const targetMenu = savedMenus.find(m => m.id === selectedTargetMenuId)
-                    onSaveToMenu(recipe, false, selectedTargetMenuId)
-                    setSaveSuccessMessage(`✓ Saved to "${targetMenu?.title || 'Menu'}"!`)
+                    onSaveToMenu(recipeToSave, false, selectedTargetMenuId)
+                    setSaveSuccessMessage(`✓ Saved "${recipe.name} (${recipeVersionTag})" to "${targetMenu?.title || 'R&D Lab'}"!`)
                   }
 
                   setTimeout(() => {
@@ -438,9 +445,76 @@ export function MobileRecipeBuilder({
                 }}
                 style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
               >
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '8px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Recipe Name
+                    </label>
+                    <input
+                      type="text"
+                      value={recipe.name}
+                      onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
+                      style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.80rem', fontWeight: 700, boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                      Version Tag
+                    </label>
+                    <input
+                      type="text"
+                      value={recipeVersionTag}
+                      onChange={(e) => setRecipeVersionTag(e.target.value)}
+                      placeholder="e.g. v1.0, v1.1 Oat"
+                      style={{ width: '100%', padding: '9px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.80rem', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
+                    Formulation Status
+                  </label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setRecipeStatus('rnd')}
+                      style={{
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: `1.5px solid ${recipeStatus === 'rnd' ? '#0f172a' : '#cbd5e1'}`,
+                        background: recipeStatus === 'rnd' ? '#f1f5f9' : '#ffffff',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        color: recipeStatus === 'rnd' ? '#0f172a' : '#64748b',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🧪 Active R&D Trial
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecipeStatus('menu')}
+                      style={{
+                        padding: '8px',
+                        borderRadius: '8px',
+                        border: `1.5px solid ${recipeStatus === 'menu' ? '#059669' : '#cbd5e1'}`,
+                        background: recipeStatus === 'menu' ? '#ecfdf5' : '#ffffff',
+                        fontSize: '0.74rem',
+                        fontWeight: 800,
+                        color: recipeStatus === 'menu' ? '#059669' : '#64748b',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🚀 Live Bar Menu
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
-                    Select Target Menu Collection
+                    Target Menu / Collection Lineup
                   </label>
                   <select
                     value={selectedTargetMenuId}
@@ -459,11 +533,11 @@ export function MobileRecipeBuilder({
                 {selectedTargetMenuId === 'new' && (
                   <div>
                     <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '4px' }}>
-                      New Menu Name
+                      New Menu Title
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. Signature Cold Drinks, Weekend Brunch..."
+                      placeholder="e.g. Q4 Signature Launch, Cold Foam Series..."
                       value={newMenuTitleInput}
                       onChange={(e) => setNewMenuTitleInput(e.target.value)}
                       required
@@ -471,16 +545,6 @@ export function MobileRecipeBuilder({
                     />
                   </div>
                 )}
-
-                <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '0.74rem', color: '#64748b', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div>
-                    <strong>Drink Spec Summary:</strong> {recipe.name} • ₱{(recipe.menuPrice || 180).toFixed(2)} retail • {recipe.layers?.length || 3} layers
-                  </div>
-                  <div style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Check size={12} color="#059669" />
-                    <span>Includes {(recipe.sopSteps?.length || 4)} Preparation Steps, Barista Pro Tips & SOP</span>
-                  </div>
-                </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '6px' }}>
                   <button
@@ -492,9 +556,9 @@ export function MobileRecipeBuilder({
                   </button>
                   <button
                     type="submit"
-                    style={{ background: '#059669', border: 'none', padding: '9px 16px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', cursor: 'pointer' }}
+                    style={{ background: '#0f172a', border: 'none', padding: '9px 16px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 800, color: '#ffffff', cursor: 'pointer' }}
                   >
-                    Confirm & Save
+                    Save Formulation
                   </button>
                 </div>
               </form>
@@ -502,6 +566,7 @@ export function MobileRecipeBuilder({
           </div>
         </div>
       )}
+
 
       {/* 2. Cup & Size Selector */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
@@ -1268,6 +1333,20 @@ export function MobileRecipeBuilder({
       <BeveragePhotoStudioModal
         isOpen={isPhotoStudioOpen}
         onClose={() => setIsPhotoStudioOpen(false)}
+        recipe={recipe}
+        metrics={{ layersDetailed: recipe.layers }}
+      />
+
+      <BaristaSOPModal
+        isOpen={isSopModalOpen}
+        onClose={() => setIsSopModalOpen(false)}
+        recipe={recipe}
+        metrics={{ layersDetailed: recipe.layers }}
+      />
+
+      <BatchYieldCalculatorModal
+        isOpen={isYieldModalOpen}
+        onClose={() => setIsYieldModalOpen(false)}
         recipe={recipe}
         metrics={{ layersDetailed: recipe.layers }}
       />
