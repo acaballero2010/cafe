@@ -13,6 +13,7 @@ import { TrendingCommunityHubModal } from './TrendingCommunityHubModal'
 import { SensoryFlavorRadar } from './SensoryFlavorRadar'
 import { BaristaSOPModal } from './BaristaSOPModal'
 import { BatchYieldCalculatorModal } from './BatchYieldCalculatorModal'
+import { DrinkRepositoryModal } from './DrinkRepositoryModal'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -36,6 +37,7 @@ export function MobileRecipeBuilder({
   const [pickerTargetPortion, setPickerTargetPortion] = useState(200)
   const [isAiGenOpen, setIsAiGenOpen] = useState(false)
   const [isDiscoveryOpen, setIsDiscoveryOpen] = useState(false)
+  const [isRepositoryModalOpen, setIsRepositoryModalOpen] = useState(false)
   const [isPhotoStudioOpen, setIsPhotoStudioOpen] = useState(false)
   const [isTrendingHubOpen, setIsTrendingHubOpen] = useState(false)
   const [isSaveMenuModalOpen, setIsSaveMenuModalOpen] = useState(false)
@@ -263,7 +265,7 @@ export function MobileRecipeBuilder({
         {/* Action Button Strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
           <button
-            onClick={() => setIsDiscoveryOpen(true)}
+            onClick={() => setIsRepositoryModalOpen(true)}
             style={{
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
@@ -280,8 +282,8 @@ export function MobileRecipeBuilder({
               minHeight: '36px'
             }}
           >
-            <Search size={12} color="#2563eb" />
-            <span>Discover</span>
+            <BookOpen size={12} color="#2563eb" />
+            <span>Repo</span>
           </button>
 
           <button
@@ -1360,6 +1362,16 @@ export function MobileRecipeBuilder({
         onLoadRecipeIntoStudio={(recipeToLoad) => {
           onUpdateRecipe(recipeToLoad)
           setIsTrendingHubOpen(false)
+        }}
+        onSaveRecipeToMenu={onSaveToMenu}
+      />
+
+      <DrinkRepositoryModal
+        isOpen={isRepositoryModalOpen}
+        onClose={() => setIsRepositoryModalOpen(false)}
+        onLoadRecipeIntoStudio={(recipeToLoad) => {
+          onUpdateRecipe(recipeToLoad)
+          setIsRepositoryModalOpen(false)
         }}
         onSaveRecipeToMenu={onSaveToMenu}
       />

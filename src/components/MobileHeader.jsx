@@ -13,7 +13,8 @@ export function MobileHeader({
   onCreateBatch,
   onOpenSop,
   onOpenOcr,
-  onOpenTrending = () => {}
+  onOpenTrending = () => {},
+  onOpenRepository = () => {}
 }) {
   const categories = [
     { id: 'coffee', label: 'Coffee' },
@@ -225,15 +226,15 @@ export function MobileHeader({
           })}
 
           <button
-            onClick={onOpenTrending}
+            onClick={onOpenRepository}
             style={{
               flexShrink: 0,
-              padding: '6px 14px',
+              padding: '6px 12px',
               borderRadius: '9999px',
-              border: '1px solid #fde68a',
-              background: '#fffbeb',
-              color: '#d97706',
-              fontSize: '0.78rem',
+              border: '1px solid #bfdbfe',
+              background: '#eff6ff',
+              color: '#1d4ed8',
+              fontSize: '0.76rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
@@ -242,7 +243,27 @@ export function MobileHeader({
               marginLeft: 'auto'
             }}
           >
-            <span>🔥 Trending Hub</span>
+            <span>📚 Recipe Repo</span>
+          </button>
+
+          <button
+            onClick={onOpenTrending}
+            style={{
+              flexShrink: 0,
+              padding: '6px 12px',
+              borderRadius: '9999px',
+              border: '1px solid #fde68a',
+              background: '#fffbeb',
+              color: '#d97706',
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <span>🔥 Trending</span>
           </button>
         </div>
       )}

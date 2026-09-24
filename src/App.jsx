@@ -12,6 +12,7 @@ import { BaristaCardModal } from './components/BaristaCardModal'
 import { InvoiceOcrModal } from './components/InvoiceOcrModal'
 import { SupplierPriceAlertCard } from './components/SupplierPriceAlertCard'
 import { TrendingCommunityHubModal } from './components/TrendingCommunityHubModal'
+import { DrinkRepositoryModal } from './components/DrinkRepositoryModal'
 import { DEFAULT_CATALOG, PACKAGING_ITEMS } from './data/defaultCatalog'
 import { DEFAULT_SUB_RECIPES } from './data/defaultSubRecipes'
 import { PRESET_RECIPES } from './data/presetRecipes'
@@ -30,6 +31,7 @@ export function App() {
   const [includeScrap, setIncludeScrap] = useState(true)
   const [trendingRecipes, setTrendingRecipes] = useState(INITIAL_TRENDING_RECIPES)
   const [isTrendingModalOpen, setIsTrendingModalOpen] = useState(false)
+  const [isRepositoryOpen, setIsRepositoryOpen] = useState(false)
 
   // Saved Menus State
   const [savedMenus, setSavedMenus] = useState([
@@ -191,6 +193,7 @@ export function App() {
         onOpenSop={() => setIsBaristaCardOpen(true)}
         onOpenOcr={() => setIsOcrOpen(true)}
         onOpenTrending={() => setIsTrendingModalOpen(true)}
+        onOpenRepository={() => setIsRepositoryOpen(true)}
       />
 
       {/* 2. Main Scrollable Container with 160px Bottom Scroll Clearance */}
@@ -457,6 +460,17 @@ export function App() {
         trendingRecipes={trendingRecipes}
         onUpdateTrendingRecipes={setTrendingRecipes}
         currentRecipe={currentRecipe}
+        onLoadRecipeIntoStudio={(recipeToLoad) => {
+          setCurrentRecipe(recipeToLoad)
+          setActiveTab('studio')
+          setIsSpecSheetMode(false)
+        }}
+        onSaveRecipeToMenu={handleSaveToMenu}
+      />
+
+      <DrinkRepositoryModal
+        isOpen={isRepositoryOpen}
+        onClose={() => setIsRepositoryOpen(false)}
         onLoadRecipeIntoStudio={(recipeToLoad) => {
           setCurrentRecipe(recipeToLoad)
           setActiveTab('studio')
