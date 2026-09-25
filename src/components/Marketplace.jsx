@@ -22,9 +22,19 @@ import {
   ArrowRight, 
   CheckCircle2, 
   FileText,
-  ExternalLink
+  ExternalLink,
+  Store,
+  Package,
+  Send,
+  Zap
 } from 'lucide-react'
 import { IngredientAffiliateSourcingModal } from './IngredientAffiliateSourcingModal'
+import { VerifiedSuppliersDirectory } from './VerifiedSuppliersDirectory'
+import { MarketplaceOrdersTracking } from './MarketplaceOrdersTracking'
+import { ViberWhatsappPoModal } from './ViberWhatsappPoModal'
+import { INGREDIENT_STORE_OFFERS, generateAffiliateLink } from '../data/affiliateStoresData'
+import { MASTER_SUPPLIERS } from '../data/suppliersData'
+import { triggerHaptic } from '../utils/haptics'
 
 export function Marketplace({
   catalog = [],
@@ -38,9 +48,15 @@ export function Marketplace({
   cartItems = [],
   setCartItems
 }) {
+  // Top sub-navigation tab
+  const [marketplaceSubTab, setMarketplaceSubTab] = useState('catalog') // 'catalog' | 'pools' | 'suppliers' | 'orders'
+
+  // Search, filter, and sorting
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   const [sortBy, setSortBy] = useState('featured') // 'featured' | 'price-asc' | 'rating'
+  
+  // Modals & Active selections
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [affiliateModalProduct, setAffiliateModalProduct] = useState(null)
   const [selectedPool, setSelectedPool] = useState(null)
@@ -49,10 +65,13 @@ export function Marketplace({
   const [filterNet30Only, setFilterNet30Only] = useState(false)
   const [filterSameDayOnly, setFilterSameDayOnly] = useState(false)
 
-  // PO & Checkout states
+  // PO & Messenger Modals
   const [selectedPaymentTerms, setSelectedPaymentTerms] = useState('net30') // 'net30' | 'net15' | 'gcash' | 'cod'
   const [confirmedPo, setConfirmedPo] = useState(null)
   const [autoSyncInventory, setAutoSyncInventory] = useState(true)
+  const [isMessengerModalOpen, setIsMessengerModalOpen] = useState(false)
+  const [activeMessengerPo, setActiveMessengerPo] = useState(null)
+  const [syncToastMessage, setSyncToastMessage] = useState(null)
 
   // Pledge form state
   const [pledgeQuantity, setPledgeQuantity] = useState(2)
@@ -178,6 +197,7 @@ export function Marketplace({
       icon: '🥛',
       imgBg: '#fef3c7',
       net30: true,
+      packSize: '6 x 1L',
       description: 'The global standard barista oat milk. Foams perfectly with dense micro-foam, neutral sweetness that highlights espresso notes.',
       tierDiscounts: [
         { qty: '1-4 Cases', price: '₱1,260.00' },
@@ -200,6 +220,7 @@ export function Marketplace({
       icon: '🧋',
       imgBg: '#fee2e2',
       net30: true,
+      packSize: '6 x 3kg',
       description: 'Quick-cook black tapioca boba pearls with 4-hour soft chew window. Formulated specifically for Muscovado brown sugar marbling.',
       tierDiscounts: [
         { qty: '1-3 Cases', price: '₱2,400.00' },
@@ -221,6 +242,7 @@ export function Marketplace({
       icon: '🥢',
       imgBg: '#ecfdf5',
       net30: true,
+      packSize: '2,000 pcs Box',
       description: '100% plant-based bamboo fiber boba straws. Does not get soggy in iced drinks for over 6 hours; fully biodegradable.',
       tierDiscounts: [
         { qty: '1-2 Boxes', price: '₱3,000.00' },
@@ -242,6 +264,7 @@ export function Marketplace({
       icon: '☕',
       imgBg: '#ffedd5',
       net30: false,
+      packSize: '5kg GrainPro Sack',
       description: 'Single-origin washed Arabica from Atok, Benguet (1,500 MASL). Tasting notes: Brown sugar, orange peel, milk chocolate finish.',
       tierDiscounts: [
         { qty: '1-2 Sacks', price: '₱4,500.00' },
@@ -263,6 +286,7 @@ export function Marketplace({
       icon: '🍸',
       imgBg: '#ede9fe',
       net30: true,
+      packSize: '750ml Glass Bottle',
       description: 'Handcrafted Espadín mezcal twice distilled in wood-fired copper stills. Smoky agave, tropical fruit, and ginger aromatics.',
       tierDiscounts: [
         { qty: '1-5 Bottles', price: '₱2,850.00' },
@@ -284,6 +308,7 @@ export function Marketplace({
       icon: '🍯',
       imgBg: '#fdf4ff',
       net30: true,
+      packSize: '5L Heavy Jug',
       description: 'Natural unrefined Muscovado syrup boiled from fresh sugarcane juice. Deep molasses notes perfect for tiger boba and shaken espresso.',
       tierDiscounts: [
         { qty: '1-3 Jugs', price: '₱1,650.00' },
@@ -294,6 +319,7 @@ export function Marketplace({
 
   // Cart Management
   const handleAddToCart = (item) => {
+    triggerHaptic('tap')
     setCartItems(prev => {
       const existing = prev.find(i => i.id === item.id)
       if (existing) {
@@ -304,6 +330,7 @@ export function Marketplace({
   }
 
   const handleUpdateCartQty = (id, delta) => {
+    triggerHaptic('tap')
     setCartItems(prev => {
       return prev
         .map(i => {
@@ -318,35 +345,69 @@ export function Marketplace({
   }
 
   const handleRemoveFromCart = (id) => {
+    triggerHaptic('tap')
     setCartItems(prev => prev.filter(i => i.id !== id))
   }
 
   const cartTotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0)
 
+  // Handle 1-Tap Sync to Studio
+  const handleSyncPriceToStudio = (item) => {
+    triggerHaptic('success')
+    if (onUpdateCatalogPrice && item.skuId) {
+      const divisor = item.skuId.includes('oatly') ? 6000 : item.skuId.includes('tapioca') ? 18000 : item.skuId.includes('syrup') ? 5000 : item.skuId.includes('espresso') ? 5000 : 1000
+      const newUnitCost = Number((item.price / divisor).toFixed(4))
+      onUpdateCatalogPrice([{
+        skuId: item.skuId,
+        newPrice: item.price,
+        newUnitCost: newUnitCost
+      }])
+      setSyncToastMessage(`⚡ Synced ${item.name} (₱${newUnitCost}/ml) to Studio!`)
+      setTimeout(() => setSyncToastMessage(null), 3500)
+    }
+  }
+
   // Handle Checkout / PO Creation
   const handlePlaceOrder = () => {
+    triggerHaptic('success')
     const poNum = `PO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
-    setConfirmedPo({
+    const newPo = {
+      id: poNum.toLowerCase(),
       poNumber: poNum,
+      supplier: cartItems[0]?.supplier || 'Gourmet Direct PH (Wholesale)',
       items: [...cartItems],
       total: cartTotal,
       terms: selectedPaymentTerms === 'net30' ? 'Net-30 Commercial Invoice' : selectedPaymentTerms === 'net15' ? 'Net-15 Invoice' : 'Instant Settlement',
       deliveryDate: 'Tomorrow, 10:00 AM - 2:00 PM',
-      region: activeRegion
-    })
+      region: activeRegion,
+      orderDate: 'Just now'
+    }
+    setConfirmedPo(newPo)
 
     // If autoSync is enabled, sync the prices back into catalog
     if (autoSyncInventory && onUpdateCatalogPrice) {
-      cartItems.forEach(item => {
-        if (item.skuId) {
-          // calculate new unit cost
-          const newUnitCost = item.price / (item.skuId.includes('oatly') ? 6000 : item.skuId.includes('tapioca') ? 18000 : 1000)
-          onUpdateCatalogPrice([{ skuId: item.skuId, newUnitCost, newPrice: item.price }])
-        }
-      })
+      const updates = cartItems
+        .filter(item => item.skuId)
+        .map(item => {
+          const divisor = item.skuId.includes('oatly') ? 6000 : item.skuId.includes('tapioca') ? 18000 : 1000
+          return {
+            skuId: item.skuId,
+            newUnitCost: Number((item.price / divisor).toFixed(4)),
+            newPrice: item.price
+          }
+        })
+      if (updates.length > 0) {
+        onUpdateCatalogPrice(updates)
+      }
     }
 
     setCartItems([])
+  }
+
+  // Open Messenger PO Modal directly
+  const handleOpenMessengerPo = (po) => {
+    setActiveMessengerPo(po)
+    setIsMessengerModalOpen(true)
   }
 
   // Filter and Sort direct products
@@ -365,407 +426,655 @@ export function Marketplace({
     })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%', margin: '0 auto', paddingBottom: '120px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', margin: '0 auto', paddingBottom: '120px' }}>
       
-      {/* 1. Search Bar & Filter Trigger */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+      {/* Sync Toast Banner */}
+      {syncToastMessage && (
         <div
           style={{
-            flex: 1,
+            background: 'linear-gradient(135deg, #0f172a, #1e293b)',
+            color: '#38bdf8',
+            padding: '10px 16px',
+            borderRadius: '14px',
+            fontSize: '0.78rem',
+            fontWeight: 800,
             display: 'flex',
             alignItems: 'center',
-            background: '#ffffff',
-            border: '1px solid #e2e8f0',
-            borderRadius: '16px',
-            padding: '10px 14px',
-            gap: '8px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            animation: 'fadeIn 0.2s ease-out'
           }}
         >
-          <Search size={16} color="#94a3b8" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search beans, syrups, cups, boba..."
-            style={{
-              width: '100%',
-              border: 'none',
-              outline: 'none',
-              fontSize: '0.84rem',
-              color: '#0f172a',
-              background: 'transparent',
-              fontWeight: 500
-            }}
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
-              <X size={14} />
-            </button>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Zap size={15} color="#38bdf8" />
+            <span>{syncToastMessage}</span>
+          </div>
+          <button
+            onClick={() => setSyncToastMessage(null)}
+            style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 0 }}
+          >
+            <X size={14} />
+          </button>
         </div>
+      )}
 
-        <button
-          onClick={() => setShowFiltersModal(true)}
-          style={{
-            height: '44px',
-            padding: '0 14px',
-            borderRadius: '16px',
-            border: (filterNet30Only || filterSameDayOnly) ? '1.5px solid #d97706' : '1px solid #e2e8f0',
-            background: (filterNet30Only || filterSameDayOnly) ? '#fffbeb' : '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            color: (filterNet30Only || filterSameDayOnly) ? '#b45309' : '#334155',
-            cursor: 'pointer',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
-          }}
-        >
-          <SlidersHorizontal size={15} color={(filterNet30Only || filterSameDayOnly) ? '#b45309' : '#475569'} />
-          <span>Filters</span>
-          {(filterNet30Only || filterSameDayOnly) && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#d97706' }} />}
-        </button>
-      </div>
-
-      {/* Horizontal Category Pills */}
+      {/* TOP SUB-NAVIGATION BAR (4 Dedicated B2B Tabs) */}
       <div
         style={{
-          display: 'flex',
-          gap: '8px',
-          overflowX: 'auto',
-          paddingBottom: '2px',
-          scrollbarWidth: 'none'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          background: '#f1f5f9',
+          padding: '4px',
+          borderRadius: '16px',
+          gap: '4px'
         }}
       >
-        {categories.map(cat => {
-          const isActive = activeCategory === cat.id
+        {[
+          { id: 'catalog', label: 'Catalog', icon: '🛍️', badge: null },
+          { id: 'pools', label: 'Co-Op Pools', icon: '👥', badge: '4' },
+          { id: 'suppliers', label: 'Suppliers', icon: '🏬', badge: '6' },
+          { id: 'orders', label: 'Orders', icon: '📦', badge: '1 Live' }
+        ].map(tab => {
+          const isActive = marketplaceSubTab === tab.id
           return (
             <button
-              key={cat.id}
-              onClick={() => setActiveCategory(cat.id)}
+              key={tab.id}
+              onClick={() => {
+                triggerHaptic('tap')
+                setMarketplaceSubTab(tab.id)
+              }}
               style={{
-                flexShrink: 0,
-                padding: '7px 14px',
-                borderRadius: '9999px',
-                border: isActive ? '1.5px solid #0f172a' : '1px solid #e2e8f0',
-                background: isActive ? '#0f172a' : '#ffffff',
-                color: isActive ? '#ffffff' : '#475569',
-                fontSize: '0.78rem',
-                fontWeight: isActive ? 700 : 600,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '8px 4px',
+                borderRadius: '12px',
+                border: 'none',
+                background: isActive ? '#ffffff' : 'transparent',
+                color: isActive ? '#0f172a' : '#64748b',
+                fontWeight: isActive ? 800 : 600,
+                fontSize: '0.72rem',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                transition: 'all 0.15s ease',
+                position: 'relative'
               }}
             >
-              {cat.label}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ fontSize: '0.92rem' }}>{tab.icon}</span>
+                <span>{tab.label}</span>
+              </div>
+              {tab.badge && (
+                <span
+                  style={{
+                    marginTop: '2px',
+                    fontSize: '0.58rem',
+                    fontWeight: 800,
+                    padding: '1px 5px',
+                    borderRadius: '9999px',
+                    background: isActive ? '#0f172a' : '#e2e8f0',
+                    color: isActive ? '#38bdf8' : '#475569'
+                  }}
+                >
+                  {tab.badge}
+                </span>
+              )}
             </button>
           )
         })}
       </div>
 
-      {/* 2. Group Buying Section ("Active Group Pools") */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+      {/* ========================================================= */}
+      {/* TAB 1: WHOLESALE CATALOG & MULTI-STORE SOURCING */}
+      {/* ========================================================= */}
+      {marketplaceSubTab === 'catalog' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          
+          {/* Search Bar & Filter Trigger */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '16px',
+                padding: '10px 14px',
+                gap: '8px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+              }}
+            >
+              <Search size={16} color="#94a3b8" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search beans, syrups, cups, boba..."
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '0.84rem',
+                  color: '#0f172a',
+                  background: 'transparent',
+                  fontWeight: 500
+                }}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => setShowFiltersModal(true)}
+              style={{
+                height: '44px',
+                padding: '0 14px',
+                borderRadius: '16px',
+                border: (filterNet30Only || filterSameDayOnly) ? '1.5px solid #d97706' : '1px solid #e2e8f0',
+                background: (filterNet30Only || filterSameDayOnly) ? '#fffbeb' : '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                color: (filterNet30Only || filterSameDayOnly) ? '#b45309' : '#334155',
+                cursor: 'pointer',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+              }}
+            >
+              <SlidersHorizontal size={15} color={(filterNet30Only || filterSameDayOnly) ? '#b45309' : '#475569'} />
+              <span>Filters</span>
+              {(filterNet30Only || filterSameDayOnly) && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#d97706' }} />}
+            </button>
+          </div>
+
+          {/* Horizontal Category Pills */}
+          <div
+            style={{
+              display: 'flex',
+              gap: '8px',
+              overflowX: 'auto',
+              paddingBottom: '2px',
+              scrollbarWidth: 'none'
+            }}
+          >
+            {categories.map(cat => {
+              const isActive = activeCategory === cat.id
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    triggerHaptic('tap')
+                    setActiveCategory(cat.id)
+                  }}
+                  style={{
+                    flexShrink: 0,
+                    padding: '7px 14px',
+                    borderRadius: '9999px',
+                    border: isActive ? '1.5px solid #0f172a' : '1px solid #e2e8f0',
+                    background: isActive ? '#0f172a' : '#ffffff',
+                    color: isActive ? '#ffffff' : '#475569',
+                    fontSize: '0.78rem',
+                    fontWeight: isActive ? 700 : 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {cat.label}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Group Buying Teaser */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+              border: '1px solid #fde68a',
+              borderRadius: '18px',
+              padding: '14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
+                👥
+              </div>
+              <div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#92400e' }}>
+                  Co-Op Volume Buying Pools Active
+                </div>
+                <div style={{ fontSize: '0.7rem', color: '#b45309' }}>
+                  Save up to 30% by pooling orders with 40+ local Metro Manila cafes.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setMarketplaceSubTab('pools')}
+              style={{
+                background: '#0f172a',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                padding: '6px 12px',
+                fontSize: '0.74rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                flexShrink: 0
+              }}
+            >
+              <span>Explore</span>
+              <ChevronRight size={13} />
+            </button>
+          </div>
+
+          {/* Direct Wholesale Catalog Grid */}
           <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              Active Group Pools
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div>
+                <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Wholesale Sourcing & Multi-Store Catalog
+                </h2>
+                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                  Delivering to <strong style={{ color: '#0f172a' }}>{activeRegion}</strong>
+                </span>
+              </div>
+
+              <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
+                {filteredProducts.length} Products
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+              {filteredProducts.map(item => {
+                const inCart = cartItems.find(c => c.id === item.id)
+                const storeOffers = INGREDIENT_STORE_OFFERS[item.skuId] || []
+                const shopeeOffer = storeOffers.find(o => o.platform.includes('Shopee'))
+                const lazadaOffer = storeOffers.find(o => o.platform.includes('Lazada'))
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '20px',
+                      padding: '14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                      gap: '10px'
+                    }}
+                  >
+                    <div>
+                      {/* Top Bar: Icon + Supplier & Rating */}
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
+                        <div
+                          onClick={() => setSelectedProduct(item)}
+                          style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '14px',
+                            background: item.imgBg,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.8rem',
+                            cursor: 'pointer',
+                            flexShrink: 0
+                          }}
+                        >
+                          {item.icon}
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.supplier}</span>
+                            <span style={{ color: '#d97706', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                              <Star size={11} fill="#d97706" color="#d97706" /> {item.rating}
+                            </span>
+                          </div>
+
+                          <h4
+                            onClick={() => setSelectedProduct(item)}
+                            style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', margin: '2px 0 0', lineHeight: 1.25, cursor: 'pointer' }}
+                          >
+                            {item.name}
+                          </h4>
+
+                          <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
+                            Pack: <strong style={{ color: '#334155' }}>{item.packSize || item.moq}</strong> • <span style={{ color: '#059669', fontWeight: 700 }}>{item.leadTime}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Multi-Store Comparison Chips */}
+                      <div
+                        style={{
+                          background: '#f8fafc',
+                          border: '1px solid #f1f5f9',
+                          borderRadius: '12px',
+                          padding: '6px 10px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '6px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#0f172a' }}>
+                            B2B: ₱{item.price.toLocaleString()}
+                          </span>
+                          {shopeeOffer && (
+                            <span style={{ fontSize: '0.64rem', color: '#ea580c', background: '#fff7ed', padding: '1px 5px', borderRadius: '4px', border: '1px solid #fed7aa', fontWeight: 700 }}>
+                              Shopee ₱{shopeeOffer.pricePhp.toLocaleString()}
+                            </span>
+                          )}
+                          {lazadaOffer && (
+                            <span style={{ fontSize: '0.64rem', color: '#1d4ed8', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 700 }}>
+                              Lazada ₱{lazadaOffer.pricePhp.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => setAffiliateModalProduct({
+                            id: item.skuId || item.id,
+                            name: item.name,
+                            unitCostPerMl: item.price / (item.skuId.includes('oatly') ? 6000 : 1000),
+                            packSize: item.packSize,
+                            supplier: item.supplier
+                          })}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#0284c7',
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                            flexShrink: 0
+                          }}
+                        >
+                          <span>Compare</span>
+                          <ChevronRight size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Price & Action Buttons */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
+                      <div>
+                        <div style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', fontFamily: 'var(--font-mono)' }}>
+                          ₱{item.price.toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: '0.64rem', color: '#64748b' }}>
+                          {item.unitEquiv}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {/* 1-Tap Sync to Studio */}
+                        <button
+                          onClick={() => handleSyncPriceToStudio(item)}
+                          style={{
+                            background: '#f0fdf4',
+                            color: '#15803d',
+                            border: '1px solid #bbf7d0',
+                            borderRadius: '10px',
+                            padding: '7px 9px',
+                            fontSize: '0.7rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                          title="Sync this supplier price directly into Recipe Studio"
+                        >
+                          <Zap size={13} color="#16a34a" />
+                          <span>Sync</span>
+                        </button>
+
+                        {/* Add to PO Cart */}
+                        <button
+                          onClick={() => handleAddToCart(item)}
+                          style={{
+                            background: inCart ? '#059669' : '#0f172a',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '10px',
+                            padding: '7px 12px',
+                            fontSize: '0.74rem',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {inCart ? <Check size={13} /> : <Plus size={13} />}
+                          <span>{inCart ? `${inCart.qty} In PO` : 'Add'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 2: CO-OP GROUP VOLUME BUYING POOLS */}
+      {/* ========================================================= */}
+      {marketplaceSubTab === 'pools' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              Live Co-Op Buying Pools ({poolDeals.length})
             </h2>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-              Co-purchase with {poolDeals.reduce((acc, p) => acc + p.pledgedCount, 0)} local cafés for volume discounts
+            <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+              Pledge volume together with Philippine specialty coffee shops for wholesale container discounts.
             </span>
           </div>
 
-          <button
-            onClick={() => setShowAllPoolsModal(true)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: '#d97706',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '2px'
-            }}
-          >
-            <span>View All ({poolDeals.length})</span>
-            <ChevronRight size={14} />
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {poolDeals.slice(0, 2).map(pool => {
-            const percent = Math.round((pool.pledgedCount / pool.targetCount) * 100)
-            return (
-              <div
-                key={pool.id}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '18px',
-                  padding: '14px',
-                  display: 'flex',
-                  gap: '12px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-                }}
-              >
-                {/* Left: 64x64 Thumbnail */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {poolDeals.map(pool => {
+              const percent = Math.round((pool.pledgedCount / pool.targetCount) * 100)
+              return (
                 <div
+                  key={pool.id}
                   style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '14px',
-                    background: pool.imgBg,
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '20px',
+                    padding: '16px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.8rem',
-                    flexShrink: 0
+                    flexDirection: 'column',
+                    gap: '12px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
                   }}
                 >
-                  {pool.icon}
-                </div>
-
-                {/* Right: Content Details */}
-                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {/* Top Badge Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div
                       style={{
-                        background: '#fffbeb',
-                        color: '#b45309',
-                        border: '1px solid #fde68a',
-                        borderRadius: '9999px',
-                        padding: '2px 8px',
-                        fontSize: '0.66rem',
-                        fontWeight: 800
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '16px',
+                        background: pool.imgBg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2rem',
+                        flexShrink: 0
                       }}
                     >
-                      🔥 {pool.tierDiscount}
-                    </span>
-                    <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                      <Clock size={11} /> {pool.timeRemaining}
-                    </span>
+                      {pool.icon}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span
+                          style={{
+                            background: '#fffbeb',
+                            color: '#b45309',
+                            border: '1px solid #fde68a',
+                            borderRadius: '9999px',
+                            padding: '2px 8px',
+                            fontSize: '0.68rem',
+                            fontWeight: 800
+                          }}
+                        >
+                          🔥 {pool.tierDiscount}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <Clock size={12} /> {pool.timeRemaining}
+                        </span>
+                      </div>
+
+                      <h3
+                        onClick={() => setSelectedPool(pool)}
+                        style={{ fontSize: '0.98rem', fontWeight: 800, color: '#0f172a', margin: '2px 0 0 0', lineHeight: 1.25, cursor: 'pointer' }}
+                      >
+                        {pool.title}
+                      </h3>
+
+                      <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>{pool.supplier}</span>
+                        <span>•</span>
+                        <span style={{ color: '#d97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <Star size={11} fill="#d97706" color="#d97706" /> {pool.rating} ({pool.reviews})
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Product Title */}
-                  <h3
-                    onClick={() => setSelectedPool(pool)}
-                    style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0f172a', margin: '2px 0 0 0', lineHeight: 1.25, cursor: 'pointer' }}
-                  >
-                    {pool.title}
-                  </h3>
-
-                  {/* Supplier Line */}
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span>{pool.supplier}</span>
-                    <span>•</span>
-                    <span style={{ color: '#d97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Star size={11} fill="#d97706" color="#d97706" /> {pool.rating}
-                    </span>
+                  {/* Savings Banner */}
+                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '12px', padding: '8px 12px', fontSize: '0.74rem', color: '#065f46', fontWeight: 700 }}>
+                    💰 {pool.unitCostSavings}
                   </div>
 
                   {/* Progress Bar */}
-                  <div style={{ margin: '4px 0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', marginBottom: '3px', fontWeight: 600 }}>
-                      <span style={{ color: '#475569' }}>{pool.pledgedCount} / {pool.targetCount} Cafes Pledged</span>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '4px', fontWeight: 700 }}>
+                      <span style={{ color: '#334155' }}>{pool.pledgedCount} of {pool.targetCount} Cafes Pledged</span>
                       <span style={{ color: '#059669', fontWeight: 800 }}>({percent}%)</span>
                     </div>
-                    <div style={{ width: '100%', height: '5px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '7px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
                       <div style={{ width: `${percent}%`, height: '100%', background: '#059669', borderRadius: '4px', transition: 'width 0.3s ease' }} />
                     </div>
                   </div>
 
-                  {/* Price & Action Row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: '4px', marginTop: '2px' }}>
+                  {/* Participating Shops */}
+                  <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                    <strong>Participating:</strong> {pool.participatingShops.join(', ')}
+                  </div>
+
+                  {/* Price & Join CTA */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
                     <div>
                       <span style={{ fontSize: '0.72rem', color: '#94a3b8', textDecoration: 'line-through', marginRight: '4px' }}>
                         ₱{pool.standardPrice.toLocaleString()}
                       </span>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#047857', fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>
+                      <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#047857', fontFamily: 'var(--font-mono)', lineHeight: 1.1 }}>
                         ₱{pool.poolPrice.toLocaleString()} / {pool.unitLabel}
                       </div>
                     </div>
 
-                    <div style={{ textAlign: 'right' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedPool(pool)
-                          setPledgeQuantity(2)
-                          setPledgeSuccess(false)
-                        }}
-                        style={{
-                          background: 'linear-gradient(135deg, #d97706, #b45309)',
-                          color: '#ffffff',
-                          border: 'none',
-                          padding: '7px 14px',
-                          borderRadius: '10px',
-                          fontSize: '0.76rem',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 6px rgba(217, 119, 6, 0.25)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <span>Join Pool</span>
-                      </button>
-                      <div style={{ fontSize: '0.62rem', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
-                        Net-30 terms available
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* 3. Direct Wholesale Catalog (2-Column Grid) */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              Direct Supplier Catalog
-            </h2>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-              Delivering to <strong style={{ color: '#0f172a' }}>{activeRegion}</strong>
-            </span>
-          </div>
-
-          <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
-            {filteredProducts.length} Products
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-          {filteredProducts.map(item => {
-            const inCart = cartItems.find(c => c.id === item.id)
-            return (
-              <div
-                key={item.id}
-                style={{
-                  background: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '18px',
-                  padding: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                  gap: '8px'
-                }}
-              >
-                <div>
-                  {/* Product Thumbnail & Icon */}
-                  <div
-                    onClick={() => setSelectedProduct(item)}
-                    style={{
-                      height: '80px',
-                      borderRadius: '12px',
-                      background: item.imgBg,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '2.2rem',
-                      marginBottom: '8px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {item.icon}
-                  </div>
-
-                  {/* Supplier & Rating */}
-                  <div style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90px' }}>{item.supplier}</span>
-                    <span style={{ color: '#d97706', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px' }}>
-                      <Star size={10} fill="#d97706" color="#d97706" /> {item.rating}
-                    </span>
-                  </div>
-
-                  {/* Product Name */}
-                  <h4
-                    onClick={() => setSelectedProduct(item)}
-                    style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', margin: '3px 0', lineHeight: 1.25, minHeight: '32px', cursor: 'pointer' }}
-                  >
-                    {item.name}
-                  </h4>
-
-                  {/* MOQ & Lead Time */}
-                  <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
-                    <div>MOQ: <strong style={{ color: '#334155' }}>{item.moq}</strong></div>
-                    <div style={{ color: '#059669', fontWeight: 600, marginTop: '1px' }}>{item.leadTime}</div>
-                  </div>
-                </div>
-
-                {/* Price & Quick Order Button */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '6px', borderTop: '1px solid #f1f5f9' }}>
-                  <div>
-                    <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', fontFamily: 'var(--font-mono)' }}>
-                      ₱{item.price.toLocaleString()}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '4px' }}>
                     <button
-                      onClick={() => setAffiliateModalProduct({
-                        id: item.skuId || item.id,
-                        name: item.name,
-                        unitCostPerMl: item.price / 1000,
-                        packSize: item.packSize,
-                        supplier: item.supplier
-                      })}
-                      style={{
-                        background: '#fff7ed',
-                        color: '#ea580c',
-                        border: '1px solid #fed7aa',
-                        borderRadius: '8px',
-                        padding: '6px 8px',
-                        fontSize: '0.68rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '3px'
+                      onClick={() => {
+                        setSelectedPool(pool)
+                        setPledgeQuantity(2)
+                        setPledgeSuccess(false)
                       }}
-                      title="Compare Shopee, Lazada & Wholesale Stores"
-                    >
-                      <ShoppingBag size={11} />
-                      <span>Stores</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleAddToCart(item)}
                       style={{
-                        background: inCart ? '#059669' : '#0f172a',
+                        background: 'linear-gradient(135deg, #d97706, #b45309)',
                         color: '#ffffff',
                         border: 'none',
-                        borderRadius: '8px',
-                        padding: '6px 10px',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
+                        padding: '9px 18px',
+                        borderRadius: '12px',
+                        fontSize: '0.82rem',
+                        fontWeight: 800,
                         cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(217, 119, 6, 0.3)',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '4px',
-                        transition: 'all 0.15s ease'
+                        gap: '6px'
                       }}
-                      title="Add to Cart"
                     >
-                      {inCart ? <Check size={12} /> : <Plus size={12} />}
-                      <span>{inCart ? `${inCart.qty} In Cart` : 'Order'}</span>
+                      <Users size={14} />
+                      <span>Join Pool</span>
                     </button>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 3: VERIFIED SUPPLIERS DIRECTORY */}
+      {/* ========================================================= */}
+      {marketplaceSubTab === 'suppliers' && (
+        <VerifiedSuppliersDirectory
+          onSelectSupplier={(sup) => {
+            triggerHaptic('tap')
+            setSearchQuery(sup.name)
+            setMarketplaceSubTab('catalog')
+          }}
+          onOpenMessenger={(sup) => {
+            const tempPo = {
+              poNumber: `PO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+              supplier: sup.name,
+              items: [
+                { name: `${sup.name} Catalog Inquiry`, qty: 1, price: sup.minOrderPhp || 2500, packSize: 'Direct Commercial Order' }
+              ],
+              total: sup.minOrderPhp || 2500,
+              terms: sup.paymentTerms?.[0] || 'Net-30 Invoice',
+              region: sup.region || 'Metro Manila Express'
+            }
+            handleOpenMessengerPo(tempPo)
+          }}
+        />
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 4: ORDERS & LOGISTICS TRACKING */}
+      {/* ========================================================= */}
+      {marketplaceSubTab === 'orders' && (
+        <MarketplaceOrdersTracking
+          onOpenMessenger={(order) => {
+            handleOpenMessengerPo(order)
+          }}
+          onReorder={(order) => {
+            triggerHaptic('success')
+            if (order.items && order.items.length > 0) {
+              setCartItems(prev => [...prev, ...order.items.map(i => ({ ...i, id: `reorder-${Date.now()}-${Math.random()}` }))])
+              setIsCartOpen(true)
+            }
+          }}
+        />
+      )}
 
       {/* ========================================================= */}
       {/* MODAL 1: B2B Cart & PO Checkout Drawer */}
@@ -790,46 +1099,40 @@ export function Marketplace({
             style={{
               width: '100%',
               maxWidth: '540px',
-              maxHeight: '88vh',
+              maxHeight: '85vh',
               overflowY: 'auto',
-              margin: '0 auto',
               background: '#ffffff',
               borderRadius: '28px 28px 0 0',
               padding: '18px 20px 32px',
               boxShadow: '0 -10px 40px rgba(0,0,0,0.25)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '16px'
+              gap: '14px',
+              animation: 'slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
             }}
           >
-            {/* Grab Handle */}
+            {/* Top Pull Bar */}
             <div style={{ width: '40px', height: '4px', background: '#cbd5e1', borderRadius: '9999px', margin: '0 auto' }} />
 
-            {/* Header */}
+            {/* Title & Close */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Wholesale Purchase Order
-                </h3>
-                <p style={{ fontSize: '0.74rem', color: '#64748b', margin: '2px 0 0 0' }}>
-                  Delivery Region: <strong style={{ color: '#0f172a' }}>{activeRegion}</strong>
-                </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShoppingBag size={16} color="#38bdf8" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                    B2B Purchase Order Cart
+                  </h3>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    {cartItems.reduce((acc, i) => acc + i.qty, 0)} items • Commercial Invoice
+                  </span>
+                </div>
               </div>
 
               <button
                 onClick={() => setIsCartOpen(false)}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: '#f1f5f9',
-                  border: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  color: '#475569'
-                }}
+                style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <X size={16} />
               </button>
@@ -837,119 +1140,51 @@ export function Marketplace({
 
             {cartItems.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '36px 0', color: '#64748b' }}>
-                <ShoppingBag size={36} style={{ margin: '0 auto 8px', color: '#cbd5e1' }} />
-                <div style={{ fontWeight: 700, color: '#0f172a', fontSize: '0.94rem' }}>Your wholesale cart is empty</div>
-                <p style={{ fontSize: '0.78rem', marginTop: '4px' }}>Browse raw beans, oat milk cases, and U-cups above.</p>
+                <div style={{ fontSize: '2.5rem', marginBottom: '8px' }}>🛒</div>
+                <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#0f172a' }}>Your PO Cart is Empty</div>
+                <div style={{ fontSize: '0.76rem', marginTop: '4px' }}>Add wholesale ingredients or packaging to issue a purchase order.</div>
               </div>
             ) : (
               <>
-                {/* Smart Basket Consolidator Optimizer Banner */}
-                <div
-                  style={{
-                    background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-                    border: '1px solid #86efac',
-                    borderRadius: '16px',
-                    padding: '12px 14px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '10px'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                    <Sparkles size={16} color="#059669" style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <div>
-                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#065f46' }}>
-                        Smart Basket Optimization: Save ₱450 Shipping
-                      </div>
-                      <div style={{ fontSize: '0.70rem', color: '#047857', marginTop: '1px' }}>
-                        Consolidating multi-vendor items into <strong>Gourmet Direct PH</strong> eliminates split freight fees & hits free delivery MOQ.
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      alert('⚡ Cart auto-consolidated! Swapped items to single master distributor with ₱0 split delivery fee.')
-                    }}
-                    style={{
-                      background: '#059669',
-                      border: 'none',
-                      color: '#ffffff',
-                      padding: '6px 10px',
-                      borderRadius: '8px',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                      boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
-                    }}
-                  >
-                    Auto-Optimize
-                  </button>
-                </div>
-
                 {/* Cart Items List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {cartItems.map((item) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+                  {cartItems.map(item => (
                     <div
                       key={item.id}
                       style={{
-                        background: '#f8fafc',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '14px',
-                        padding: '10px 12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        gap: '10px'
+                        padding: '10px 12px',
+                        borderRadius: '14px',
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        gap: '8px'
                       }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {item.name}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
                           ₱{item.price.toLocaleString()} / unit • {item.supplier}
                         </div>
                       </div>
 
-                      {/* Quantity Stepper */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {/* Stepper */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#ffffff', borderRadius: '10px', border: '1px solid #cbd5e1', padding: '2px 4px' }}>
                         <button
                           onClick={() => handleUpdateCartQty(item.id, -1)}
-                          style={{
-                            width: '26px',
-                            height: '26px',
-                            borderRadius: '6px',
-                            border: '1px solid #cbd5e1',
-                            background: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#334155'
-                          }}
+                          style={{ width: '24px', height: '24px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#334155' }}
                         >
                           <Minus size={11} />
                         </button>
-                        <span style={{ fontSize: '0.86rem', fontWeight: 800, minWidth: '20px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ fontSize: '0.84rem', fontWeight: 800, minWidth: '18px', textAlign: 'center', fontFamily: 'var(--font-mono)' }}>
                           {item.qty}
                         </span>
                         <button
                           onClick={() => handleUpdateCartQty(item.id, 1)}
-                          style={{
-                            width: '26px',
-                            height: '26px',
-                            borderRadius: '6px',
-                            border: '1px solid #cbd5e1',
-                            background: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                            color: '#334155'
-                          }}
+                          style={{ width: '24px', height: '24px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', color: '#334155' }}
                         >
                           <Plus size={11} />
                         </button>
@@ -983,7 +1218,10 @@ export function Marketplace({
                     ].map(term => (
                       <button
                         key={term.id}
-                        onClick={() => setSelectedPaymentTerms(term.id)}
+                        onClick={() => {
+                          triggerHaptic('tap')
+                          setSelectedPaymentTerms(term.id)
+                        }}
                         style={{
                           background: selectedPaymentTerms === term.id ? '#ffffff' : 'transparent',
                           border: selectedPaymentTerms === term.id ? '2px solid #0f172a' : '1px solid #e2e8f0',
@@ -1075,7 +1313,7 @@ export function Marketplace({
             onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
-              maxWidth: '440px',
+              maxWidth: '460px',
               background: '#ffffff',
               borderRadius: '24px',
               padding: '24px',
@@ -1129,25 +1367,51 @@ export function Marketplace({
             </div>
 
             <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
-              Vendors have received your dispatch request. Invoice copy sent to your registered business email.
+              Vendor has received your dispatch request. You can also share the formal PO directly via Viber or WhatsApp.
             </div>
 
-            <button
-              onClick={() => setConfirmedPo(null)}
-              style={{
-                width: '100%',
-                height: '44px',
-                borderRadius: '12px',
-                border: 'none',
-                background: '#0f172a',
-                color: '#ffffff',
-                fontSize: '0.86rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              Done & Return to Studio
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  handleOpenMessengerPo(confirmedPo)
+                }}
+                style={{
+                  flex: 1,
+                  height: '44px',
+                  borderRadius: '12px',
+                  border: '1.5px solid #38bdf8',
+                  background: '#f0f9ff',
+                  color: '#0369a1',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Send size={15} />
+                <span>Dispatch to Viber / WA</span>
+              </button>
+
+              <button
+                onClick={() => setConfirmedPo(null)}
+                style={{
+                  flex: 1,
+                  height: '44px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1327,9 +1591,15 @@ export function Marketplace({
             <div style={{ width: '40px', height: '4px', background: '#cbd5e1', borderRadius: '9999px', margin: '0 auto' }} />
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                Select Delivery Region
-              </h3>
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
+                  Select Delivery Region
+                </h3>
+                <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                  Prices and dispatch schedules adjust automatically.
+                </span>
+              </div>
+
               <button onClick={() => setIsRegionModalOpen(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={16} />
               </button>
@@ -1346,22 +1616,22 @@ export function Marketplace({
                       setIsRegionModalOpen(false)
                     }}
                     style={{
-                      background: isSelected ? '#fffbeb' : '#ffffff',
-                      border: isSelected ? '2px solid #d97706' : '1px solid #e2e8f0',
-                      borderRadius: '14px',
-                      padding: '12px 14px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
+                      padding: '12px 14px',
+                      borderRadius: '14px',
+                      border: isSelected ? '2px solid #0f172a' : '1px solid #e2e8f0',
+                      background: isSelected ? '#f8fafc' : '#ffffff',
                       cursor: 'pointer',
                       textAlign: 'left'
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a' }}>{r.id}</div>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '2px' }}>{r.leadTime} • {r.fee}</div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a' }}>{r.id}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{r.leadTime} • {r.fee}</div>
                     </div>
-                    {isSelected && <Check size={16} color="#d97706" />}
+                    {isSelected && <Check size={16} color="#0f172a" />}
                   </button>
                 )
               })}
@@ -1371,7 +1641,7 @@ export function Marketplace({
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 5: Product Detail & Spec Sheet */}
+      {/* MODAL 5: Product Details Quick View Sheet */}
       {/* ========================================================= */}
       {selectedProduct && (
         <div
@@ -1407,16 +1677,12 @@ export function Marketplace({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: selectedProduct.imgBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
+                <div style={{ width: '60px', height: '60px', borderRadius: '14px', background: selectedProduct.imgBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>
                   {selectedProduct.icon}
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                    {selectedProduct.name}
-                  </h3>
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
-                    {selectedProduct.supplier} • ⭐ {selectedProduct.rating}
-                  </div>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>{selectedProduct.supplier}</span>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a', margin: '2px 0 0 0' }}>{selectedProduct.name}</h3>
                 </div>
               </div>
 
@@ -1425,28 +1691,20 @@ export function Marketplace({
               </button>
             </div>
 
-            <p style={{ fontSize: '0.78rem', color: '#475569', lineHeight: 1.4, margin: 0 }}>
+            <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5, margin: 0 }}>
               {selectedProduct.description}
             </p>
 
-            {/* Cost Conversion Block */}
-            <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '0.76rem' }}>
-              <div style={{ color: '#64748b' }}>Recipe Unit Conversion:</div>
-              <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a', marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
-                {selectedProduct.unitEquiv}
-              </div>
-            </div>
-
-            {/* Volume Tier Table */}
-            <div>
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                Tiered Volume Pricing
+            {/* Wholesale Tier Pricing */}
+            <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                Wholesale Volume Price Breaks
               </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {selectedProduct.tierDiscounts.map((t, idx) => (
-                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', background: idx === 0 ? '#ffffff' : '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.76rem' }}>
-                    <span style={{ fontWeight: 600, color: '#334155' }}>{t.qty}</span>
-                    <span style={{ fontWeight: 800, color: idx === 0 ? '#0f172a' : '#059669', fontFamily: 'var(--font-mono)' }}>{t.price}</span>
+                  <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                    <span style={{ color: '#64748b' }}>{t.qty}:</span>
+                    <strong style={{ color: '#0f172a', fontFamily: 'var(--font-mono)' }}>{t.price}</strong>
                   </div>
                 ))}
               </div>
@@ -1600,96 +1858,6 @@ export function Marketplace({
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* MODAL 7: View All Pools Modal */}
-      {/* ========================================================= */}
-      {showAllPoolsModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            background: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end'
-          }}
-          onClick={() => setShowAllPoolsModal(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              width: '100%',
-              maxWidth: '540px',
-              maxHeight: '88vh',
-              overflowY: 'auto',
-              background: '#ffffff',
-              borderRadius: '28px 28px 0 0',
-              padding: '18px 20px 32px',
-              boxShadow: '0 -10px 40px rgba(0,0,0,0.25)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px'
-            }}
-          >
-            <div style={{ width: '40px', height: '4px', background: '#cbd5e1', borderRadius: '9999px', margin: '0 auto' }} />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                All Active Group Pools ({poolDeals.length})
-              </h3>
-              <button onClick={() => setShowAllPoolsModal(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <X size={16} />
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {poolDeals.map(pool => (
-                <div
-                  key={pool.id}
-                  style={{
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '16px',
-                    padding: '12px',
-                    display: 'flex',
-                    gap: '10px',
-                    alignItems: 'center'
-                  }}
-                >
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: pool.imgBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', flexShrink: 0 }}>
-                    {pool.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pool.title}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 700 }}>₱{pool.poolPrice.toLocaleString()} / {pool.unitLabel} ({pool.tierDiscount})</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setShowAllPoolsModal(false)
-                      setSelectedPool(pool)
-                    }}
-                    style={{
-                      background: '#0f172a',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Join
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL: Multi-Store Affiliate Comparison */}
       <IngredientAffiliateSourcingModal
         isOpen={Boolean(affiliateModalProduct)}
@@ -1705,6 +1873,13 @@ export function Marketplace({
             }])
           }
         }}
+      />
+
+      {/* MODAL: Viber / WhatsApp PO Dispatch */}
+      <ViberWhatsappPoModal
+        isOpen={isMessengerModalOpen}
+        onClose={() => setIsMessengerModalOpen(false)}
+        poData={activeMessengerPo}
       />
     </div>
   )
