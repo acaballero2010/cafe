@@ -1212,7 +1212,329 @@ export const DEFAULT_CATALOG = [
   },
 
   // ==========================================
-  // 9. PACKAGING & CONSUMABLES
+  // 9. HAZELNUT & SPECIALTY NUT SYRUPS
+  // ==========================================
+  {
+    id: '1883-roasted-hazelnut',
+    name: '1883 Maison Routin Roasted Hazelnut Syrup',
+    brand: '1883 Maison Routin (France)',
+    tier: 'artisanal',
+    flavorType: 'hazelnut',
+    category: 'syrup',
+    packSize: '1,000 ml Glass Bottle',
+    packPrice: 773.00,
+    unitYieldMl: 1000,
+    unitCostPerMl: 0.773,
+    densityBrix: 65.0,
+    supplier: 'Barista Depot Manila',
+    scrapType: 'standard',
+    colorHex: '#92400e',
+    layerType: 'syrup',
+    description: 'Intense aroma of freshly roasted hazelnuts with toasted praline notes.'
+  },
+  {
+    id: 'monin-roasted-hazelnut',
+    name: 'Monin Roasted Hazelnut Syrup',
+    brand: 'Monin (France)',
+    tier: 'signature',
+    flavorType: 'hazelnut',
+    category: 'syrup',
+    packSize: '700 ml Glass Bottle',
+    packPrice: 480.00,
+    unitYieldMl: 700,
+    unitCostPerMl: 0.685,
+    densityBrix: 64.0,
+    supplier: 'Monin Official PH',
+    scrapType: 'standard',
+    colorHex: '#a16207',
+    layerType: 'syrup',
+    description: 'Rich toasted hazelnut flavor with subtle praline sweetness.'
+  },
+  {
+    id: 'torani-puremade-hazelnut',
+    name: 'Torani Puremade Hazelnut Syrup',
+    brand: 'Torani (San Francisco)',
+    tier: 'signature',
+    flavorType: 'hazelnut',
+    category: 'syrup',
+    packSize: '750 ml Bottle',
+    packPrice: 440.00,
+    unitYieldMl: 750,
+    unitCostPerMl: 0.587,
+    densityBrix: 63.0,
+    supplier: 'Gourmet Direct PH',
+    scrapType: 'standard',
+    colorHex: '#b45309',
+    layerType: 'syrup',
+    description: 'Warm, nutty aroma and true hazelnut flavor without artificial preservatives.'
+  },
+  {
+    id: 'top-creamery-hazelnut',
+    name: 'Top Creamery Hazelnut Syrup',
+    brand: 'Top Creamery Manila',
+    tier: 'value',
+    flavorType: 'hazelnut',
+    category: 'syrup',
+    packSize: '750 ml Bottle',
+    packPrice: 210.00,
+    unitYieldMl: 750,
+    unitCostPerMl: 0.280,
+    densityBrix: 60.0,
+    supplier: 'Top Creamery Foodservice',
+    scrapType: 'standard',
+    colorHex: '#d97706',
+    layerType: 'syrup',
+    description: 'Economical commercial hazelnut syrup for iced coffees and frappes.'
+  },
+
+  // ==========================================
+  // 10. SPECIALTY TEAS & BOTANICALS
+  // ==========================================
+  {
+    id: 'kyoto-roasted-hojicha',
+    name: 'Kyoto Micro-Ground Roasted Hojicha Powder (60ml)',
+    brand: 'Kyoto Uji Botanicals PH',
+    tier: 'artisanal',
+    flavorType: 'hojicha',
+    category: 'tea',
+    packSize: '250g Vacuum Tin',
+    packPrice: 1250.00,
+    unitYieldMl: 2500,
+    unitCostPerMl: 0.500,
+    densityBrix: 8.0,
+    supplier: 'Kyoto Imports Direct PH',
+    scrapType: 'standard',
+    colorHex: '#78350f',
+    layerType: 'tea',
+    description: 'Slow-roasted Bancha tea leaves with nutty, toasted caramel aromatics.'
+  },
+  {
+    id: 'harney-earl-grey-tea',
+    name: 'Harney & Sons Supreme Earl Grey Tea Brew',
+    brand: 'Harney & Sons (USA)',
+    tier: 'artisanal',
+    flavorType: 'black_tea',
+    category: 'tea',
+    packSize: '50 Sachet Tin (Yields 15L)',
+    packPrice: 1350.00,
+    unitYieldMl: 15000,
+    unitCostPerMl: 0.090,
+    densityBrix: 2.0,
+    supplier: 'Gourmet Direct Imports PH',
+    scrapType: 'standard',
+    colorHex: '#451a03',
+    layerType: 'tea',
+    description: 'Black tea blend scented with natural oil of bergamot from Calabria.'
+  },
+  {
+    id: 'thai-tea-cha-tra-mue',
+    name: 'ChaTraMue Traditional Thai Red Tea Brew',
+    brand: 'ChaTraMue (Original Thai Tea)',
+    tier: 'signature',
+    flavorType: 'thai_tea',
+    category: 'tea',
+    packSize: '400g Pouch (Yields 12L)',
+    packPrice: 280.00,
+    unitYieldMl: 12000,
+    unitCostPerMl: 0.023,
+    densityBrix: 2.5,
+    supplier: 'Asian Beverage Hub PH',
+    scrapType: 'standard',
+    colorHex: '#c2410c',
+    layerType: 'tea',
+    description: 'Iconic Thai tea blend with fragrant spices and distinct amber hue.'
+  },
+  {
+    id: 'jasmine-green-tea-loose',
+    name: 'Formosa High Mountain Jasmine Blossom Green Tea',
+    brand: 'Taiwan Tea Crafts',
+    tier: 'signature',
+    flavorType: 'green_tea',
+    category: 'tea',
+    packSize: '500g Bag (Yields 25L)',
+    packPrice: 650.00,
+    unitYieldMl: 25000,
+    unitCostPerMl: 0.026,
+    densityBrix: 1.5,
+    supplier: 'Boba King Wholesale Supply',
+    scrapType: 'standard',
+    colorHex: '#65a30d',
+    layerType: 'tea',
+    description: 'Fresh green tea layered five times with night-blooming jasmine flowers.'
+  },
+
+  // ==========================================
+  // 11. BOBA, JELLIES & TOPPINGS
+  // ==========================================
+  {
+    id: 'top-creamery-raw-tapioca',
+    name: 'Top Creamery Raw Black Tapioca Pearls (3kg)',
+    brand: 'Top Creamery Manila',
+    tier: 'value',
+    flavorType: 'boba',
+    category: 'toppings',
+    packSize: '3 kg Vacuum Pack',
+    packPrice: 380.00,
+    unitYieldMl: 3000,
+    unitCostPerMl: 0.126,
+    densityBrix: 35.0,
+    supplier: 'Top Creamery Foodservice',
+    scrapType: 'standard',
+    colorHex: '#09090b',
+    layerType: 'solid',
+    description: 'Quick-cook black tapioca pearls with 4-hour chewy window for milk tea.'
+  },
+  {
+    id: 'taiwan-tiger-boba',
+    name: 'Authentic Taiwan Tiger Muscovado Boba Pearls',
+    brand: 'Boba King Wholesale Supply',
+    tier: 'signature',
+    flavorType: 'boba',
+    category: 'toppings',
+    packSize: '3 kg Pack',
+    packPrice: 480.00,
+    unitYieldMl: 3000,
+    unitCostPerMl: 0.160,
+    densityBrix: 40.0,
+    supplier: 'Boba King Wholesale Supply',
+    scrapType: 'standard',
+    colorHex: '#18181b',
+    layerType: 'solid',
+    description: 'High elasticity cassava pearls with deep brown sugar absorption.'
+  },
+  {
+    id: 'brown-sugar-agar-jelly',
+    name: 'Crystal Brown Sugar Agar Konjac Jelly Ball',
+    brand: 'Sunwide Foodservice Taiwan',
+    tier: 'artisanal',
+    flavorType: 'jelly',
+    category: 'toppings',
+    packSize: '2 kg Tub',
+    packPrice: 420.00,
+    unitYieldMl: 2000,
+    unitCostPerMl: 0.210,
+    densityBrix: 28.0,
+    supplier: 'Asian Beverage Hub PH',
+    scrapType: 'standard',
+    colorHex: '#713f12',
+    layerType: 'solid',
+    description: 'Ready-to-serve crunchy konjac agar balls in light brown sugar syrup.'
+  },
+  {
+    id: 'rainbow-popping-boba',
+    name: 'Mango & Strawberry Bursting Popping Boba',
+    brand: 'Top Creamery Manila',
+    tier: 'value',
+    flavorType: 'popping_boba',
+    category: 'toppings',
+    packSize: '3.2 kg Tub',
+    packPrice: 650.00,
+    unitYieldMl: 3200,
+    unitCostPerMl: 0.203,
+    densityBrix: 25.0,
+    supplier: 'Top Creamery Foodservice',
+    scrapType: 'standard',
+    colorHex: '#f59e0b',
+    layerType: 'solid',
+    description: 'Real fruit juice filled bursting pearls for refreshers and mocktails.'
+  },
+  {
+    id: 'egg-pudding-custard',
+    name: 'Silky Egg Custard Pudding Mix Prep',
+    brand: 'Top Creamery Manila',
+    tier: 'signature',
+    flavorType: 'pudding',
+    category: 'toppings',
+    packSize: '1 kg Pouch (Yields 4,000ml)',
+    packPrice: 320.00,
+    unitYieldMl: 4000,
+    unitCostPerMl: 0.080,
+    densityBrix: 22.0,
+    supplier: 'Top Creamery Foodservice',
+    scrapType: 'standard',
+    colorHex: '#facc15',
+    layerType: 'solid',
+    description: 'Smooth and silky Japanese-style sweet egg custard pudding topping.'
+  },
+
+  // ==========================================
+  // 12. BAR, CRAFT SPIRITS & SPECIALTY MIXERS
+  // ==========================================
+  {
+    id: 'del-maguey-vida-mezcal',
+    name: 'Del Maguey Vida Artisanal Mezcal (750ml)',
+    brand: 'Del Maguey (Oaxaca)',
+    tier: 'artisanal',
+    flavorType: 'mezcal',
+    category: 'bar',
+    packSize: '750 ml Glass Bottle',
+    packPrice: 2850.00,
+    unitYieldMl: 750,
+    unitCostPerMl: 3.800, // ₱171 per 45ml pour
+    densityBrix: 0.0,
+    supplier: 'Craft Spirits Manila',
+    scrapType: 'standard',
+    colorHex: '#e2e8f0',
+    layerType: 'liquid',
+    description: 'Handcrafted Espadín agave mezcal twice distilled in wood-fired copper stills.'
+  },
+  {
+    id: 'kahlua-coffee-liqueur',
+    name: 'Kahlúa Original Coffee Liqueur (700ml)',
+    brand: 'Kahlúa (Veracruz)',
+    tier: 'signature',
+    flavorType: 'liqueur',
+    category: 'bar',
+    packSize: '700 ml Bottle',
+    packPrice: 980.00,
+    unitYieldMl: 700,
+    unitCostPerMl: 1.400,
+    densityBrix: 38.0,
+    supplier: 'Pernod Ricard Philippines',
+    scrapType: 'standard',
+    colorHex: '#1c1917',
+    layerType: 'liquid',
+    description: '100% Arabica coffee beans and rum blend for espresso martinis and white russians.'
+  },
+  {
+    id: 'baileys-irish-cream',
+    name: "Baileys Original Irish Cream Liqueur (750ml)",
+    brand: "Baileys (Ireland)",
+    tier: 'signature',
+    flavorType: 'irish_cream',
+    category: 'bar',
+    packSize: '750 ml Bottle',
+    packPrice: 1150.00,
+    unitYieldMl: 750,
+    unitCostPerMl: 1.533,
+    densityBrix: 32.0,
+    supplier: 'Diageo Philippines Direct',
+    scrapType: 'standard',
+    colorHex: '#fef3c7',
+    layerType: 'dairy',
+    description: 'Irish whiskey homogenized with fresh dairy cream, cocoa, and vanilla.'
+  },
+  {
+    id: 'monin-blue-curacao',
+    name: 'Monin Blue Curaçao Citrus Liqueur Syrup',
+    brand: 'Monin (France)',
+    tier: 'signature',
+    flavorType: 'citrus',
+    category: 'bar',
+    packSize: '700 ml Bottle',
+    packPrice: 480.00,
+    unitYieldMl: 700,
+    unitCostPerMl: 0.685,
+    densityBrix: 62.0,
+    supplier: 'Monin Official PH',
+    scrapType: 'standard',
+    colorHex: '#0284c7',
+    layerType: 'syrup',
+    description: 'Valencia orange peel essence with vivid electric blue color.'
+  },
+
+  // ==========================================
+  // 13. PACKAGING & CONSUMABLES (Expanded)
   // ==========================================
   {
     id: 'eco-pla-16oz-set',
@@ -1227,7 +1549,8 @@ export const DEFAULT_CATALOG = [
     supplier: 'Green Packaging Solutions PH',
     scrapType: 'packaging',
     colorHex: '#15803d',
-    layerType: 'packaging'
+    layerType: 'packaging',
+    description: 'Plant-based cornstarch PLA cups and straws. Commercial compost certified.'
   },
   {
     id: 'pet-clear-16oz-set',
@@ -1242,7 +1565,56 @@ export const DEFAULT_CATALOG = [
     supplier: 'Manila Foodservice Pack Direct',
     scrapType: 'packaging',
     colorHex: '#0284c7',
-    layerType: 'packaging'
+    layerType: 'packaging',
+    description: 'Crystal-clear food grade PET cup with 98mm caliber snap-fit flat or dome lid.'
+  },
+  {
+    id: 'pet-clear-22oz-u-cup',
+    name: '22oz Hard U-Cup (90mm Caliber) + Strawless Lid Set',
+    brand: 'Apex Plastic Solutions',
+    tier: 'signature',
+    category: 'packaging',
+    packSize: 'Case of 1,000 sets',
+    packPrice: 5200.00, // ₱5.20 / set
+    unitYieldMl: 1000,
+    unitCostPerMl: 5.20,
+    supplier: 'Manila Foodservice Pack Direct',
+    scrapType: 'packaging',
+    colorHex: '#0369a1',
+    layerType: 'packaging',
+    description: 'Curved bottom U-cup engineered for layered iced espresso, matcha, and boba drinks.'
+  },
+  {
+    id: 'kraft-hot-12oz-cup-set',
+    name: '12oz Double-Wall Kraft Hot Paper Cup + Sip Lid',
+    brand: 'EcoPack Direct PH',
+    tier: 'signature',
+    category: 'packaging',
+    packSize: 'Case of 500 sets',
+    packPrice: 2750.00, // ₱5.50 / set
+    unitYieldMl: 500,
+    unitCostPerMl: 5.50,
+    supplier: 'EcoPack Direct PH',
+    scrapType: 'packaging',
+    colorHex: '#78350f',
+    layerType: 'packaging',
+    description: 'Insulated double-wall corrugated kraft paper cup. No cup sleeve needed.'
+  },
+  {
+    id: 'boba-bamboo-straws-2000',
+    name: '12mm x 210mm Bamboo Fiber Boba Straws (Individually Wrapped)',
+    brand: 'EcoFriendly PH',
+    tier: 'artisanal',
+    category: 'packaging',
+    packSize: 'Box of 2,000 pcs',
+    packPrice: 3000.00, // ₱1.50 / straw
+    unitYieldMl: 2000,
+    unitCostPerMl: 1.50,
+    supplier: 'Green Packaging Solutions PH',
+    scrapType: 'packaging',
+    colorHex: '#166534',
+    layerType: 'packaging',
+    description: '100% natural bamboo fiber wide boba straws. 6-hour soggy-free resistance.'
   },
   {
     id: 'pp-standard-16oz-set',
@@ -1257,8 +1629,26 @@ export const DEFAULT_CATALOG = [
     supplier: 'Divisoria B2B Wholesale Depot',
     scrapType: 'packaging',
     colorHex: '#64748b',
-    layerType: 'packaging'
+    layerType: 'packaging',
+    description: 'Economic polypropylene injection cups for high-volume takeout operations.'
+  },
+  {
+    id: 'kraft-takeout-carry-bags',
+    name: 'Brown Kraft Paper 2-Cup Takeout Carrier Bags',
+    brand: 'Universal Cup Supplies',
+    tier: 'value',
+    category: 'packaging',
+    packSize: 'Bundle of 500 pcs',
+    packPrice: 1250.00, // ₱2.50 / bag
+    unitYieldMl: 500,
+    unitCostPerMl: 2.50,
+    supplier: 'Divisoria B2B Wholesale Depot',
+    scrapType: 'packaging',
+    colorHex: '#b45309',
+    layerType: 'packaging',
+    description: 'Reinforced twisted-handle kraft bags with interior cardboard divider.'
   }
 ]
 
 export const PACKAGING_ITEMS = DEFAULT_CATALOG.filter(item => item.category === 'packaging')
+

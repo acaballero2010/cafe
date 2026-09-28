@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { 
   Search, 
   SlidersHorizontal, 
@@ -26,7 +26,10 @@ import {
   Store,
   Package,
   Send,
-  Zap
+  Zap,
+  Tag,
+  Award,
+  Filter
 } from 'lucide-react'
 import { IngredientAffiliateSourcingModal } from './IngredientAffiliateSourcingModal'
 import { VerifiedSuppliersDirectory } from './VerifiedSuppliersDirectory'
@@ -34,6 +37,7 @@ import { MarketplaceOrdersTracking } from './MarketplaceOrdersTracking'
 import { ViberWhatsappPoModal } from './ViberWhatsappPoModal'
 import { INGREDIENT_STORE_OFFERS, generateAffiliateLink } from '../data/affiliateStoresData'
 import { MASTER_SUPPLIERS } from '../data/suppliersData'
+import { DEFAULT_CATALOG } from '../data/defaultCatalog'
 import { triggerHaptic } from '../utils/haptics'
 
 export function Marketplace({
@@ -54,6 +58,8 @@ export function Marketplace({
   // Search, filter, and sorting
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
+  const [selectedBrand, setSelectedBrand] = useState('all')
+  const [selectedTier, setSelectedTier] = useState('all') // 'all' | 'artisanal' | 'signature' | 'value'
   const [sortBy, setSortBy] = useState('featured') // 'featured' | 'price-asc' | 'rating'
   
   // Modals & Active selections
@@ -78,12 +84,15 @@ export function Marketplace({
   const [pledgeSuccess, setPledgeSuccess] = useState(false)
 
   const categories = [
-    { id: 'all', label: 'All' },
-    { id: 'packaging', label: '📦 Packaging' },
-    { id: 'boba', label: '🧋 Boba & Teas' },
-    { id: 'beans', label: '☕ Beans' },
-    { id: 'dairy', label: '🥛 Dairy' },
-    { id: 'bar', label: '🍸 Bar' }
+    { id: 'all', label: 'All Items' },
+    { id: 'coffee', label: '☕ Espresso & Coffee' },
+    { id: 'milk', label: '🥛 Dairy & Plant Milk' },
+    { id: 'condensed', label: '🍯 Sweeteners & Condensed' },
+    { id: 'syrup', label: '✨ Syrups & Sauces' },
+    { id: 'tea', label: '🍵 Matcha & Teas' },
+    { id: 'toppings', label: '🧋 Boba & Toppings' },
+    { id: 'bar', label: '🍸 Bar & Spirits' },
+    { id: 'packaging', label: '📦 Packaging & Cups' }
   ]
 
   const regions = [
@@ -119,7 +128,7 @@ export function Marketplace({
     {
       id: 'pool-2',
       title: '1st-Harvest Uji Ceremonial Matcha (5kg Bulk)',
-      category: 'boba',
+      category: 'tea',
       supplier: 'Matcha Manila Direct',
       rating: 5.0,
       reviews: 89,
@@ -140,7 +149,7 @@ export function Marketplace({
     {
       id: 'pool-3',
       title: 'Oatly Barista Edition (Pallet / 60 Cases)',
-      category: 'dairy',
+      category: 'milk',
       supplier: 'Gourmet Direct PH',
       rating: 4.8,
       reviews: 210,
@@ -161,7 +170,7 @@ export function Marketplace({
     {
       id: 'pool-4',
       title: 'Benguet Highland Peaberry Specialty (60kg Bag)',
-      category: 'beans',
+      category: 'coffee',
       supplier: 'Cordillera Coffee Alliance',
       rating: 4.9,
       reviews: 64,
@@ -181,141 +190,95 @@ export function Marketplace({
     }
   ]
 
-  const directProducts = [
-    {
-      id: 'prod-1',
-      skuId: 'oatly-barista',
-      name: 'Oatly Barista Edition (Case 6 x 1L)',
-      supplier: 'Gourmet Direct PH',
-      category: 'dairy',
-      price: 1260.00,
-      unitEquiv: '₱210.00 / Liter (₱0.210/ml)',
-      moq: '3 Cases',
-      leadTime: 'Next-day delivery',
-      rating: 4.9,
-      reviews: 320,
-      icon: '🥛',
-      imgBg: '#fef3c7',
-      net30: true,
-      packSize: '6 x 1L',
-      description: 'The global standard barista oat milk. Foams perfectly with dense micro-foam, neutral sweetness that highlights espresso notes.',
-      tierDiscounts: [
-        { qty: '1-4 Cases', price: '₱1,260.00' },
-        { qty: '5-19 Cases', price: '₱1,180.00 (Save 6%)' },
-        { qty: '20+ Cases', price: '₱1,090.00 (Save 13%)' }
-      ]
-    },
-    {
-      id: 'prod-2',
-      skuId: 'tiger-boba-pearls',
-      name: 'Top Creamery Raw Tapioca (6 x 3kg)',
-      supplier: 'Top Creamery Mfg',
-      category: 'boba',
-      price: 2400.00,
-      unitEquiv: '₱133.33 / kg (₱0.133/g raw)',
-      moq: '2 Cases',
-      leadTime: 'Same-day dispatch',
-      rating: 4.8,
-      reviews: 184,
-      icon: '🧋',
-      imgBg: '#fee2e2',
-      net30: true,
-      packSize: '6 x 3kg',
-      description: 'Quick-cook black tapioca boba pearls with 4-hour soft chew window. Formulated specifically for Muscovado brown sugar marbling.',
-      tierDiscounts: [
-        { qty: '1-3 Cases', price: '₱2,400.00' },
-        { qty: '4+ Cases', price: '₱2,250.00' }
-      ]
-    },
-    {
-      id: 'prod-3',
-      skuId: 'boba-bamboo-straw',
-      name: '12mm Bamboo Fiber Straws (2000 pcs)',
-      supplier: 'EcoFriendly PH',
-      category: 'packaging',
-      price: 3000.00,
-      unitEquiv: '₱1.50 / straw',
-      moq: '1 Box',
-      leadTime: 'Next-day delivery',
-      rating: 4.9,
-      reviews: 95,
-      icon: '🥢',
-      imgBg: '#ecfdf5',
-      net30: true,
-      packSize: '2,000 pcs Box',
-      description: '100% plant-based bamboo fiber boba straws. Does not get soggy in iced drinks for over 6 hours; fully biodegradable.',
-      tierDiscounts: [
-        { qty: '1-2 Boxes', price: '₱3,000.00' },
-        { qty: '3+ Boxes', price: '₱2,700.00' }
-      ]
-    },
-    {
-      id: 'prod-4',
-      skuId: 'ethiopia-espresso',
-      name: 'Benguet Highland Arabica (5kg Sack)',
-      supplier: 'Cordillera Coffee Alliance',
-      category: 'beans',
-      price: 4500.00,
-      unitEquiv: '₱900.00 / kg (₱16.20 per 18g double shot)',
-      moq: '1 Sack',
-      leadTime: '2-3 days direct origin',
-      rating: 5.0,
-      reviews: 112,
-      icon: '☕',
-      imgBg: '#ffedd5',
-      net30: false,
-      packSize: '5kg GrainPro Sack',
-      description: 'Single-origin washed Arabica from Atok, Benguet (1,500 MASL). Tasting notes: Brown sugar, orange peel, milk chocolate finish.',
-      tierDiscounts: [
-        { qty: '1-2 Sacks', price: '₱4,500.00' },
-        { qty: '3+ Sacks', price: '₱4,150.00' }
-      ]
-    },
-    {
-      id: 'prod-5',
-      skuId: 'artisanal-mezcal',
-      name: 'Del Maguey Vida Mezcal (750ml)',
-      supplier: 'Craft Spirits Manila',
-      category: 'bar',
-      price: 2850.00,
-      unitEquiv: '₱3.80 / ml (₱171 per 45ml pour)',
-      moq: '2 Bottles',
-      leadTime: 'Next-day delivery',
-      rating: 4.9,
-      reviews: 58,
-      icon: '🍸',
-      imgBg: '#ede9fe',
-      net30: true,
-      packSize: '750ml Glass Bottle',
-      description: 'Handcrafted Espadín mezcal twice distilled in wood-fired copper stills. Smoky agave, tropical fruit, and ginger aromatics.',
-      tierDiscounts: [
-        { qty: '1-5 Bottles', price: '₱2,850.00' },
-        { qty: '6+ Bottles', price: '₱2,650.00' }
-      ]
-    },
-    {
-      id: 'prod-6',
-      skuId: 'tiger-brown-sugar-syrup',
-      name: 'House Muscovado Raw Sugar Syrup (5L Jug)',
-      supplier: 'Negros Cane Collective',
-      category: 'beans',
-      price: 1650.00,
-      unitEquiv: '₱0.330 / ml (68° Brix)',
-      moq: '1 Jug',
-      leadTime: 'Same-day dispatch',
-      rating: 4.8,
-      reviews: 77,
-      icon: '🍯',
-      imgBg: '#fdf4ff',
-      net30: true,
-      packSize: '5L Heavy Jug',
-      description: 'Natural unrefined Muscovado syrup boiled from fresh sugarcane juice. Deep molasses notes perfect for tiger boba and shaken espresso.',
-      tierDiscounts: [
-        { qty: '1-3 Jugs', price: '₱1,650.00' },
-        { qty: '4+ Jugs', price: '₱1,500.00' }
-      ]
-    }
-  ]
+  // Consolidate full dynamic catalog into rich marketplace products
+  const allMasterCatalog = useMemo(() => {
+    const sourceList = (catalog && catalog.length > 0) ? catalog : DEFAULT_CATALOG
+    return sourceList.map(item => {
+      // Category normalization
+      let marketCat = 'syrup'
+      if (item.category === 'coffee' || item.flavorType === 'espresso' || item.flavorType === 'cold_brew') {
+        marketCat = 'coffee'
+      } else if (item.category === 'milk' || item.flavorType?.includes('milk_') || item.flavorType === 'milk_whole' || item.flavorType === 'milk_oat' || item.flavorType === 'milk_almond') {
+        marketCat = 'milk'
+      } else if (item.category === 'dairy' || item.flavorType?.includes('condensed') || item.flavorType?.includes('evaporated') || item.flavorType === 'cheese_foam') {
+        marketCat = 'condensed'
+      } else if (item.category === 'tea' || item.flavorType === 'matcha' || item.flavorType === 'hojicha' || item.flavorType?.includes('tea')) {
+        marketCat = 'tea'
+      } else if (item.category === 'toppings' || item.flavorType === 'boba' || item.flavorType === 'jelly' || item.flavorType === 'pudding' || item.flavorType === 'popping_boba') {
+        marketCat = 'toppings'
+      } else if (item.category === 'bar' || item.flavorType === 'mezcal' || item.flavorType === 'liqueur' || item.flavorType === 'irish_cream') {
+        marketCat = 'bar'
+      } else if (item.category === 'packaging' || item.layerType === 'packaging') {
+        marketCat = 'packaging'
+      } else {
+        marketCat = 'syrup'
+      }
+
+      // Icon & Background tint mapping
+      let icon = '✨'
+      let imgBg = '#fef3c7'
+      if (marketCat === 'coffee') { icon = '☕'; imgBg = '#ffedd5' }
+      else if (marketCat === 'milk') { icon = '🥛'; imgBg = '#fef7ee' }
+      else if (marketCat === 'condensed') { icon = '🍯'; imgBg = '#fef9c3' }
+      else if (marketCat === 'tea') { icon = '🍵'; imgBg = '#ecfdf5' }
+      else if (marketCat === 'toppings') { icon = '🧋'; imgBg = '#fee2e2' }
+      else if (marketCat === 'bar') { icon = '🍸'; imgBg = '#ede9fe' }
+      else if (marketCat === 'packaging') { icon = '📦'; imgBg = '#e0f2fe' }
+      else if (item.flavorType === 'chocolate') { icon = '🍫'; imgBg = '#f5ebe0' }
+      else if (item.flavorType === 'strawberry') { icon = '🍓'; imgBg = '#ffe4e6' }
+
+      const price = Number(item.packPrice || (item.unitCostPerMl * (item.unitYieldMl || 1000))) || 350
+      const unitCost = Number(item.unitCostPerMl || 0.25)
+
+      let unitEquiv = `₱${unitCost.toFixed(3)} / ml`
+      if (item.category === 'packaging') {
+        unitEquiv = `₱${unitCost.toFixed(2)} / set`
+      } else if (marketCat === 'coffee') {
+        unitEquiv = `₱${(unitCost * 36).toFixed(2)} per double shot (36ml)`
+      } else if (marketCat === 'milk') {
+        unitEquiv = `₱${(unitCost * 1000).toFixed(2)} / Liter (₱${unitCost.toFixed(3)}/ml)`
+      }
+
+      return {
+        id: item.id,
+        skuId: item.id,
+        name: item.name,
+        brand: item.brand || 'Specialty Roaster / Brand',
+        supplier: item.supplier || item.brand || 'Metro Manila Wholesale Direct',
+        category: marketCat,
+        rawCategory: item.category,
+        flavorType: item.flavorType,
+        tier: item.tier || 'signature',
+        price: price,
+        unitCostPerMl: unitCost,
+        unitYieldMl: item.unitYieldMl || 1000,
+        unitEquiv: unitEquiv,
+        moq: item.tier === 'artisanal' ? '1 Case / Pack' : item.tier === 'value' ? '2 Cases' : '1 Unit',
+        leadTime: item.supplier?.includes('Direct') || item.supplier?.includes('Manila') ? 'Next-day delivery' : '1-2 Days Direct Origin',
+        rating: item.tier === 'artisanal' ? 4.95 : item.tier === 'signature' ? 4.88 : 4.75,
+        reviews: Math.floor(45 + (item.name.length * 13) % 320),
+        icon: icon,
+        imgBg: imgBg,
+        net30: item.tier !== 'value',
+        packSize: item.packSize || `${item.unitYieldMl || 1000} ml Pack`,
+        description: item.description || `${item.brand} commercial cafe formulation with guaranteed yield and brix consistency.`,
+        tierDiscounts: [
+          { qty: '1-4 Packs', price: `₱${price.toLocaleString()}` },
+          { qty: '5-19 Packs', price: `₱${Math.round(price * 0.94).toLocaleString()} (Save 6%)` },
+          { qty: '20+ Packs', price: `₱${Math.round(price * 0.88).toLocaleString()} (Save 12%)` }
+        ]
+      }
+    })
+  }, [catalog])
+
+  // Extract all unique brands for filtering
+  const availableBrands = useMemo(() => {
+    const brands = new Set()
+    allMasterCatalog.forEach(p => {
+      if (p.brand) brands.add(p.brand)
+    })
+    return ['all', ...Array.from(brands).sort()]
+  }, [allMasterCatalog])
 
   // Cart Management
   const handleAddToCart = (item) => {
@@ -355,8 +318,7 @@ export function Marketplace({
   const handleSyncPriceToStudio = (item) => {
     triggerHaptic('success')
     if (onUpdateCatalogPrice && item.skuId) {
-      const divisor = item.skuId.includes('oatly') ? 6000 : item.skuId.includes('tapioca') ? 18000 : item.skuId.includes('syrup') ? 5000 : item.skuId.includes('espresso') ? 5000 : 1000
-      const newUnitCost = Number((item.price / divisor).toFixed(4))
+      const newUnitCost = Number((item.unitCostPerMl || (item.price / (item.unitYieldMl || 1000))).toFixed(4))
       onUpdateCatalogPrice([{
         skuId: item.skuId,
         newPrice: item.price,
@@ -389,10 +351,9 @@ export function Marketplace({
       const updates = cartItems
         .filter(item => item.skuId)
         .map(item => {
-          const divisor = item.skuId.includes('oatly') ? 6000 : item.skuId.includes('tapioca') ? 18000 : 1000
           return {
             skuId: item.skuId,
-            newUnitCost: Number((item.price / divisor).toFixed(4)),
+            newUnitCost: Number((item.unitCostPerMl || (item.price / (item.unitYieldMl || 1000))).toFixed(4)),
             newPrice: item.price
           }
         })
@@ -411,19 +372,29 @@ export function Marketplace({
   }
 
   // Filter and Sort direct products
-  const filteredProducts = directProducts
-    .filter(item => {
-      const matchesCat = activeCategory === 'all' || item.category === activeCategory
-      const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.supplier.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesNet30 = !filterNet30Only || item.net30
-      const matchesSameDay = !filterSameDayOnly || item.leadTime.includes('Same-day')
-      return matchesCat && matchesSearch && matchesNet30 && matchesSameDay
-    })
-    .sort((a, b) => {
-      if (sortBy === 'price-asc') return a.price - b.price
-      if (sortBy === 'rating') return b.rating - a.rating
-      return 0
-    })
+  const filteredProducts = useMemo(() => {
+    return allMasterCatalog
+      .filter(item => {
+        const matchesCat = activeCategory === 'all' || item.category === activeCategory
+        const matchesBrand = selectedBrand === 'all' || item.brand === selectedBrand
+        const matchesTier = selectedTier === 'all' || item.tier === selectedTier
+        const searchLower = searchQuery.toLowerCase()
+        const matchesSearch = 
+          item.name.toLowerCase().includes(searchLower) ||
+          item.brand.toLowerCase().includes(searchLower) ||
+          item.supplier.toLowerCase().includes(searchLower) ||
+          (item.flavorType && item.flavorType.toLowerCase().includes(searchLower)) ||
+          item.category.toLowerCase().includes(searchLower)
+        const matchesNet30 = !filterNet30Only || item.net30
+        const matchesSameDay = !filterSameDayOnly || item.leadTime.includes('Same-day') || item.leadTime.includes('Next-day')
+        return matchesCat && matchesBrand && matchesTier && matchesSearch && matchesNet30 && matchesSameDay
+      })
+      .sort((a, b) => {
+        if (sortBy === 'price-asc') return a.price - b.price
+        if (sortBy === 'rating') return b.rating - a.rating
+        return 0
+      })
+  }, [allMasterCatalog, activeCategory, selectedBrand, selectedTier, searchQuery, filterNet30Only, filterSameDayOnly, sortBy])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', margin: '0 auto', paddingBottom: '120px' }}>
@@ -632,6 +603,93 @@ export function Marketplace({
             })}
           </div>
 
+          {/* Secondary Brand & Quality Tier Filter Bar */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Brand Filter Dropdown / Pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', padding: '4px 10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <Tag size={13} color="#64748b" />
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569' }}>Brand:</span>
+              <select
+                value={selectedBrand}
+                onChange={(e) => {
+                  triggerHaptic('tap')
+                  setSelectedBrand(e.target.value)
+                }}
+                style={{
+                  border: 'none',
+                  background: 'transparent',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  color: selectedBrand === 'all' ? '#0f172a' : '#0284c7',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Brands ({availableBrands.length - 1})</option>
+                {availableBrands.filter(b => b !== 'all').map(b => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Quality Tier Segmented Controls */}
+            <div style={{ display: 'flex', gap: '4px', background: '#f1f5f9', padding: '3px', borderRadius: '12px' }}>
+              {[
+                { id: 'all', label: 'All Tiers' },
+                { id: 'artisanal', label: '✨ Artisanal' },
+                { id: 'signature', label: '⭐ Signature' },
+                { id: 'value', label: '🏷️ Value' }
+              ].map(t => {
+                const isSelected = selectedTier === t.id
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      triggerHaptic('tap')
+                      setSelectedTier(t.id)
+                    }}
+                    style={{
+                      padding: '4px 9px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: isSelected ? '#ffffff' : 'transparent',
+                      color: isSelected ? '#0f172a' : '#64748b',
+                      fontSize: '0.68rem',
+                      fontWeight: isSelected ? 800 : 600,
+                      cursor: 'pointer',
+                      boxShadow: isSelected ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {(selectedBrand !== 'all' || selectedTier !== 'all' || activeCategory !== 'all' || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSelectedBrand('all')
+                  setSelectedTier('all')
+                  setActiveCategory('all')
+                  setSearchQuery('')
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#ef4444',
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  padding: '4px 6px'
+                }}
+              >
+                Reset Filters ✕
+              </button>
+            )}
+          </div>
+
           {/* Group Buying Teaser */}
           <div
             style={{
@@ -688,7 +746,7 @@ export function Marketplace({
                   Wholesale Sourcing & Multi-Store Catalog
                 </h2>
                 <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                  Delivering to <strong style={{ color: '#0f172a' }}>{activeRegion}</strong>
+                  Delivering to <strong style={{ color: '#0f172a' }}>{activeRegion}</strong> • {filteredProducts.length} verified ingredients & SKUs
                 </span>
               </div>
 
@@ -697,188 +755,233 @@ export function Marketplace({
               </span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-              {filteredProducts.map(item => {
-                const inCart = cartItems.find(c => c.id === item.id)
-                const storeOffers = INGREDIENT_STORE_OFFERS[item.skuId] || []
-                const shopeeOffer = storeOffers.find(o => o.platform.includes('Shopee'))
-                const lazadaOffer = storeOffers.find(o => o.platform.includes('Lazada'))
+            {filteredProducts.length === 0 ? (
+              <div style={{ background: '#f8fafc', border: '1px dashed #cbd5e1', borderRadius: '16px', padding: '32px 20px', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🔍</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>No matching products found</div>
+                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '4px' }}>Try adjusting your search keyword, category, or brand filters.</div>
+                <button
+                  onClick={() => {
+                    setSelectedBrand('all')
+                    setSelectedTier('all')
+                    setActiveCategory('all')
+                    setSearchQuery('')
+                  }}
+                  style={{
+                    marginTop: '12px',
+                    background: '#0f172a',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    padding: '6px 14px',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                {filteredProducts.map(item => {
+                  const inCart = cartItems.find(c => c.id === item.id)
+                  const storeOffers = INGREDIENT_STORE_OFFERS[item.skuId] || []
+                  const shopeeOffer = storeOffers.find(o => o.platform.includes('Shopee'))
+                  const lazadaOffer = storeOffers.find(o => o.platform.includes('Lazada'))
 
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '20px',
-                      padding: '14px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                      gap: '10px'
-                    }}
-                  >
-                    <div>
-                      {/* Top Bar: Icon + Supplier & Rating */}
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '8px' }}>
-                        <div
-                          onClick={() => setSelectedProduct(item)}
-                          style={{
-                            width: '56px',
-                            height: '56px',
-                            borderRadius: '14px',
-                            background: item.imgBg,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '1.8rem',
-                            cursor: 'pointer',
-                            flexShrink: 0
-                          }}
-                        >
-                          {item.icon}
-                        </div>
+                  const tierBadgeStyle = 
+                    item.tier === 'artisanal' 
+                      ? { bg: '#f5f3ff', color: '#7c3aed', border: '#ddd6fe', label: 'Artisanal' }
+                      : item.tier === 'signature'
+                      ? { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe', label: 'Signature' }
+                      : { bg: '#ecfdf5', color: '#047857', border: '#a7f3d0', label: 'Value' }
 
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.supplier}</span>
-                            <span style={{ color: '#d97706', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-                              <Star size={11} fill="#d97706" color="#d97706" /> {item.rating}
-                            </span>
-                          </div>
-
-                          <h4
-                            onClick={() => setSelectedProduct(item)}
-                            style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', margin: '2px 0 0', lineHeight: 1.25, cursor: 'pointer' }}
-                          >
-                            {item.name}
-                          </h4>
-
-                          <div style={{ fontSize: '0.68rem', color: '#64748b', marginTop: '2px' }}>
-                            Pack: <strong style={{ color: '#334155' }}>{item.packSize || item.moq}</strong> • <span style={{ color: '#059669', fontWeight: 700 }}>{item.leadTime}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Multi-Store Comparison Chips */}
-                      <div
-                        style={{
-                          background: '#f8fafc',
-                          border: '1px solid #f1f5f9',
-                          borderRadius: '12px',
-                          padding: '6px 10px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '6px'
-                        }}
-                      >
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#0f172a' }}>
-                            B2B: ₱{item.price.toLocaleString()}
-                          </span>
-                          {shopeeOffer && (
-                            <span style={{ fontSize: '0.64rem', color: '#ea580c', background: '#fff7ed', padding: '1px 5px', borderRadius: '4px', border: '1px solid #fed7aa', fontWeight: 700 }}>
-                              Shopee ₱{shopeeOffer.pricePhp.toLocaleString()}
-                            </span>
-                          )}
-                          {lazadaOffer && (
-                            <span style={{ fontSize: '0.64rem', color: '#1d4ed8', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 700 }}>
-                              Lazada ₱{lazadaOffer.pricePhp.toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-
-                        <button
-                          onClick={() => setAffiliateModalProduct({
-                            id: item.skuId || item.id,
-                            name: item.name,
-                            unitCostPerMl: item.price / (item.skuId.includes('oatly') ? 6000 : 1000),
-                            packSize: item.packSize,
-                            supplier: item.supplier
-                          })}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#0284c7',
-                            fontSize: '0.68rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            padding: 0,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '2px',
-                            flexShrink: 0
-                          }}
-                        >
-                          <span>Compare</span>
-                          <ChevronRight size={12} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Price & Action Buttons */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
+                  return (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '20px',
+                        padding: '14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                        gap: '10px'
+                      }}
+                    >
                       <div>
-                        <div style={{ fontSize: '1rem', fontWeight: 900, color: '#0f172a', fontFamily: 'var(--font-mono)' }}>
-                          ₱{item.price.toLocaleString()}
+                        {/* Top Bar: Icon + Brand / Tier / Supplier & Rating */}
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <div
+                            onClick={() => setSelectedProduct(item)}
+                            style={{
+                              width: '54px',
+                              height: '54px',
+                              borderRadius: '14px',
+                              background: item.imgBg,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '1.75rem',
+                              cursor: 'pointer',
+                              flexShrink: 0
+                            }}
+                          >
+                            {item.icon}
+                          </div>
+
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <span style={{ fontSize: '0.62rem', fontWeight: 800, padding: '1px 6px', borderRadius: '6px', background: tierBadgeStyle.bg, color: tierBadgeStyle.color, border: `1px solid ${tierBadgeStyle.border}` }}>
+                                  {tierBadgeStyle.label}
+                                </span>
+                                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {item.brand}
+                                </span>
+                              </div>
+                              <span style={{ color: '#d97706', fontWeight: 800, fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                                <Star size={11} fill="#d97706" color="#d97706" /> {item.rating}
+                              </span>
+                            </div>
+
+                            <h4
+                              onClick={() => setSelectedProduct(item)}
+                              style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', margin: '2px 0 0', lineHeight: 1.25, cursor: 'pointer' }}
+                            >
+                              {item.name}
+                            </h4>
+
+                            <div style={{ fontSize: '0.66rem', color: '#64748b', marginTop: '2px' }}>
+                              Pack: <strong style={{ color: '#334155' }}>{item.packSize || item.moq}</strong> • <span style={{ color: '#059669', fontWeight: 700 }}>{item.leadTime}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '0.64rem', color: '#64748b' }}>
-                          {item.unitEquiv}
+
+                        {/* Multi-Store Comparison Chips */}
+                        <div
+                          style={{
+                            background: '#f8fafc',
+                            border: '1px solid #f1f5f9',
+                            borderRadius: '12px',
+                            padding: '6px 10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '6px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.66rem', fontWeight: 800, color: '#0f172a' }}>
+                              B2B: ₱{item.price.toLocaleString()}
+                            </span>
+                            {shopeeOffer && (
+                              <span style={{ fontSize: '0.62rem', color: '#ea580c', background: '#fff7ed', padding: '1px 5px', borderRadius: '4px', border: '1px solid #fed7aa', fontWeight: 700 }}>
+                                Shopee ₱{shopeeOffer.pricePhp.toLocaleString()}
+                              </span>
+                            )}
+                            {lazadaOffer && (
+                              <span style={{ fontSize: '0.62rem', color: '#1d4ed8', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px', border: '1px solid #bfdbfe', fontWeight: 700 }}>
+                                Lazada ₱{lazadaOffer.pricePhp.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => setAffiliateModalProduct({
+                              id: item.skuId || item.id,
+                              name: item.name,
+                              brand: item.brand,
+                              unitCostPerMl: item.unitCostPerMl,
+                              packSize: item.packSize,
+                              packPrice: item.price,
+                              supplier: item.supplier
+                            })}
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#0284c7',
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              padding: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                              flexShrink: 0
+                            }}
+                          >
+                            <span>Compare</span>
+                            <ChevronRight size={12} />
+                          </button>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        {/* 1-Tap Sync to Studio */}
-                        <button
-                          onClick={() => handleSyncPriceToStudio(item)}
-                          style={{
-                            background: '#f0fdf4',
-                            color: '#15803d',
-                            border: '1px solid #bbf7d0',
-                            borderRadius: '10px',
-                            padding: '7px 9px',
-                            fontSize: '0.7rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                          title="Sync this supplier price directly into Recipe Studio"
-                        >
-                          <Zap size={13} color="#16a34a" />
-                          <span>Sync</span>
-                        </button>
+                      {/* Price & Action Buttons */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
+                        <div>
+                          <div style={{ fontSize: '0.98rem', fontWeight: 900, color: '#0f172a', fontFamily: 'var(--font-mono)' }}>
+                            ₱{item.price.toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: '0.64rem', color: '#64748b' }}>
+                            {item.unitEquiv}
+                          </div>
+                        </div>
 
-                        {/* Add to PO Cart */}
-                        <button
-                          onClick={() => handleAddToCart(item)}
-                          style={{
-                            background: inCart ? '#059669' : '#0f172a',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '10px',
-                            padding: '7px 12px',
-                            fontSize: '0.74rem',
-                            fontWeight: 800,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          {inCart ? <Check size={13} /> : <Plus size={13} />}
-                          <span>{inCart ? `${inCart.qty} In PO` : 'Add'}</span>
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          {/* 1-Tap Sync to Studio */}
+                          <button
+                            onClick={() => handleSyncPriceToStudio(item)}
+                            style={{
+                              background: '#f0fdf4',
+                              color: '#15803d',
+                              border: '1px solid #bbf7d0',
+                              borderRadius: '10px',
+                              padding: '7px 9px',
+                              fontSize: '0.7rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            title="Sync this supplier price directly into Recipe Studio"
+                          >
+                            <Zap size={13} color="#16a34a" />
+                            <span>Sync</span>
+                          </button>
+
+                          {/* Add to PO Cart */}
+                          <button
+                            onClick={() => handleAddToCart(item)}
+                            style={{
+                              background: inCart ? '#059669' : '#0f172a',
+                              color: '#ffffff',
+                              border: 'none',
+                              borderRadius: '10px',
+                              padding: '7px 12px',
+                              fontSize: '0.74rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            {inCart ? <Check size={13} /> : <Plus size={13} />}
+                            <span>{inCart ? `${inCart.qty} In PO` : 'Add'}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
