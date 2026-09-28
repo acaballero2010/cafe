@@ -223,6 +223,9 @@ export function MobileRecipeBuilder({
       id: `layer-${Date.now()}`,
       ingredientId: item.id,
       name: item.name,
+      brand: item.brand || item.supplier || 'Specialty Catalog',
+      tier: item.tier || 'signature',
+      supplier: item.supplier,
       volumeMl: item.category === 'milk' || item.category === 'tea' ? 0 : 30,
       unitCostPerMl: item.unitCostPerMl,
       colorHex: item.colorHex || '#f59e0b',
@@ -237,7 +240,7 @@ export function MobileRecipeBuilder({
       updated = updated.map(l => ({ ...l, isTopOff: false }))
     }
     updated.push(newLayer)
-    onUpdateRecipe({ ...recipe, layers: updated })
+    onUpdateRecipe({ ...recipe, layers: updated, ingredientTier: 'hybrid' })
     setShowAddMenu(false)
   }
 
@@ -761,9 +764,9 @@ export function MobileRecipeBuilder({
                 boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
               }}
             >
-              {/* Row 1: Number Badge + Clean Ingredient Name + Drag Handle */}
+              {/* Row 1: Number Badge + Clean Ingredient Name + Tier Tag + Drag Handle */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
                   <div
                     style={{
                       width: '24px',
@@ -782,8 +785,22 @@ export function MobileRecipeBuilder({
                     {idx + 1}
                   </div>
 
-                  <span style={{ fontSize: '0.94rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {getCleanName(layer.name)}
+                  </span>
+
+                  {/* Quality Tier Indicator Pill */}
+                  <span style={{
+                    fontSize: '0.62rem',
+                    fontWeight: '800',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: layer.isSubRecipe ? '#fef3c7' : layer.tier === 'artisanal' ? '#faf5ff' : layer.tier === 'value' ? '#f0f9ff' : '#ecfdf5',
+                    color: layer.isSubRecipe ? '#b45309' : layer.tier === 'artisanal' ? '#7e22ce' : layer.tier === 'value' ? '#0284c7' : '#059669',
+                    border: `1px solid ${layer.isSubRecipe ? '#fde68a' : layer.tier === 'artisanal' ? '#e9d5ff' : layer.tier === 'value' ? '#bae6fd' : '#a7f3d0'}`,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {layer.isSubRecipe ? '✨ BATCH PREP' : layer.tier === 'artisanal' ? '👑 ARTISANAL' : layer.tier === 'value' ? '⚡ VALUE' : '⚖️ SIGNATURE'}
                   </span>
                 </div>
 
@@ -793,11 +810,13 @@ export function MobileRecipeBuilder({
                 </div>
               </div>
 
-              {/* Row 2: Metadata Subtext (Left) + Compact Stepper (Right) */}
+              {/* Row 2: Brand/Supplier Subtitle (Left) + Compact Stepper (Right) */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingTop: '2px' }}>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>
-                  {getLayerSubtext(idx, recipe.layers.length, layer.isTopOff)}
-                </span>
+                <div style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: '#64748b' }}>🏷️ Brand:</span>
+                  <span style={{ color: '#0f172a', fontWeight: 700 }}>{layer.brand || layer.supplier || 'Specialty Benchmark'}</span>
+                  <span style={{ color: '#94a3b8' }}>• ₱{(layer.unitCostPerMl || 0).toFixed(3)}/ml</span>
+                </div>
 
                 {/* Stepper Pill or Top-Off Button */}
                 {!layer.isTopOff ? (
@@ -910,7 +929,7 @@ export function MobileRecipeBuilder({
                     title="Swap ingredient SKU or change brand supplier"
                   >
                     <RefreshCw size={11} color="#0284c7" />
-                    <span>Swap SKU</span>
+                    <span>Swap Brand / SKU</span>
                   </button>
                 )}
               </div>
@@ -918,7 +937,7 @@ export function MobileRecipeBuilder({
           ))}
         </div>
 
-        {/* 3. Missing Full-Width "+ Add Ingredient or Layer" Button + Link Supplier Action */}
+        {/* 3. Add Layer & Link Supplier Buttons */}
         <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {!showAddMenu ? (
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -942,7 +961,7 @@ export function MobileRecipeBuilder({
                 }}
               >
                 <Plus size={16} />
-                <span>+ Add Layer</span>
+                <span>+ Add Layer / Brand SKU</span>
               </button>
 
               <button
@@ -965,15 +984,16 @@ export function MobileRecipeBuilder({
                   gap: '6px',
                   boxShadow: '0 1px 3px rgba(217, 119, 6, 0.08)'
                 }}
+                title="Link custom B2B supplier price or marketplace vendor"
               >
                 <Link2 size={15} />
-                <span>Link Supplier</span>
+                <span>Link Wholesale SKU</span>
               </button>
             </div>
           ) : (
             <div style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '14px', padding: '12px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155' }}>Select Item to Add:</span>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#334155' }}>Select Brand SKU to Add:</span>
                 <button
                   onClick={() => setShowAddMenu(false)}
                   style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: '0.74rem', cursor: 'pointer', fontWeight: 600 }}
@@ -999,15 +1019,25 @@ export function MobileRecipeBuilder({
                   minHeight: '44px'
                 }}
               >
-                <option value="" disabled selected>Tap to choose ingredient...</option>
+                <option value="" disabled selected>Tap to choose brand ingredient...</option>
                 <optgroup label="✨ House Batch Preps">
                   {subRecipes.map(s => (
                     <option key={s.id} value={`sub:${s.id}`}>[Batch] {s.name}</option>
                   ))}
                 </optgroup>
-                <optgroup label="📦 Raw Ingredients">
-                  {catalog.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+                <optgroup label="👑 Artisanal Reserve Brands (Luxury)">
+                  {catalog.filter(c => c.tier === 'artisanal').map(c => (
+                    <option key={c.id} value={c.id}>[👑 {c.brand}] {c.name} (₱{c.unitCostPerMl.toFixed(3)}/ml)</option>
+                  ))}
+                </optgroup>
+                <optgroup label="⚖️ Signature Standard Brands (Craft Cafe)">
+                  {catalog.filter(c => c.tier === 'signature').map(c => (
+                    <option key={c.id} value={c.id}>[⚖️ {c.brand}] {c.name} (₱{c.unitCostPerMl.toFixed(3)}/ml)</option>
+                  ))}
+                </optgroup>
+                <optgroup label="⚡ Value Bar Brands (Commercial Economy)">
+                  {catalog.filter(c => c.tier === 'value').map(c => (
+                    <option key={c.id} value={c.id}>[⚡ {c.brand}] {c.name} (₱{c.unitCostPerMl.toFixed(3)}/ml)</option>
                   ))}
                 </optgroup>
               </select>

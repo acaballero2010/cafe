@@ -524,15 +524,27 @@ export const INGREDIENT_TIER_PRESETS = [
     bg: '#f0f9ff',
     border: '#bae6fd',
     packagingUnitCost: 4.20,
+    featuredBrands: ['Top Creamery', 'Metro Foodservice', 'Bataan Bulk Roasters'],
+    brandSummary: 'Top Creamery + Metro Milk + Bataan Roasters',
     itemMappings: {
-      milk: { name: 'Commercial Barista Fresh Milk', unitCostPerMl: 0.075, supplier: 'Metro Foodservice Wholesale' },
-      espresso: { name: 'Commercial Arabica/Robusta Bar Blend (Double Shot)', unitCostPerMl: 0.380, supplier: 'Bataan Roasters Bulk' },
-      syrup: { name: 'Value Pure Cane / Fructose Syrup', unitCostPerMl: 0.160, supplier: 'Top Creamery Food Mfg' },
-      tea: { name: 'Commercial Ceylon Black Tea Brew', unitCostPerMl: 0.024, supplier: 'TeaSource Wholesale' },
-      matcha: { name: 'Culinary Grade Green Tea Powder', unitCostPerMl: 0.180, supplier: 'Boba King Supply' },
-      topping: { name: 'Standard Tapioca Pearls', unitCostPerMl: 0.110, supplier: 'Top Creamery Food Mfg' },
-      citrus: { name: 'Commercial Calamansi Concentrate', unitCostPerMl: 0.120, supplier: 'Divisoria Bulk' },
-      spirit: { name: 'House Well Spirit', unitCostPerMl: 1.20, supplier: 'Beverage Wholesale PH' }
+      espresso: { name: 'Commercial Robusta/Arabica Dark Roast Blend', brand: 'Bataan Roasters Bulk', unitCostPerMl: 0.380, supplier: 'Bataan Roasters Wholesale' },
+      cold_brew: { name: 'Commercial Cold Brew Concentrate', brand: 'Metro Foodservice', unitCostPerMl: 0.220, supplier: 'Metro Foodservice' },
+      milk_whole: { name: 'Commercial Barista Fresh Milk 3.2%', brand: 'Metro Foodservice Wholesale', unitCostPerMl: 0.075, supplier: 'Metro Foodservice' },
+      milk_oat: { name: 'Commercial Barista Oat Milk', brand: 'Boba King Supply', unitCostPerMl: 0.120, supplier: 'Boba King Supply Manila' },
+      milk_almond: { name: 'Commercial Barista Almond Milk', brand: 'Boba King Supply', unitCostPerMl: 0.140, supplier: 'Boba King Supply' },
+      caramel: { name: 'Top Creamery Salted Caramel Syrup', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.160, supplier: 'Top Creamery Direct' },
+      vanilla: { name: 'Top Creamery French Vanilla Syrup', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.160, supplier: 'Top Creamery Direct' },
+      brown_sugar: { name: 'Value Pure Cane / Fructose Syrup', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.160, supplier: 'Top Creamery Direct' },
+      chocolate: { name: 'Commercial Cocoa Sauce & Powder', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.180, supplier: 'Top Creamery Direct' },
+      hazelnut: { name: 'Top Creamery Roasted Hazelnut Syrup', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.160, supplier: 'Top Creamery Direct' },
+      strawberry: { name: 'Commercial Strawberry Fruit Puree', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.190, supplier: 'Top Creamery Direct' },
+      syrup: { name: 'Value Pure Cane / Fructose Syrup', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.160, supplier: 'Top Creamery Direct' },
+      tea: { name: 'Commercial Ceylon Black Tea Brew', brand: 'TeaSource Wholesale', unitCostPerMl: 0.024, supplier: 'TeaSource Wholesale' },
+      matcha: { name: 'Culinary Grade Green Tea Powder', brand: 'Boba King Supply', unitCostPerMl: 0.180, supplier: 'Boba King Supply' },
+      topping: { name: 'Standard Tapioca Pearls', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.110, supplier: 'Top Creamery Food Mfg' },
+      cheese_foam: { name: 'Commercial Salted Cream Powder Cap', brand: 'Top Creamery Food Mfg', unitCostPerMl: 0.120, supplier: 'Top Creamery Direct' },
+      citrus: { name: 'Commercial Calamansi Concentrate', brand: 'Divisoria Bulk', unitCostPerMl: 0.120, supplier: 'Divisoria Bulk' },
+      spirit: { name: 'House Well Spirit', brand: 'House Well', unitCostPerMl: 1.20, supplier: 'Beverage Wholesale PH' }
     }
   },
   {
@@ -546,15 +558,27 @@ export const INGREDIENT_TIER_PRESETS = [
     bg: '#ecfdf5',
     border: '#a7f3d0',
     packagingUnitCost: 7.80,
+    featuredBrands: ['Torani / Monin', 'Magnolia / Emborg', 'Kalsada Arabica'],
+    brandSummary: 'Torani/Monin + Magnolia Milk + Kalsada Arabica',
     itemMappings: {
-      milk: { name: 'Magnolia / Emborg Pure Whole Milk 3.8%', unitCostPerMl: 0.095, supplier: 'San Miguel / Metro Foodservice' },
-      espresso: { name: 'Benguet / Mt. Apo Specialty Arabica (Double Shot)', unitCostPerMl: 0.550, supplier: 'Kalsada Coffee / Local Origin' },
-      syrup: { name: 'House Muscovado Brown Sugar Syrup', unitCostPerMl: 0.342, supplier: 'Equicom Raw Sugar Bacolod' },
-      tea: { name: 'Royal Ceylon Strong Black Tea Base', unitCostPerMl: 0.034, supplier: 'TeaSource PH Wholesale' },
-      matcha: { name: 'Kyoto Ceremonial Grade Blend', unitCostPerMl: 0.320, supplier: 'Matcha Manila Direct' },
-      topping: { name: 'Fresh Warm Tiger Tapioca Pearls', unitCostPerMl: 0.160, supplier: 'Top Creamery Food Mfg' },
-      citrus: { name: 'Fresh Pressed Calamansi / Key Lime Juice', unitCostPerMl: 0.225, supplier: 'Divisoria Fresh Produce' },
-      spirit: { name: 'Craft Small-Batch Spirit', unitCostPerMl: 2.10, supplier: 'Wine Warehouse Manila' }
+      espresso: { name: 'Benguet / Mt. Apo Specialty Arabica (Double Shot)', brand: 'Kalsada Coffee / Local Origin', unitCostPerMl: 0.550, supplier: 'Kalsada Coffee Direct' },
+      cold_brew: { name: 'Nitro Cold Brew Concentrate (1:4 Dilution Yield)', brand: 'Manila Cold Brew Supply Co.', unitCostPerMl: 0.315, supplier: 'Manila Cold Brew Supply Co.' },
+      milk_whole: { name: 'Emborg / Magnolia Fresh Whole Milk 3.8%', brand: 'Magnolia / Emborg Professional', unitCostPerMl: 0.095, supplier: 'San Miguel / Metro Foodservice' },
+      milk_oat: { name: 'Oatside Barista Blend Oat Milk', brand: 'Oatside PH', unitCostPerMl: 0.160, supplier: 'Oatside Direct PH' },
+      milk_almond: { name: 'Califia Farms Barista Almond Blend', brand: 'Califia Farms', unitCostPerMl: 0.238, supplier: 'Santini Fine Foods PH' },
+      caramel: { name: 'Torani Classic Salted Caramel Sauce (Puremade)', brand: 'Torani / Monin', unitCostPerMl: 0.342, supplier: 'Barista Depot Manila' },
+      vanilla: { name: 'Monin French Vanilla Gourmet Syrup', brand: 'Monin', unitCostPerMl: 0.542, supplier: 'Barista Depot Manila' },
+      brown_sugar: { name: 'House Muscovado Brown Sugar Syrup (68° Brix)', brand: 'Equicom Raw Sugar Bacolod', unitCostPerMl: 0.342, supplier: 'Equicom Raw Sugar Bacolod' },
+      chocolate: { name: 'Ghirardelli / Monin Dark Chocolate Sauce', brand: 'Ghirardelli / Monin', unitCostPerMl: 0.420, supplier: 'Barista Depot Manila' },
+      hazelnut: { name: 'Torani Classic Roasted Hazelnut Syrup', brand: 'Torani', unitCostPerMl: 0.342, supplier: 'Barista Depot Manila' },
+      strawberry: { name: 'Monin Real Strawberry Fruit Puree', brand: 'Monin', unitCostPerMl: 0.390, supplier: 'Barista Depot Manila' },
+      syrup: { name: 'House Muscovado Brown Sugar Syrup', brand: 'Equicom Raw Sugar Bacolod', unitCostPerMl: 0.342, supplier: 'Equicom Raw Sugar Bacolod' },
+      tea: { name: 'Royal Ceylon Strong Black Tea Base', brand: 'TeaSource PH Wholesale', unitCostPerMl: 0.034, supplier: 'TeaSource PH Wholesale' },
+      matcha: { name: 'Kyoto Barista Grade Ceremonial Matcha Blend', brand: 'Matcha Manila Specialty', unitCostPerMl: 0.320, supplier: 'Matcha Manila Direct PH' },
+      topping: { name: 'Fresh Warm Tiger Tapioca Pearls (4h window)', brand: 'Top Creamery Food Mfg Corp', unitCostPerMl: 0.160, supplier: 'Top Creamery Food Mfg Corp' },
+      cheese_foam: { name: 'Sea Salt Himalayan Cheese Cream Cap', brand: 'In-House Prep Batch', unitCostPerMl: 0.187, supplier: 'In-House Prep Batch' },
+      citrus: { name: 'Fresh Pressed Calamansi / Key Lime Juice', brand: 'Divisoria Fresh Farm Produce', unitCostPerMl: 0.225, supplier: 'Divisoria Fresh Produce' },
+      spirit: { name: 'Craft Small-Batch Spirit', brand: 'Craft Spirits PH', unitCostPerMl: 2.10, supplier: 'Wine Warehouse Manila' }
     }
   },
   {
@@ -568,27 +592,54 @@ export const INGREDIENT_TIER_PRESETS = [
     bg: '#faf5ff',
     border: '#e9d5ff',
     packagingUnitCost: 10.50,
+    featuredBrands: ['1883 Maison Routin', 'Oatly / Hokkaido', 'Yardstick Ethiopia Guji'],
+    brandSummary: '1883 Maison Routin + Oatly/Hokkaido + Yardstick Guji',
     itemMappings: {
-      milk: { name: 'Oatly Barista Edition / Japanese Hokkaido Milk', unitCostPerMl: 0.210, supplier: 'BakeEtc / Gourmet Direct PH' },
-      espresso: { name: 'Ethiopia Guji Heirloom Single-Origin (Double Shot)', unitCostPerMl: 0.725, supplier: 'Yardstick Coffee Wholesale' },
-      syrup: { name: '1883 Maison Routin Madagascar Vanilla Bean Syrup', unitCostPerMl: 0.773, supplier: 'Barista Depot Manila' },
-      tea: { name: 'High Mountain Jasmine Blossom First Flush', unitCostPerMl: 0.065, supplier: 'TeaSource PH Wholesale' },
-      matcha: { name: 'Uji First-Harvest Ceremonial Matcha', unitCostPerMl: 0.480, supplier: 'Matcha Manila Direct PH' },
-      topping: { name: 'Artisanal Himalayan Cheese Cream Foam', unitCostPerMl: 0.220, supplier: 'In-House Bar Lab' },
-      citrus: { name: 'Japanese Yuzu & Organic Calamansi Puree', unitCostPerMl: 0.450, supplier: 'Gourmet Direct PH' },
-      spirit: { name: 'Del Maguey Vida Artisanal Mezcal', unitCostPerMl: 2.60, supplier: 'Wine Warehouse Manila' }
+      espresso: { name: 'Ethiopia Guji Heirloom Single-Origin Reserve (36ml)', brand: 'Yardstick Coffee Wholesale', unitCostPerMl: 0.725, supplier: 'Yardstick Coffee Wholesale (Manila)' },
+      cold_brew: { name: 'Single-Origin Geisha Cold Drip Extraction', brand: 'Artisanal Lab Manila', unitCostPerMl: 0.550, supplier: 'In-House Lab' },
+      milk_whole: { name: 'Japanese Hokkaido Farm Fresh Milk 4.0%', brand: 'Hokkaido Dairy Direct', unitCostPerMl: 0.230, supplier: 'Gourmet Direct Imports PH' },
+      milk_oat: { name: 'Oatly Barista Edition Oat Milk (Sweden)', brand: 'Oatly', unitCostPerMl: 0.210, supplier: 'BakeEtc / Gourmet Direct PH' },
+      milk_almond: { name: 'Califia Farms Organic Barista Blend', brand: 'Califia Farms', unitCostPerMl: 0.260, supplier: 'Santini Fine Foods' },
+      caramel: { name: '1883 Maison Routin Fleur de Sel Salted Caramel', brand: '1883 Maison Routin (France)', unitCostPerMl: 0.773, supplier: 'Gourmet Direct Imports PH' },
+      vanilla: { name: '1883 Maison Routin Madagascar Pure Vanilla Bean', brand: '1883 Maison Routin (France)', unitCostPerMl: 0.773, supplier: 'Barista Depot Manila' },
+      brown_sugar: { name: 'Artisanal Okinawa Kokuto Black Sugar Puree', brand: 'Okinawa Artisanal Imports', unitCostPerMl: 0.650, supplier: 'Gourmet Direct Imports PH' },
+      chocolate: { name: 'Valrhona Single-Origin French Mocha Ganache', brand: 'Valrhona France', unitCostPerMl: 0.850, supplier: 'Gourmet Direct Imports PH' },
+      hazelnut: { name: '1883 Maison Routin Piedmont Roasted Hazelnut', brand: '1883 Maison Routin (France)', unitCostPerMl: 0.773, supplier: 'Barista Depot Manila' },
+      strawberry: { name: 'La Trinidad Hand-Picked Organic Strawberry Compote', brand: 'Benguet Fruit Growers Direct', unitCostPerMl: 0.680, supplier: 'Benguet Fruit Direct' },
+      syrup: { name: '1883 Maison Routin Madagascar Pure Vanilla Bean', brand: '1883 Maison Routin (France)', unitCostPerMl: 0.773, supplier: 'Barista Depot Manila' },
+      tea: { name: 'High Mountain Jasmine Blossom First Flush', brand: 'Boba King / TeaSource', unitCostPerMl: 0.064, supplier: 'Boba King Supply Manila' },
+      matcha: { name: 'Uji First-Harvest Ceremonial Matcha (60ml)', brand: 'Kyoto Uji Direct', unitCostPerMl: 0.480, supplier: 'Matcha Manila Direct PH' },
+      topping: { name: 'Artisanal Okinawa Boba Pearls & Gold Flakes', brand: 'Artisanal Imports', unitCostPerMl: 0.240, supplier: 'In-House Bar Lab' },
+      cheese_foam: { name: 'Himalayan Pink Rock Salt Mascarpone Cream Foam', brand: 'In-House Bar Lab', unitCostPerMl: 0.250, supplier: 'In-House Bar Lab' },
+      citrus: { name: 'Japanese Yuzu & Organic Calamansi Puree', brand: 'Gourmet Direct Imports PH', unitCostPerMl: 0.450, supplier: 'Gourmet Direct PH' },
+      spirit: { name: 'Del Maguey Vida Artisanal Mezcal (45ml)', brand: 'Del Maguey (Oaxaca)', unitCostPerMl: 2.60, supplier: 'Wine Warehouse Manila' }
     }
   }
 ]
 
-export function detectLayerCategory(layer) {
+export function detectLayerFlavorProfile(layer) {
   const name = (layer.name || '').toLowerCase()
-  if (name.includes('espresso') || name.includes('coffee') || name.includes('ristretto') || name.includes('cold brew')) return 'espresso'
-  if (name.includes('milk') || name.includes('oat') || name.includes('dairy') || name.includes('cream') || name.includes('almond') || name.includes('soy')) return 'milk'
+  // Specific syrups & sauces
+  if (name.includes('caramel')) return 'caramel'
+  if (name.includes('vanilla')) return 'vanilla'
+  if (name.includes('brown sugar') || name.includes('muscovado') || name.includes('okinawa') || name.includes('cane') || name.includes('fructose') || name.includes('sugar')) return 'brown_sugar'
+  if (name.includes('chocolate') || name.includes('mocha') || name.includes('cocoa') || name.includes('ganache')) return 'chocolate'
+  if (name.includes('hazelnut') || name.includes('nut')) return 'hazelnut'
+  if (name.includes('strawberry') || name.includes('berry') || name.includes('fruit') || name.includes('compote')) return 'strawberry'
+  // Milks & Alt-milks
+  if (name.includes('oat')) return 'milk_oat'
+  if (name.includes('almond')) return 'milk_almond'
+  if (name.includes('milk') || name.includes('dairy') || name.includes('cream')) return 'milk_whole'
+  // Coffee
+  if (name.includes('cold brew')) return 'cold_brew'
+  if (name.includes('espresso') || name.includes('coffee') || name.includes('ristretto')) return 'espresso'
+  // Tea & Matcha
   if (name.includes('matcha') || name.includes('hojicha')) return 'matcha'
   if (name.includes('tea') || name.includes('jasmine') || name.includes('ceylon') || name.includes('earl grey')) return 'tea'
-  if (name.includes('boba') || name.includes('pearl') || name.includes('jelly') || name.includes('foam') || name.includes('cap')) return 'topping'
-  if (name.includes('syrup') || name.includes('sugar') || name.includes('puree') || name.includes('vanilla') || name.includes('compote') || name.includes('sauce') || name.includes('nectar')) return 'syrup'
+  // Toppings & Foam
+  if (name.includes('cheese') || name.includes('foam') || name.includes('cap') || name.includes('cloud')) return 'cheese_foam'
+  if (name.includes('boba') || name.includes('pearl') || name.includes('tapioca') || name.includes('jelly')) return 'topping'
+  // Citrus & Spirits
   if (name.includes('lime') || name.includes('lemon') || name.includes('calamansi') || name.includes('citrus') || name.includes('yuzu')) return 'citrus'
   if (name.includes('mezcal') || name.includes('gin') || name.includes('spirit') || name.includes('rum') || name.includes('whiskey')) return 'spirit'
   return 'syrup'
@@ -605,22 +656,20 @@ export function applyIngredientTierToRecipe(recipe, tierId = 'signature', catalo
     // Keep custom sub-recipe batch preps unchanged or adjust unitCost if applicable
     if (layer.isSubRecipe) return layer
 
-    const category = detectLayerCategory(layer)
-    const tierMapping = tier.itemMappings[category]
+    const flavor = detectLayerFlavorProfile(layer)
+    const tierMapping = tier.itemMappings[flavor] || tier.itemMappings.syrup
 
     if (!tierMapping) return layer
 
     return {
       ...layer,
       name: tierMapping.name,
+      brand: tierMapping.brand,
       unitCostPerMl: tierMapping.unitCostPerMl,
       supplier: tierMapping.supplier,
       tier: tierId
     }
   })
-
-  // Compute updated packaging cost for the tier
-  const basePrice = Number(recipe.price || recipe.menuPrice || 180)
 
   return {
     ...recipe,
@@ -633,6 +682,9 @@ export function applyIngredientTierToRecipe(recipe, tierId = 'signature', catalo
  * Calculates side-by-side comparison across all 3 tiers (Value, Signature, Artisanal) for the given recipe.
  */
 export function calculateRecipeTierComparison(recipe, catalog = [], basePrice = 180) {
+  // Check if current recipe is hybrid or matches an active tier
+  const activeTierId = recipe.ingredientTier || 'signature'
+
   return INGREDIENT_TIER_PRESETS.map(tier => {
     const previewRecipe = applyIngredientTierToRecipe(recipe, tier.id, catalog)
     const layers = previewRecipe.layers || []
@@ -658,13 +710,15 @@ export function calculateRecipeTierComparison(recipe, catalog = [], basePrice = 
       color: tier.color,
       bg: tier.bg,
       border: tier.border,
+      featuredBrands: tier.featuredBrands,
+      brandSummary: tier.brandSummary,
       totalLiquidCost: Number(totalLiquidCost.toFixed(2)),
       packagingCost: tier.packagingUnitCost,
       totalCogs,
       grossProfit,
       grossMarginPct,
       suggestedPrice,
-      isActive: (recipe.ingredientTier || 'signature') === tier.id
+      isActive: activeTierId === tier.id
     }
   })
 }
