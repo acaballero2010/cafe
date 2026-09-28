@@ -22,6 +22,8 @@ import { DeliveryMarginSimulator } from './DeliveryMarginSimulator'
 import { PriceSurgeSimulatorModal } from './PriceSurgeSimulatorModal'
 import { RecipeIterationHistoryModal } from './RecipeIterationHistoryModal'
 import { IngredientTierSelectorCard } from './IngredientTierSelectorCard'
+import { SkuSwapModal } from './SkuSwapModal'
+import { CostComputationModal } from './CostComputationModal'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -58,6 +60,9 @@ export function MobileRecipeBuilder({
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false)
   const [isSurgeOpen, setIsSurgeOpen] = useState(false)
   const [isVersionOpen, setIsVersionOpen] = useState(false)
+  const [isCostModalOpen, setIsCostModalOpen] = useState(false)
+  const [isBrandSwapModalOpen, setIsBrandSwapModalOpen] = useState(false)
+  const [activeSwapLayerIndex, setActiveSwapLayerIndex] = useState(null)
   const [recipeVersionTag, setRecipeVersionTag] = useState(recipe.version || 'v1.0')
   const [recipeStatus, setRecipeStatus] = useState(recipe.status || 'rnd') // 'rnd' | 'menu'
   const [selectedTargetMenuId, setSelectedTargetMenuId] = useState(savedMenus[0]?.id || 'new')
@@ -653,6 +658,39 @@ export function MobileRecipeBuilder({
         currentUser={currentUser}
       />
 
+      {/* Multi-Brand SKU Swap Modal */}
+      {isBrandSwapModalOpen && activeSwapLayerIndex !== null && recipe.layers[activeSwapLayerIndex] && (
+        <SkuSwapModal
+          isOpen={isBrandSwapModalOpen}
+          onClose={() => {
+            setIsBrandSwapModalOpen(false)
+            setActiveSwapLayerIndex(null)
+          }}
+          layer={recipe.layers[activeSwapLayerIndex]}
+          layerIndex={activeSwapLayerIndex}
+          catalog={catalog}
+          recipePrice={recipe.menuPrice || 180}
+          onSelectBrand={(updatedLayer) => {
+            const updated = [...recipe.layers]
+            updated[activeSwapLayerIndex] = updatedLayer
+            onUpdateRecipe({
+              ...recipe,
+              ingredientTier: 'hybrid',
+              layers: updated
+            })
+            setIsBrandSwapModalOpen(false)
+            setActiveSwapLayerIndex(null)
+          }}
+        />
+      )}
+
+      {/* Transparent Cost Formula & Margin Computation Inspector Modal */}
+      <CostComputationModal
+        isOpen={isCostModalOpen}
+        onClose={() => setIsCostModalOpen(false)}
+        recipe={recipe}
+      />
+
 
       {/* 2. Cup & Size Selector */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
@@ -743,9 +781,31 @@ export function MobileRecipeBuilder({
           <h2 style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Recipe Build Order
           </h2>
-          <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 600 }}>
-            {recipe.layers.length} Layers
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setIsCostModalOpen(true)}
+              style={{
+                background: '#f0f9ff',
+                border: '1px solid #bae6fd',
+                color: '#0369a1',
+                fontSize: '0.70rem',
+                fontWeight: 800,
+                padding: '4px 8px',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                cursor: 'pointer'
+              }}
+              title="View mathematical COGS formula, pack yields, and target margin calculations"
+            >
+              <FileText size={12} color="#0284c7" />
+              <span>How Cost is Computed</span>
+            </button>
+            <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 600 }}>
+              {recipe.layers.length} Layers
+            </span>
+          </div>
         </div>
 
         {/* List of 2-Row Ingredient Cards */}
@@ -900,17 +960,31 @@ export function MobileRecipeBuilder({
                   <span style={{ fontSize: '0.66rem', background: layer.isSubRecipe ? '#fef3c7' : '#f1f5f9', color: layer.isSubRecipe ? '#b45309' : '#475569', padding: '2px 6px', borderRadius: '6px', fontWeight: 700 }}>
                     {layer.isSubRecipe ? 'HOUSE PREP BATCH' : 'WHOLESALE SKU'}
                   </span>
-                  <span style={{ fontWeight: 600, color: '#334155' }}>
-                    ₱{((layer.unitCostPerMl || 0.1) * (layer.volumeMl || 30)).toFixed(2)} portion cost
-                  </span>
+                  <button
+                    onClick={() => setIsCostModalOpen(true)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: 0,
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '3px'
+                    }}
+                    title="Click to view full calculation breakdown"
+                  >
+                    <span>₱{((layer.unitCostPerMl || 0.1) * (layer.volumeMl || 30)).toFixed(2)} portion cost</span>
+                    <span style={{ color: '#0284c7', fontSize: '0.68rem' }}>ℹ️</span>
+                  </button>
                 </div>
 
                 {!layer.isSubRecipe && (
                   <button
                     onClick={() => {
-                      setActivePickerLayerIndex(idx)
-                      setPickerTargetPortion(layer.volumeMl || 30)
-                      setIsPickerOpen(true)
+                      setActiveSwapLayerIndex(idx)
+                      setIsBrandSwapModalOpen(true)
                     }}
                     style={{
                       background: '#f8fafc',
@@ -926,7 +1000,7 @@ export function MobileRecipeBuilder({
                       gap: '4px',
                       boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
                     }}
-                    title="Swap ingredient SKU or change brand supplier"
+                    title="Swap ingredient brand and compare live pricing differences"
                   >
                     <RefreshCw size={11} color="#0284c7" />
                     <span>Swap Brand / SKU</span>
