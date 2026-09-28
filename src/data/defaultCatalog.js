@@ -1,6 +1,7 @@
-// Raw Materials & Packaging Catalog (Philippine Peso ₱ Pricing & Localized Multi-Brand Database)
+import { TOP_CREAMERY_FULL_CATALOG } from './topCreameryCatalog.js'
 
-export const DEFAULT_CATALOG = [
+// Raw Materials & Packaging Catalog (Philippine Peso ₱ Pricing & Localized Multi-Brand Database)
+export const CORE_CURATED_CATALOG = [
   // ==========================================
   // 1. ESPRESSO & COFFEE BEANS
   // ==========================================
@@ -1650,5 +1651,12 @@ export const DEFAULT_CATALOG = [
   }
 ]
 
+// Complete consolidated Master Wholesale Catalog with all 820+ TOP Creamery products and specialty brands
+export const DEFAULT_CATALOG = [
+  ...CORE_CURATED_CATALOG,
+  ...TOP_CREAMERY_FULL_CATALOG.filter(tc => !CORE_CURATED_CATALOG.some(c => c.name.toLowerCase() === tc.name.toLowerCase()))
+]
+
 export const PACKAGING_ITEMS = DEFAULT_CATALOG.filter(item => item.category === 'packaging')
+
 
