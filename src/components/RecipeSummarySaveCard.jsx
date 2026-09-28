@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   Save,
   Sparkles,
@@ -18,9 +18,11 @@ import {
   FileText
 } from 'lucide-react'
 import { calculateSensoryProfile, analyzeAllergensAndNutrition } from '../utils/beverageCalculators'
+import { calculateDrinkMetrics } from '../types/physics'
 
 export function RecipeSummarySaveCard({
   recipe,
+  metrics,
   onUpdateRecipe = () => {},
   onSaveRecipe = () => {},
   onOpenSaveModal = () => {},
@@ -29,34 +31,52 @@ export function RecipeSummarySaveCard({
 }) {
   const [isSavedSuccess, setIsSavedSuccess] = useState(false)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [titleInput, setTitleInput] = useState(recipe.name || 'Untitled Recipe')
-  const [priceInput, setPriceInput] = useState(recipe.menuPrice || recipe.price || 180)
+  const [titleInput, setTitleInput] = useState(recipe?.name || 'Untitled Recipe')
+  const [priceInput, setPriceInput] = useState(recipe?.menuPrice || recipe?.price || 180)
 
-  const layers = recipe.layers || []
+  useEffect(() => {
+    setTitleInput(recipe?.name || 'Untitled Recipe')
+  }, [recipe?.name])
+
+  useEffect(() => {
+    setPriceInput(recipe?.menuPrice || recipe?.price || 180)
+  }, [recipe?.menuPrice, recipe?.price])
+
+  const layers = recipe?.layers || []
   const sensory = calculateSensoryProfile(recipe)
   const nutrition = analyzeAllergensAndNutrition(recipe)
 
-  // Compute live COGS
-  let totalLiquidCost = 0
+  // Use centralized drink metrics for 100% centavo-exact synchronization with floating bar
+  const calculatedMetrics = useMemo(() => {
+    if (metrics) return metrics
+    return calculateDrinkMetrics({
+      vesselId: recipe?.vesselId,
+      iceTypeId: recipe?.iceTypeId,
+      layers: recipe?.layers,
+      packagingItems: [],
+      includeScrap: true,
+      menuPrice: Number(recipe?.menuPrice || recipe?.price || 180)
+    })
+  }, [metrics, recipe])
+
+  const totalCogs = Number(calculatedMetrics.totalCogs.toFixed(2))
+  const grossProfit = Number(calculatedMetrics.grossProfit.toFixed(2))
+  const grossMarginPct = Number(calculatedMetrics.grossMarginPct.toFixed(1))
+  const totalLiquidCost = Number((calculatedMetrics.realLiquidCostWithScrap || calculatedMetrics.nominalLiquidCost).toFixed(2))
+  const packagingCost = Number(((calculatedMetrics.packagingCost || 0) + (calculatedMetrics.iceCost || 0)).toFixed(2))
+  const menuPrice = Number(recipe?.menuPrice || recipe?.price || 180)
+
   let totalVolumeMl = 0
   layers.forEach(l => {
-    const vol = Number(l.volumeMl || 0)
-    const rate = Number(l.unitCostPerMl || 0.15)
-    totalLiquidCost += (vol * rate)
-    totalVolumeMl += vol
+    totalVolumeMl += Number(l.volumeMl || 0)
   })
-
-  const packagingCost = 4.50
-  const totalCogs = Number((totalLiquidCost + packagingCost).toFixed(2))
-  const menuPrice = Number(recipe.menuPrice || recipe.price || 180)
-  const grossProfit = Number((menuPrice - totalCogs).toFixed(2))
-  const grossMarginPct = menuPrice > 0 ? Number(((grossProfit / menuPrice) * 100).toFixed(1)) : 0
 
   const handleQuickSave = () => {
     const updated = {
       ...recipe,
       name: titleInput.trim() || recipe.name,
       menuPrice: Number(priceInput) || 180,
+      price: Number(priceInput) || 180,
       lastSavedAt: new Date().toISOString()
     }
     onUpdateRecipe(updated)

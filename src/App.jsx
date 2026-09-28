@@ -522,6 +522,7 @@ export function App() {
             {studioSubTab === 'builder' && (
               <MobileRecipeBuilder
                 recipe={syncedRecipe}
+                metrics={metrics}
                 catalog={catalog}
                 subRecipes={subRecipes}
                 includeScrap={includeScrap}

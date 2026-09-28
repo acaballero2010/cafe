@@ -28,6 +28,7 @@ import { RecipeSummarySaveCard } from './RecipeSummarySaveCard'
 
 export function MobileRecipeBuilder({
   recipe,
+  metrics,
   catalog,
   subRecipes = [],
   includeScrap,
@@ -283,6 +284,7 @@ export function MobileRecipeBuilder({
       {/* 1. Executive Recipe Summary, Live Costing & Instant Save Card */}
       <RecipeSummarySaveCard
         recipe={recipe}
+        metrics={metrics}
         onUpdateRecipe={onUpdateRecipe}
         onSaveRecipe={(updated) => {
           if (onSaveToMenu) {
