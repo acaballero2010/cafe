@@ -27,12 +27,21 @@ export function MultiCupScalerPanel({
 
   const handleApplySize = (cup) => {
     setAppliedCupId(cup.cupId)
-    // Create new recipe object with scaled layers
+    // Create new recipe object with scaled layers and updated menu price
+    const mappedVessel = cup.cupId === '12oz' 
+      ? 'hot-12oz' 
+      : cup.cupId === '22oz' 
+        ? 'boba-20oz' 
+        : cup.cupId === '1000ml' 
+          ? 'boba-24oz' 
+          : 'cold-16oz'
+
     const scaledRecipe = {
       ...recipe,
-      vesselId: cup.cupId === '12oz' ? 'hot-12oz' : cup.cupId === '22oz' ? 'boba-24oz' : 'cold-16oz',
+      vesselId: mappedVessel,
       targetVolumeMl: cup.volumeMl,
-      price: cup.actualPrice,
+      menuPrice: cup.actualPrice || cup.suggestedPrice || 180,
+      price: cup.actualPrice || cup.suggestedPrice || 180,
       srp: cup.suggestedPrice,
       layers: cup.layers.map(l => ({
         ...l,
@@ -40,7 +49,7 @@ export function MultiCupScalerPanel({
       }))
     }
     onApplyScaledRecipe(scaledRecipe, cup)
-    setTimeout(() => setAppliedCupId(null), 2500)
+    setTimeout(() => setAppliedCupId(null), 1500)
   }
 
   return (
