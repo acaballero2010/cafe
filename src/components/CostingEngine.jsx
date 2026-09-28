@@ -29,6 +29,7 @@ import { MultiCupScalerPanel } from './MultiCupScalerPanel'
 import { DeliveryMarginSimulator } from './DeliveryMarginSimulator'
 import { PriceSurgeSimulatorModal } from './PriceSurgeSimulatorModal'
 import { RecipeIterationHistoryModal } from './RecipeIterationHistoryModal'
+import { IngredientTierSelectorCard } from './IngredientTierSelectorCard'
 
 export function CostingEngine({
   recipe,
@@ -264,6 +265,7 @@ export function CostingEngine({
         }}>
           {[
             { id: 'builder', label: '🧪 Recipe Builder', desc: 'Layers & Physics' },
+            { id: 'tiers', label: '✨ Ingredient Tiers', desc: 'Value / Signature / Reserve' },
             { id: 'multicup', label: '📐 Multi-Cup Sizing', desc: '12oz / 16oz / 22oz / 1L' },
             { id: 'delivery', label: '🛵 Delivery & Grab/Panda', desc: '25% Commissions' },
             { id: 'ladder', label: '🎯 Target Margin Ladder', desc: 'Reverse Pricing Solver' }
@@ -364,6 +366,15 @@ export function CostingEngine({
           </>
         )}
       </div>
+
+      {/* Tab: Ingredient Tiers Preset */}
+      {activeTab === 'tiers' && (
+        <IngredientTierSelectorCard
+          recipe={recipe}
+          catalog={catalog}
+          onUpdateRecipe={onUpdateRecipe}
+        />
+      )}
 
       {/* Tab 2: Multi-Cup Sizing Matrix */}
       {activeTab === 'multicup' && (

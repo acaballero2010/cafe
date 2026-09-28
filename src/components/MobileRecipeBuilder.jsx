@@ -21,6 +21,7 @@ import { MultiCupScalerPanel } from './MultiCupScalerPanel'
 import { DeliveryMarginSimulator } from './DeliveryMarginSimulator'
 import { PriceSurgeSimulatorModal } from './PriceSurgeSimulatorModal'
 import { RecipeIterationHistoryModal } from './RecipeIterationHistoryModal'
+import { IngredientTierSelectorCard } from './IngredientTierSelectorCard'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -726,6 +727,13 @@ export function MobileRecipeBuilder({
         </div>
       </div>
 
+      {/* 3.5 Intelligent Quality & Ingredient Tier Presets (Value / Signature / Artisanal) */}
+      <IngredientTierSelectorCard
+        recipe={recipe}
+        catalog={catalog}
+        onUpdateRecipe={onUpdateRecipe}
+      />
+
       {/* 4. Streamlined Recipe Build Order (Balanced 2-Row Layout, No Squishing!) */}
       <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
@@ -879,54 +887,31 @@ export function MobileRecipeBuilder({
                 </div>
 
                 {!layer.isSubRecipe && (
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      onClick={() => handleOpenAffiliateModal(layer, idx)}
-                      style={{
-                        background: '#fff7ed',
-                        border: '1px solid #fed7aa',
-                        color: '#ea580c',
-                        fontSize: '0.70rem',
-                        fontWeight: 800,
-                        padding: '4px 8px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        boxShadow: '0 1px 2px rgba(234, 88, 12, 0.08)'
-                      }}
-                      title="Compare Shopee, Lazada & Wholesale Prices & Buy"
-                    >
-                      <ShoppingBag size={11} />
-                      <span>Compare Stores & Buy</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setActivePickerLayerIndex(idx)
-                        setPickerTargetPortion(layer.volumeMl || 30)
-                        setIsPickerOpen(true)
-                      }}
-                      style={{
-                        background: '#f0fdf4',
-                        border: '1px solid #bbf7d0',
-                        color: '#047857',
-                        fontSize: '0.70rem',
-                        fontWeight: 800,
-                        padding: '4px 8px',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        boxShadow: '0 1px 2px rgba(5, 150, 105, 0.08)'
-                      }}
-                    >
-                      <RefreshCw size={11} />
-                      <span>Swap</span>
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => {
+                      setActivePickerLayerIndex(idx)
+                      setPickerTargetPortion(layer.volumeMl || 30)
+                      setIsPickerOpen(true)
+                    }}
+                    style={{
+                      background: '#f8fafc',
+                      border: '1px solid #cbd5e1',
+                      color: '#0f172a',
+                      fontSize: '0.70rem',
+                      fontWeight: 800,
+                      padding: '4px 10px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                    }}
+                    title="Swap ingredient SKU or change brand supplier"
+                  >
+                    <RefreshCw size={11} color="#0284c7" />
+                    <span>Swap SKU</span>
+                  </button>
                 )}
               </div>
             </div>

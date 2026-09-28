@@ -504,3 +504,167 @@ export function calculateBatchSpoilageAmortization({
     isHighRisk: expectedSellThroughPct < 70
   }
 }
+
+/**
+ * 6. INTELLIGENT INGREDIENT TIER PRESET ENGINE
+ * Auto-selects and swaps all recipe ingredients across 3 calibrated quality & pricing tiers:
+ * - 'value' (⚡ Value / Commercial Bar - Lowest Pricing)
+ * - 'signature' (⚖️ Signature / Craft Standard - Benchmark Mid-Tier)
+ * - 'artisanal' (👑 Artisanal / Reserve Luxury - Single-Origin Premium)
+ */
+export const INGREDIENT_TIER_PRESETS = [
+  {
+    id: 'value',
+    label: '⚡ Value Bar',
+    fullName: '⚡ Value / Commercial Bar',
+    tagline: 'Lowest Cost & High Margin',
+    desc: 'Cost-optimized wholesale SKUs designed for high-volume delivery, school kiosks & value menus.',
+    badge: 'Budget / Grab-Optimized',
+    color: '#0284c7',
+    bg: '#f0f9ff',
+    border: '#bae6fd',
+    packagingUnitCost: 4.20,
+    itemMappings: {
+      milk: { name: 'Commercial Barista Fresh Milk', unitCostPerMl: 0.075, supplier: 'Metro Foodservice Wholesale' },
+      espresso: { name: 'Commercial Arabica/Robusta Bar Blend (Double Shot)', unitCostPerMl: 0.380, supplier: 'Bataan Roasters Bulk' },
+      syrup: { name: 'Value Pure Cane / Fructose Syrup', unitCostPerMl: 0.160, supplier: 'Top Creamery Food Mfg' },
+      tea: { name: 'Commercial Ceylon Black Tea Brew', unitCostPerMl: 0.024, supplier: 'TeaSource Wholesale' },
+      matcha: { name: 'Culinary Grade Green Tea Powder', unitCostPerMl: 0.180, supplier: 'Boba King Supply' },
+      topping: { name: 'Standard Tapioca Pearls', unitCostPerMl: 0.110, supplier: 'Top Creamery Food Mfg' },
+      citrus: { name: 'Commercial Calamansi Concentrate', unitCostPerMl: 0.120, supplier: 'Divisoria Bulk' },
+      spirit: { name: 'House Well Spirit', unitCostPerMl: 1.20, supplier: 'Beverage Wholesale PH' }
+    }
+  },
+  {
+    id: 'signature',
+    label: '⚖️ Signature Standard',
+    fullName: '⚖️ Signature / Craft Standard',
+    tagline: 'Balanced Specialty Benchmark',
+    desc: 'Mainstream specialty cafe standard balancing robust flavor clarity with optimal 75% margin.',
+    badge: 'Standard Cafe Benchmark',
+    color: '#059669',
+    bg: '#ecfdf5',
+    border: '#a7f3d0',
+    packagingUnitCost: 7.80,
+    itemMappings: {
+      milk: { name: 'Magnolia / Emborg Pure Whole Milk 3.8%', unitCostPerMl: 0.095, supplier: 'San Miguel / Metro Foodservice' },
+      espresso: { name: 'Benguet / Mt. Apo Specialty Arabica (Double Shot)', unitCostPerMl: 0.550, supplier: 'Kalsada Coffee / Local Origin' },
+      syrup: { name: 'House Muscovado Brown Sugar Syrup', unitCostPerMl: 0.342, supplier: 'Equicom Raw Sugar Bacolod' },
+      tea: { name: 'Royal Ceylon Strong Black Tea Base', unitCostPerMl: 0.034, supplier: 'TeaSource PH Wholesale' },
+      matcha: { name: 'Kyoto Ceremonial Grade Blend', unitCostPerMl: 0.320, supplier: 'Matcha Manila Direct' },
+      topping: { name: 'Fresh Warm Tiger Tapioca Pearls', unitCostPerMl: 0.160, supplier: 'Top Creamery Food Mfg' },
+      citrus: { name: 'Fresh Pressed Calamansi / Key Lime Juice', unitCostPerMl: 0.225, supplier: 'Divisoria Fresh Produce' },
+      spirit: { name: 'Craft Small-Batch Spirit', unitCostPerMl: 2.10, supplier: 'Wine Warehouse Manila' }
+    }
+  },
+  {
+    id: 'artisanal',
+    label: '👑 Artisanal Reserve',
+    fullName: '👑 Artisanal / Reserve Luxury',
+    tagline: 'Top-Shelf Single-Origin & Luxury',
+    desc: 'Exceptional single-origin roasts, Japanese imported dairy, and organic purees for boutique positioning.',
+    badge: 'Artisanal Single-Origin',
+    color: '#9333ea',
+    bg: '#faf5ff',
+    border: '#e9d5ff',
+    packagingUnitCost: 10.50,
+    itemMappings: {
+      milk: { name: 'Oatly Barista Edition / Japanese Hokkaido Milk', unitCostPerMl: 0.210, supplier: 'BakeEtc / Gourmet Direct PH' },
+      espresso: { name: 'Ethiopia Guji Heirloom Single-Origin (Double Shot)', unitCostPerMl: 0.725, supplier: 'Yardstick Coffee Wholesale' },
+      syrup: { name: '1883 Maison Routin Madagascar Vanilla Bean Syrup', unitCostPerMl: 0.773, supplier: 'Barista Depot Manila' },
+      tea: { name: 'High Mountain Jasmine Blossom First Flush', unitCostPerMl: 0.065, supplier: 'TeaSource PH Wholesale' },
+      matcha: { name: 'Uji First-Harvest Ceremonial Matcha', unitCostPerMl: 0.480, supplier: 'Matcha Manila Direct PH' },
+      topping: { name: 'Artisanal Himalayan Cheese Cream Foam', unitCostPerMl: 0.220, supplier: 'In-House Bar Lab' },
+      citrus: { name: 'Japanese Yuzu & Organic Calamansi Puree', unitCostPerMl: 0.450, supplier: 'Gourmet Direct PH' },
+      spirit: { name: 'Del Maguey Vida Artisanal Mezcal', unitCostPerMl: 2.60, supplier: 'Wine Warehouse Manila' }
+    }
+  }
+]
+
+export function detectLayerCategory(layer) {
+  const name = (layer.name || '').toLowerCase()
+  if (name.includes('espresso') || name.includes('coffee') || name.includes('ristretto') || name.includes('cold brew')) return 'espresso'
+  if (name.includes('milk') || name.includes('oat') || name.includes('dairy') || name.includes('cream') || name.includes('almond') || name.includes('soy')) return 'milk'
+  if (name.includes('matcha') || name.includes('hojicha')) return 'matcha'
+  if (name.includes('tea') || name.includes('jasmine') || name.includes('ceylon') || name.includes('earl grey')) return 'tea'
+  if (name.includes('boba') || name.includes('pearl') || name.includes('jelly') || name.includes('foam') || name.includes('cap')) return 'topping'
+  if (name.includes('syrup') || name.includes('sugar') || name.includes('puree') || name.includes('vanilla') || name.includes('compote') || name.includes('sauce') || name.includes('nectar')) return 'syrup'
+  if (name.includes('lime') || name.includes('lemon') || name.includes('calamansi') || name.includes('citrus') || name.includes('yuzu')) return 'citrus'
+  if (name.includes('mezcal') || name.includes('gin') || name.includes('spirit') || name.includes('rum') || name.includes('whiskey')) return 'spirit'
+  return 'syrup'
+}
+
+/**
+ * Automatically applies an ingredient quality & pricing tier across all layers of a recipe.
+ */
+export function applyIngredientTierToRecipe(recipe, tierId = 'signature', catalog = []) {
+  const tier = INGREDIENT_TIER_PRESETS.find(t => t.id === tierId) || INGREDIENT_TIER_PRESETS[1]
+  const layers = recipe?.layers || []
+
+  const updatedLayers = layers.map(layer => {
+    // Keep custom sub-recipe batch preps unchanged or adjust unitCost if applicable
+    if (layer.isSubRecipe) return layer
+
+    const category = detectLayerCategory(layer)
+    const tierMapping = tier.itemMappings[category]
+
+    if (!tierMapping) return layer
+
+    return {
+      ...layer,
+      name: tierMapping.name,
+      unitCostPerMl: tierMapping.unitCostPerMl,
+      supplier: tierMapping.supplier,
+      tier: tierId
+    }
+  })
+
+  // Compute updated packaging cost for the tier
+  const basePrice = Number(recipe.price || recipe.menuPrice || 180)
+
+  return {
+    ...recipe,
+    ingredientTier: tierId,
+    layers: updatedLayers
+  }
+}
+
+/**
+ * Calculates side-by-side comparison across all 3 tiers (Value, Signature, Artisanal) for the given recipe.
+ */
+export function calculateRecipeTierComparison(recipe, catalog = [], basePrice = 180) {
+  return INGREDIENT_TIER_PRESETS.map(tier => {
+    const previewRecipe = applyIngredientTierToRecipe(recipe, tier.id, catalog)
+    const layers = previewRecipe.layers || []
+
+    let totalLiquidCost = 0
+    layers.forEach(l => {
+      const vol = Number(l.volumeMl || 0)
+      const cost = vol * Number(l.unitCostPerMl || 0.15)
+      totalLiquidCost += cost
+    })
+
+    const totalCogs = Number((totalLiquidCost + tier.packagingUnitCost + 1.50).toFixed(2))
+    const grossProfit = Number((basePrice - totalCogs).toFixed(2))
+    const grossMarginPct = basePrice > 0 ? Number(((grossProfit / basePrice) * 100).toFixed(1)) : 0
+    const suggestedPrice = Math.ceil((totalCogs / 0.25) / 5) * 5 // 75% target margin
+
+    return {
+      tierId: tier.id,
+      label: tier.label,
+      fullName: tier.fullName,
+      tagline: tier.tagline,
+      desc: tier.desc,
+      color: tier.color,
+      bg: tier.bg,
+      border: tier.border,
+      totalLiquidCost: Number(totalLiquidCost.toFixed(2)),
+      packagingCost: tier.packagingUnitCost,
+      totalCogs,
+      grossProfit,
+      grossMarginPct,
+      suggestedPrice,
+      isActive: (recipe.ingredientTier || 'signature') === tier.id
+    }
+  })
+}
