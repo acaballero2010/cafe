@@ -24,6 +24,7 @@ import { RecipeIterationHistoryModal } from './RecipeIterationHistoryModal'
 import { IngredientTierSelectorCard } from './IngredientTierSelectorCard'
 import { SkuSwapModal } from './SkuSwapModal'
 import { CostComputationModal } from './CostComputationModal'
+import { RecipeSummarySaveCard } from './RecipeSummarySaveCard'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -279,79 +280,23 @@ export function MobileRecipeBuilder({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', margin: '0 auto' }}>
       
-      {/* 1. Clean Drink Title & Action Row (Stacked 2-Tier Layout with Lineage Tracking) */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '18px 20px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        
-        {/* Lineage Fork Chip */}
-        {recipe.forkedFrom && (
-          <div style={{
-            background: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            borderRadius: '12px',
-            padding: '8px 12px',
-            marginBottom: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <GitFork size={14} color="#16a34a" />
-              <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#15803d' }}>
-                Custom Variation of <span style={{ textDecoration: 'underline' }}>{recipe.forkedFrom.name}</span>
-              </span>
-            </div>
-            <button
-              onClick={() => setIsSaveMenuModalOpen(true)}
-              style={{
-                background: '#15803d',
-                color: '#ffffff',
-                border: 'none',
-                padding: '4px 9px',
-                borderRadius: '6px',
-                fontSize: '0.68rem',
-                fontWeight: 800,
-                cursor: 'pointer'
-              }}
-            >
-              Save Twist
-            </button>
-          </div>
-        )}
+      {/* 1. Executive Recipe Summary, Live Costing & Instant Save Card */}
+      <RecipeSummarySaveCard
+        recipe={recipe}
+        onUpdateRecipe={onUpdateRecipe}
+        onSaveRecipe={(updated) => {
+          if (onSaveToMenu) {
+            onSaveToMenu(updated)
+          }
+        }}
+        onOpenSaveModal={() => setIsSaveMenuModalOpen(true)}
+        onOpenCostInspector={() => setIsCostModalOpen(true)}
+        onOpenSopModal={() => setIsSopModalOpen(true)}
+      />
 
-        {/* Full-width Drink Title */}
-        <div style={{ marginBottom: '14px' }}>
-          <input
-            type="text"
-            value={recipe.name}
-            onChange={(e) => onUpdateRecipe({ ...recipe, name: e.target.value })}
-            style={{
-              fontSize: '1.3rem', // ~22pt bold
-              fontWeight: 800,
-              color: '#0f172a', // text-slate-900
-              fontFamily: 'var(--font-display)',
-              border: 'none',
-              padding: 0,
-              width: '100%',
-              outline: 'none',
-              background: 'transparent',
-              lineHeight: 1.3
-            }}
-            placeholder="Enter Drink Name..."
-          />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
-              Base Spec • {currentVessel.name.split(' (')[0]}
-            </span>
-            <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#cbd5e1' }} />
-            <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 700 }}>
-              ₱{(recipe.menuPrice || 180).toFixed(2)} Target Menu Price
-            </span>
-          </div>
-        </div>
-
-        {/* Action Button Strip */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+      {/* Action Button Strip */}
+      <div style={{ background: '#ffffff', borderRadius: '18px', padding: '10px 14px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
           <button
             onClick={() => setIsRepositoryModalOpen(true)}
             style={{
