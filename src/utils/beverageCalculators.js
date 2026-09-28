@@ -744,3 +744,177 @@ export function calculateRecipeTierComparison(recipe, catalog = [], basePrice = 
     }
   })
 }
+
+/**
+ * Calculates absolute minimum and maximum COGS possible for a recipe based on available catalog brands.
+ */
+export function calculateRecipeCostBounds(recipe, catalog = []) {
+  const pool = catalog.length > 0 ? catalog : []
+  const layers = recipe?.layers || []
+  const packagingCost = 4.50
+
+  let minLiquidCost = 0
+  let maxLiquidCost = 0
+  let currentLiquidCost = 0
+
+  const layerBounds = layers.map(layer => {
+    const vol = Number(layer.volumeMl || 0)
+    const currentRate = Number(layer.unitCostPerMl || 0.15)
+    currentLiquidCost += (vol * currentRate)
+
+    if (layer.isSubRecipe) {
+      minLiquidCost += (vol * currentRate)
+      maxLiquidCost += (vol * currentRate)
+      return {
+        layer,
+        minSku: layer,
+        maxSku: layer,
+        minCost: vol * currentRate,
+        maxCost: vol * currentRate
+      }
+    }
+
+    const flavor = detectLayerFlavorProfile(layer)
+    const candidates = pool.filter(item => {
+      if (item.category === 'packaging') return false
+      const itemFlavor = item.flavorType || detectLayerFlavorProfile(item)
+      return itemFlavor === flavor
+    })
+
+    if (candidates.length === 0) {
+      minLiquidCost += (vol * currentRate)
+      maxLiquidCost += (vol * currentRate)
+      return {
+        layer,
+        minSku: layer,
+        maxSku: layer,
+        minCost: vol * currentRate,
+        maxCost: vol * currentRate
+      }
+    }
+
+    // Sort by unit cost
+    const sorted = [...candidates].sort((a, b) => (a.unitCostPerMl || 0) - (b.unitCostPerMl || 0))
+    const minSku = sorted[0]
+    const maxSku = sorted[sorted.length - 1]
+
+    const minCost = vol * (minSku.unitCostPerMl || currentRate)
+    const maxCost = vol * (maxSku.unitCostPerMl || currentRate)
+
+    minLiquidCost += minCost
+    maxLiquidCost += maxCost
+
+    return {
+      layer,
+      minSku,
+      maxSku,
+      minCost,
+      maxCost,
+      candidates: sorted
+    }
+  })
+
+  return {
+    minCogs: Number((minLiquidCost + packagingCost).toFixed(2)),
+    maxCogs: Number((maxLiquidCost + packagingCost).toFixed(2)),
+    currentCogs: Number((currentLiquidCost + packagingCost).toFixed(2)),
+    packagingCost,
+    layerBounds
+  }
+}
+
+/**
+ * Dynamically selects optimal brand SKUs for each recipe layer to achieve the user's desired target COGS.
+ */
+export function optimizeRecipeToTargetCost(recipe, targetCost, catalog = []) {
+  const pool = catalog.length > 0 ? catalog : []
+  const bounds = calculateRecipeCostBounds(recipe, pool)
+  const layers = recipe?.layers || []
+  const packagingCost = bounds.packagingCost
+
+  // Clamp target cost
+  const clampedTarget = Math.max(bounds.minCogs, Math.min(bounds.maxCogs, targetCost))
+  const targetLiquidBudget = clampedTarget - packagingCost
+
+  // Priority weights for upgrading ingredient quality (Sensory ROI)
+  // Upgrading coffee extraction & signature syrups first gives highest perceived customer value
+  const priorityWeights = {
+    espresso: 10,
+    cold_brew: 9,
+    matcha: 9,
+    tea: 8,
+    caramel: 7,
+    vanilla: 7,
+    chocolate: 7,
+    strawberry: 6,
+    hazelnut: 6,
+    cheese_foam: 5,
+    milk_oat: 4,
+    milk_whole: 3,
+    condensed_milk: 2,
+    brown_sugar: 1,
+    syrup: 1
+  }
+
+  // Determine interpolation factor (0.0 = all minimum, 1.0 = all maximum)
+  const totalRange = bounds.maxCogs - bounds.minCogs
+  const factor = totalRange > 0 ? Math.max(0, Math.min(1, (clampedTarget - bounds.minCogs) / totalRange)) : 0.5
+
+  const updatedLayers = bounds.layerBounds.map(({ layer, candidates = [] }) => {
+    if (layer.isSubRecipe || !candidates || candidates.length === 0) {
+      return layer
+    }
+
+    if (candidates.length === 1) {
+      const chosen = candidates[0]
+      return {
+        ...layer,
+        name: chosen.name,
+        brand: chosen.brand,
+        unitCostPerMl: chosen.unitCostPerMl,
+        ingredientId: chosen.id,
+        supplier: chosen.supplier,
+        tier: chosen.tier || 'signature'
+      }
+    }
+
+    const flavor = detectLayerFlavorProfile(layer)
+    const weight = priorityWeights[flavor] || 5
+    // Adjust factor based on layer sensory weight
+    const adjustedFactor = Math.min(1, Math.max(0, factor * (weight / 5.5)))
+
+    const index = Math.min(candidates.length - 1, Math.round(adjustedFactor * (candidates.length - 1)))
+    const chosen = candidates[index]
+
+    return {
+      ...layer,
+      name: chosen.name,
+      brand: chosen.brand,
+      unitCostPerMl: chosen.unitCostPerMl,
+      ingredientId: chosen.id,
+      supplier: chosen.supplier,
+      tier: chosen.tier || 'signature',
+      densityBrix: chosen.densityBrix || layer.densityBrix
+    }
+  })
+
+  let actualLiquidCost = 0
+  updatedLayers.forEach(l => {
+    const vol = Number(l.volumeMl || 0)
+    const rate = Number(l.unitCostPerMl || 0.15)
+    actualLiquidCost += (vol * rate)
+  })
+
+  const actualCogs = Number((actualLiquidCost + packagingCost).toFixed(2))
+
+  return {
+    optimizedRecipe: {
+      ...recipe,
+      ingredientTier: 'hybrid',
+      layers: updatedLayers
+    },
+    actualCogs,
+    targetCost: clampedTarget,
+    bounds
+  }
+}
