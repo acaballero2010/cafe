@@ -294,29 +294,37 @@ export function MobileRecipeBuilder({
         onOpenSopModal={() => setIsSopModalOpen(true)}
       />
 
-      {/* Action Button Strip */}
-      <div style={{ background: '#ffffff', borderRadius: '18px', padding: '10px 14px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '4px' }}>
+      {/* Streamlined Secondary R&D Utilities Strip (Collapsible / Non-intrusive) */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '16px',
+        padding: '10px 14px',
+        border: '1px solid #e2e8f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '8px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setIsRepositoryModalOpen(true)}
             style={{
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               color: '#0f172a',
-              padding: '7px 2px',
-              borderRadius: '10px',
-              fontSize: '0.68rem',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3px',
-              minHeight: '36px'
+              gap: '4px'
             }}
           >
-            <BookOpen size={12} color="#2563eb" />
-            <span>Repo</span>
+            <BookOpen size={13} color="#2563eb" />
+            <span>Recipe Repo</span>
           </button>
 
           <button
@@ -325,20 +333,18 @@ export function MobileRecipeBuilder({
               background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
               border: 'none',
               color: '#ffffff',
-              padding: '7px 2px',
-              borderRadius: '10px',
-              fontSize: '0.68rem',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3px',
-              minHeight: '36px',
-              boxShadow: '0 2px 6px rgba(236, 72, 153, 0.25)'
+              gap: '4px',
+              boxShadow: '0 2px 4px rgba(236, 72, 153, 0.2)'
             }}
           >
-            <Camera size={12} color="#ffffff" />
+            <Camera size={13} color="#ffffff" />
             <span>Photo 8K</span>
           </button>
 
@@ -348,20 +354,18 @@ export function MobileRecipeBuilder({
               background: '#f0f9ff',
               border: '1px solid #bae6fd',
               color: '#0369a1',
-              padding: '7px 2px',
-              borderRadius: '10px',
-              fontSize: '0.68rem',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3px',
-              minHeight: '36px'
+              gap: '4px'
             }}
           >
-            <FileText size={12} color="#0284c7" />
-            <span>SOP</span>
+            <FileText size={13} color="#0284c7" />
+            <span>Barista SOP</span>
           </button>
 
           <button
@@ -370,130 +374,101 @@ export function MobileRecipeBuilder({
               background: '#f0fdf4',
               border: '1px solid #bbf7d0',
               color: '#15803d',
-              padding: '7px 2px',
-              borderRadius: '10px',
-              fontSize: '0.68rem',
+              padding: '6px 10px',
+              borderRadius: '8px',
+              fontSize: '0.72rem',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3px',
-              minHeight: '36px'
+              gap: '4px'
             }}
           >
-            <Scale size={12} color="#16a34a" />
+            <Scale size={13} color="#16a34a" />
             <span>Yield</span>
-          </button>
-
-          <button
-            onClick={() => setIsSaveMenuModalOpen(true)}
-            style={{
-              background: '#0f172a',
-              border: 'none',
-              color: '#ffffff',
-              padding: '7px 2px',
-              borderRadius: '10px',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '3px',
-              minHeight: '36px',
-              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)'
-            }}
-          >
-            <FolderPlus size={12} color="#fbbf24" />
-            <span>Save R&D</span>
           </button>
         </div>
 
-        {/* Advanced Costing & Operations Tool Strip */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
+        {/* Dropdown for Advanced Simulators */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <button
             onClick={() => setIsMultiCupOpen(true)}
             style={{
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              color: '#1d4ed8',
-              padding: '6px 2px',
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#475569',
+              padding: '6px 10px',
               borderRadius: '8px',
-              fontSize: '0.67rem',
-              fontWeight: 800,
+              fontSize: '0.70rem',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '3px'
             }}
-            title="Auto-scale recipe across 12oz, 16oz, 22oz, 1L"
+            title="Auto-scale recipe across 12oz, 16oz, 22oz"
           >
-            <span>📐 Sizing Matrix</span>
+            <span>📐 Multi-Cup</span>
           </button>
 
           <button
             onClick={() => setIsDeliveryOpen(true)}
             style={{
-              background: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              color: '#15803d',
-              padding: '6px 2px',
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#475569',
+              padding: '6px 10px',
               borderRadius: '8px',
-              fontSize: '0.67rem',
-              fontWeight: 800,
+              fontSize: '0.70rem',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '3px'
             }}
-            title="GrabFood & FoodPanda 25% commission margin simulator"
+            title="GrabFood / FoodPanda delivery margin simulator"
           >
-            <span>🛵 Delivery 25%</span>
+            <span>🛵 Delivery %</span>
           </button>
 
           <button
             onClick={() => setIsSurgeOpen(true)}
             style={{
-              background: '#fff7ed',
-              border: '1px solid #fed7aa',
-              color: '#ea580c',
-              padding: '6px 2px',
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#475569',
+              padding: '6px 10px',
               borderRadius: '8px',
-              fontSize: '0.67rem',
-              fontWeight: 800,
+              fontSize: '0.70rem',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '3px'
             }}
-            title="Stress-test ingredient price inflation"
+            title="Price inflation stress test"
           >
-            <span>🔥 Price Surge</span>
+            <span>🔥 Surge</span>
           </button>
 
           <button
             onClick={() => setIsVersionOpen(true)}
             style={{
-              background: '#faf5ff',
-              border: '1px solid #e9d5ff',
-              color: '#7e22ce',
-              padding: '6px 2px',
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              color: '#475569',
+              padding: '6px 10px',
               borderRadius: '8px',
-              fontSize: '0.67rem',
-              fontWeight: 800,
+              fontSize: '0.70rem',
+              fontWeight: 700,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
               gap: '3px'
             }}
-            title="Recipe version history and sensory comparison"
+            title="R&D Version lineage comparison"
           >
-            <span>🔬 R&D Versions</span>
+            <span>🔬 History</span>
           </button>
         </div>
       </div>
@@ -637,79 +612,83 @@ export function MobileRecipeBuilder({
       />
 
 
-      {/* 2. Cup & Size Selector */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        <label style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Cup Vessel & Size
-        </label>
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '2px' }}>
-          {vesselPills.map(v => {
-            const isSelected = recipe.vesselId === v.id
-            return (
-              <button
-                key={v.id}
-                onClick={() => handleVesselSelect(v.id)}
-                style={{
-                  flex: 1,
-                  minWidth: '100px',
-                  padding: '10px 8px',
-                  borderRadius: '14px',
-                  border: isSelected ? '2px solid #0f172a' : '1px solid #e2e8f0',
-                  background: isSelected ? '#ffffff' : '#f8fafc',
-                  color: isSelected ? '#0f172a' : '#475569',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  transition: 'all 0.15s ease',
-                  boxShadow: isSelected ? '0 2px 6px rgba(0,0,0,0.06)' : 'none'
-                }}
-              >
-                <div style={{ fontSize: '0.86rem', fontWeight: 800 }}>{v.label}</div>
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>{v.sub}</div>
-              </button>
-            )
-          })}
+      {/* 2. Compact Serving Specification Bar (Cup Vessel + Ice Ratio in 1 Sleek Row) */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '16px',
+        padding: '12px 16px',
+        border: '1px solid #e2e8f0',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+      }}>
+        {/* Left: Vessel Select */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>
+            🥤 Cup Size:
+          </span>
+          <div style={{ display: 'flex', gap: '4px', overflowX: 'auto' }}>
+            {vesselPills.map(v => {
+              const isSelected = recipe.vesselId === v.id
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => handleVesselSelect(v.id)}
+                  style={{
+                    padding: '6px 10px',
+                    borderRadius: '8px',
+                    border: isSelected ? '1.5px solid #0f172a' : '1px solid #e2e8f0',
+                    background: isSelected ? '#0f172a' : '#f8fafc',
+                    color: isSelected ? '#ffffff' : '#475569',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <span>{v.label}</span>
+                  <span style={{ fontSize: '0.64rem', opacity: 0.8 }}>({v.sub})</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* 3. Ice Level Selector (iOS Segment) */}
-      <div style={{ background: '#ffffff', borderRadius: '20px', padding: '16px 18px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.03)' }}>
-        <label style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569', display: 'block', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-          Ice Level
-        </label>
-        <div
-          style={{
-            display: 'flex',
-            background: '#f1f5f9',
-            padding: '4px',
-            borderRadius: '14px',
-            gap: '4px'
-          }}
-        >
-          {iceSegments.map(seg => {
-            const isSelected = recipe.iceTypeId === seg.id
-            return (
-              <button
-                key={seg.id}
-                onClick={() => onUpdateRecipe({ ...recipe, iceTypeId: seg.id })}
-                style={{
-                  flex: 1,
-                  padding: '10px 0',
-                  borderRadius: '10px',
-                  border: 'none',
-                  background: isSelected ? '#ffffff' : 'transparent',
-                  color: isSelected ? '#0f172a' : '#64748b',
-                  fontSize: '0.84rem',
-                  fontWeight: isSelected ? 800 : 600,
-                  cursor: 'pointer',
-                  boxShadow: isSelected ? '0 1px 4px rgba(0,0,0,0.08)' : 'none',
-                  transition: 'all 0.15s ease',
-                  minHeight: '44px'
-                }}
-              >
-                {seg.label}
-              </button>
-            )
-          })}
+        {/* Right: Ice Level */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase' }}>
+            🧊 Ice:
+          </span>
+          <div style={{ display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '8px', gap: '2px' }}>
+            {iceSegments.map(seg => {
+              const isSelected = recipe.iceTypeId === seg.id
+              return (
+                <button
+                  key={seg.id}
+                  onClick={() => onUpdateRecipe({ ...recipe, iceTypeId: seg.id })}
+                  style={{
+                    padding: '5px 9px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    background: isSelected ? '#ffffff' : 'transparent',
+                    color: isSelected ? '#0f172a' : '#64748b',
+                    fontSize: '0.72rem',
+                    fontWeight: isSelected ? 800 : 600,
+                    cursor: 'pointer',
+                    boxShadow: isSelected ? '0 1px 2px rgba(0,0,0,0.06)' : 'none'
+                  }}
+                >
+                  {seg.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
