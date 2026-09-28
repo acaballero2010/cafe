@@ -529,6 +529,9 @@ export const INGREDIENT_TIER_PRESETS = [
     itemMappings: {
       espresso: { name: 'Commercial Robusta/Arabica Dark Roast Blend', brand: 'Bataan Roasters Bulk', unitCostPerMl: 0.380, supplier: 'Bataan Roasters Wholesale' },
       cold_brew: { name: 'Commercial Cold Brew Concentrate', brand: 'Metro Foodservice', unitCostPerMl: 0.220, supplier: 'Metro Foodservice' },
+      condensed_milk: { name: 'Angel Sweetened Condensed Milk / Kremdensada', brand: 'Angel / Liberty', unitCostPerMl: 0.118, supplier: 'Metro Wholesale FMCG' },
+      evaporated_milk: { name: 'Angel Evaporada Culinary Blend', brand: 'Angel / Century', unitCostPerMl: 0.082, supplier: 'Metro Wholesale FMCG' },
+      heavy_cream: { name: 'Commercial Non-Dairy Whipping Cream', brand: 'Top Creamery', unitCostPerMl: 0.145, supplier: 'Top Creamery Foodservice' },
       milk_whole: { name: 'Commercial Barista Fresh Milk 3.2%', brand: 'Metro Foodservice Wholesale', unitCostPerMl: 0.075, supplier: 'Metro Foodservice' },
       milk_oat: { name: 'Commercial Barista Oat Milk', brand: 'Boba King Supply', unitCostPerMl: 0.120, supplier: 'Boba King Supply Manila' },
       milk_almond: { name: 'Commercial Barista Almond Milk', brand: 'Boba King Supply', unitCostPerMl: 0.140, supplier: 'Boba King Supply' },
@@ -563,6 +566,9 @@ export const INGREDIENT_TIER_PRESETS = [
     itemMappings: {
       espresso: { name: 'Benguet / Mt. Apo Specialty Arabica (Double Shot)', brand: 'Kalsada Coffee / Local Origin', unitCostPerMl: 0.550, supplier: 'Kalsada Coffee Direct' },
       cold_brew: { name: 'Nitro Cold Brew Concentrate (1:4 Dilution Yield)', brand: 'Manila Cold Brew Supply Co.', unitCostPerMl: 0.315, supplier: 'Manila Cold Brew Supply Co.' },
+      condensed_milk: { name: 'Nestlé Carnation Sweetened Condensed Milk', brand: 'Nestlé Carnation', unitCostPerMl: 0.175, supplier: 'Nestlé Foodservice PH' },
+      evaporated_milk: { name: 'Alaska Evaporated Milk (Classic)', brand: 'Alaska Milk Corp', unitCostPerMl: 0.110, supplier: 'Alaska Foodservice PH' },
+      heavy_cream: { name: 'Anchor Culinary Heavy Whipping Cream 35%', brand: 'Anchor Food Professionals', unitCostPerMl: 0.285, supplier: 'Fonterra Foodservice PH' },
       milk_whole: { name: 'Emborg / Magnolia Fresh Whole Milk 3.8%', brand: 'Magnolia / Emborg Professional', unitCostPerMl: 0.095, supplier: 'San Miguel / Metro Foodservice' },
       milk_oat: { name: 'Oatside Barista Blend Oat Milk', brand: 'Oatside PH', unitCostPerMl: 0.160, supplier: 'Oatside Direct PH' },
       milk_almond: { name: 'Califia Farms Barista Almond Blend', brand: 'Califia Farms', unitCostPerMl: 0.238, supplier: 'Santini Fine Foods PH' },
@@ -597,6 +603,9 @@ export const INGREDIENT_TIER_PRESETS = [
     itemMappings: {
       espresso: { name: 'Ethiopia Guji Heirloom Single-Origin Reserve (36ml)', brand: 'Yardstick Coffee Wholesale', unitCostPerMl: 0.725, supplier: 'Yardstick Coffee Wholesale (Manila)' },
       cold_brew: { name: 'Single-Origin Geisha Cold Drip Extraction', brand: 'Artisanal Lab Manila', unitCostPerMl: 0.550, supplier: 'In-House Lab' },
+      condensed_milk: { name: 'Nestlé Milkmaid Full Cream Sweetened Condensed Milk', brand: 'Nestlé Milkmaid (Gold Label)', unitCostPerMl: 0.200, supplier: 'Gourmet Direct Imports PH' },
+      evaporated_milk: { name: 'Alpine 100% Full Cream Evaporated Milk', brand: 'Alpine Evaporated Milk', unitCostPerMl: 0.165, supplier: 'Gourmet Direct Imports PH' },
+      heavy_cream: { name: 'Elle & Vire Extra Dry French Cream 35%', brand: 'Elle & Vire France', unitCostPerMl: 0.380, supplier: 'Euro Specialty Imports' },
       milk_whole: { name: 'Japanese Hokkaido Farm Fresh Milk 4.0%', brand: 'Hokkaido Dairy Direct', unitCostPerMl: 0.230, supplier: 'Gourmet Direct Imports PH' },
       milk_oat: { name: 'Oatly Barista Edition Oat Milk (Sweden)', brand: 'Oatly', unitCostPerMl: 0.210, supplier: 'BakeEtc / Gourmet Direct PH' },
       milk_almond: { name: 'Califia Farms Organic Barista Blend', brand: 'Califia Farms', unitCostPerMl: 0.260, supplier: 'Santini Fine Foods' },
@@ -619,27 +628,40 @@ export const INGREDIENT_TIER_PRESETS = [
 
 export function detectLayerFlavorProfile(layer) {
   const name = (layer.name || '').toLowerCase()
-  // Specific syrups & sauces
-  if (name.includes('caramel')) return 'caramel'
+  
+  // 1. Specific Concentrated Dairy & Sweeteners (Checked BEFORE generic milk/cream!)
+  if (name.includes('condensed') || name.includes('condensada') || name.includes('sweetened condensed')) return 'condensed_milk'
+  if (name.includes('evaporated') || name.includes('evap') || name.includes('evaporada')) return 'evaporated_milk'
+  if (name.includes('heavy cream') || name.includes('whipping cream') || name.includes('half and half') || name.includes('creamer')) return 'heavy_cream'
+
+  // 2. Specific Syrups, Sauces & Flavor Profiles
+  if (name.includes('caramel') || name.includes('toffee')) return 'caramel'
   if (name.includes('vanilla')) return 'vanilla'
   if (name.includes('brown sugar') || name.includes('muscovado') || name.includes('okinawa') || name.includes('cane') || name.includes('fructose') || name.includes('sugar')) return 'brown_sugar'
   if (name.includes('chocolate') || name.includes('mocha') || name.includes('cocoa') || name.includes('ganache')) return 'chocolate'
-  if (name.includes('hazelnut') || name.includes('nut')) return 'hazelnut'
+  if (name.includes('hazelnut') || name.includes('nut') || name.includes('pistachio')) return 'hazelnut'
   if (name.includes('strawberry') || name.includes('berry') || name.includes('fruit') || name.includes('compote')) return 'strawberry'
-  // Milks & Alt-milks
+  
+  // 3. Milks & Plant Alternatives
   if (name.includes('oat')) return 'milk_oat'
   if (name.includes('almond')) return 'milk_almond'
-  if (name.includes('milk') || name.includes('dairy') || name.includes('cream')) return 'milk_whole'
-  // Coffee
+  if (name.includes('soy')) return 'milk_soy'
+  if (name.includes('coconut')) return 'milk_coconut'
+  if (name.includes('milk') || name.includes('dairy') || name.includes('latte')) return 'milk_whole'
+  
+  // 4. Coffee
   if (name.includes('cold brew')) return 'cold_brew'
-  if (name.includes('espresso') || name.includes('coffee') || name.includes('ristretto')) return 'espresso'
-  // Tea & Matcha
+  if (name.includes('espresso') || name.includes('coffee') || name.includes('ristretto') || name.includes('shot')) return 'espresso'
+  
+  // 5. Tea & Matcha
   if (name.includes('matcha') || name.includes('hojicha')) return 'matcha'
   if (name.includes('tea') || name.includes('jasmine') || name.includes('ceylon') || name.includes('earl grey')) return 'tea'
-  // Toppings & Foam
+  
+  // 6. Toppings & Foam
   if (name.includes('cheese') || name.includes('foam') || name.includes('cap') || name.includes('cloud')) return 'cheese_foam'
   if (name.includes('boba') || name.includes('pearl') || name.includes('tapioca') || name.includes('jelly')) return 'topping'
-  // Citrus & Spirits
+  
+  // 7. Citrus & Spirits
   if (name.includes('lime') || name.includes('lemon') || name.includes('calamansi') || name.includes('citrus') || name.includes('yuzu')) return 'citrus'
   if (name.includes('mezcal') || name.includes('gin') || name.includes('spirit') || name.includes('rum') || name.includes('whiskey')) return 'spirit'
   return 'syrup'

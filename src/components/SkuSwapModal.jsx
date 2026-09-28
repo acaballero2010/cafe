@@ -42,13 +42,13 @@ export function SkuSwapModal({
         return matchesSearch && matchesTier
       }
 
-      // Otherwise, filter by matching flavor type or category
+      // Otherwise, match exact ingredient flavor profile
       const itemFlavor = item.flavorType || detectLayerFlavorProfile(item)
-      const matchesFlavor = itemFlavor === detectedFlavor || (item.category && item.category === layer.category)
+      const matchesFlavor = itemFlavor === detectedFlavor
 
       return matchesFlavor && matchesTier
     })
-  }, [catalog, detectedFlavor, layer.category, searchQuery, selectedTierFilter])
+  }, [catalog, detectedFlavor, searchQuery, selectedTierFilter])
 
   return (
     <div style={{
