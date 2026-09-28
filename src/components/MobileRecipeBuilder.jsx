@@ -17,6 +17,10 @@ import { BaristaSOPModal } from './BaristaSOPModal'
 import { BatchYieldCalculatorModal } from './BatchYieldCalculatorModal'
 import { DrinkRepositoryModal } from './DrinkRepositoryModal'
 import { SaveVariationModal } from './SaveVariationModal'
+import { MultiCupScalerPanel } from './MultiCupScalerPanel'
+import { DeliveryMarginSimulator } from './DeliveryMarginSimulator'
+import { PriceSurgeSimulatorModal } from './PriceSurgeSimulatorModal'
+import { RecipeIterationHistoryModal } from './RecipeIterationHistoryModal'
 
 export function MobileRecipeBuilder({
   recipe,
@@ -49,6 +53,10 @@ export function MobileRecipeBuilder({
   const [isYieldModalOpen, setIsYieldModalOpen] = useState(false)
   const [isAffiliateModalOpen, setIsAffiliateModalOpen] = useState(false)
   const [activeAffiliateIngredient, setActiveAffiliateIngredient] = useState(null)
+  const [isMultiCupOpen, setIsMultiCupOpen] = useState(false)
+  const [isDeliveryOpen, setIsDeliveryOpen] = useState(false)
+  const [isSurgeOpen, setIsSurgeOpen] = useState(false)
+  const [isVersionOpen, setIsVersionOpen] = useState(false)
   const [recipeVersionTag, setRecipeVersionTag] = useState(recipe.version || 'v1.0')
   const [recipeStatus, setRecipeStatus] = useState(recipe.status || 'rnd') // 'rnd' | 'menu'
   const [selectedTargetMenuId, setSelectedTargetMenuId] = useState(savedMenus[0]?.id || 'new')
@@ -447,6 +455,93 @@ export function MobileRecipeBuilder({
             <span>Save R&D</span>
           </button>
         </div>
+
+        {/* Advanced Costing & Operations Tool Strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '4px', marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #e2e8f0' }}>
+          <button
+            onClick={() => setIsMultiCupOpen(true)}
+            style={{
+              background: '#eff6ff',
+              border: '1px solid #bfdbfe',
+              color: '#1d4ed8',
+              padding: '6px 2px',
+              borderRadius: '8px',
+              fontSize: '0.67rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px'
+            }}
+            title="Auto-scale recipe across 12oz, 16oz, 22oz, 1L"
+          >
+            <span>📐 Sizing Matrix</span>
+          </button>
+
+          <button
+            onClick={() => setIsDeliveryOpen(true)}
+            style={{
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              color: '#15803d',
+              padding: '6px 2px',
+              borderRadius: '8px',
+              fontSize: '0.67rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px'
+            }}
+            title="GrabFood & FoodPanda 25% commission margin simulator"
+          >
+            <span>🛵 Delivery 25%</span>
+          </button>
+
+          <button
+            onClick={() => setIsSurgeOpen(true)}
+            style={{
+              background: '#fff7ed',
+              border: '1px solid #fed7aa',
+              color: '#ea580c',
+              padding: '6px 2px',
+              borderRadius: '8px',
+              fontSize: '0.67rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px'
+            }}
+            title="Stress-test ingredient price inflation"
+          >
+            <span>🔥 Price Surge</span>
+          </button>
+
+          <button
+            onClick={() => setIsVersionOpen(true)}
+            style={{
+              background: '#faf5ff',
+              border: '1px solid #e9d5ff',
+              color: '#7e22ce',
+              padding: '6px 2px',
+              borderRadius: '8px',
+              fontSize: '0.67rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px'
+            }}
+            title="Recipe version history and sensory comparison"
+          >
+            <span>🔬 R&D Versions</span>
+          </button>
+        </div>
       </div>
 
       {/* Save Formulation & Variation Lineage Modal */}
@@ -460,6 +555,97 @@ export function MobileRecipeBuilder({
         onPublishToCommunity={(communityRecipe) => {
           onUpdateTrendingRecipes([communityRecipe, ...trendingRecipes])
         }}
+        currentUser={currentUser}
+      />
+
+      {/* Multi-Cup Sizing Modal */}
+      {isMultiCupOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div style={{ width: '100%', maxWidth: '850px', maxHeight: '90vh', overflowY: 'auto', background: '#ffffff', borderRadius: '20px', padding: '16px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setIsMultiCupOpen(false)}
+                style={{ border: 'none', background: '#f1f5f9', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <MultiCupScalerPanel
+              recipe={recipe}
+              onApplyScaledRecipe={(scaled) => {
+                onUpdateRecipe(scaled)
+                setIsMultiCupOpen(false)
+              }}
+              targetMarginPct={75}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Margin Simulator Modal */}
+      {isDeliveryOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div style={{ width: '100%', maxWidth: '850px', maxHeight: '90vh', overflowY: 'auto', background: '#ffffff', borderRadius: '20px', padding: '16px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+              <button
+                type="button"
+                onClick={() => setIsDeliveryOpen(false)}
+                style={{ border: 'none', background: '#f1f5f9', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <DeliveryMarginSimulator
+              recipe={recipe}
+              baseCogs={recipe.layers?.reduce((s, l) => s + ((l.volumeMl || 0) * (l.unitCostPerMl || 0.15)), 0) + 10}
+              basePrice={recipe.menuPrice || recipe.price || 180}
+              targetMarginPct={75}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Price Surge Stress-Test Modal */}
+      <PriceSurgeSimulatorModal
+        isOpen={isSurgeOpen}
+        onClose={() => setIsSurgeOpen(false)}
+        recipes={[recipe]}
+        catalog={catalog}
+      />
+
+      {/* Recipe Iteration History Modal */}
+      <RecipeIterationHistoryModal
+        isOpen={isVersionOpen}
+        onClose={() => setIsVersionOpen(false)}
+        recipe={recipe}
+        onUpdateRecipe={onUpdateRecipe}
         currentUser={currentUser}
       />
 

@@ -631,6 +631,70 @@ export function SubRecipeManager({
               : `Storage stable for up to ${activeSubRecipe.shelfLifeHours} hours (${(activeSubRecipe.shelfLifeHours / 24).toFixed(0)} days) at 2-4°C.`}
           </span>
         </div>
+
+        {/* 5. Sub-Recipe Spoilage & Sell-Through Cost Amortization Engine */}
+        <div style={{
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '14px',
+          padding: '14px',
+          marginTop: '6px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1e293b' }}>
+              ⏳ Batch Spoilage & Sell-Through Amortization
+            </span>
+            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0284c7' }}>
+              Est. Sell-Through: {(activeSubRecipe.sellThroughPct || 80)}%
+            </span>
+          </div>
+
+          <p style={{ margin: '0 0 10px 0', fontSize: '0.72rem', color: '#64748b', lineHeight: 1.3 }}>
+            If customer demand fluctuates before the {activeSubRecipe.shelfLifeHours}-hour shelf-life expires, unsold portions inflate the true cost of sold servings.
+          </p>
+
+          <input
+            type="range"
+            min={40}
+            max={100}
+            step={5}
+            value={activeSubRecipe.sellThroughPct || 80}
+            onChange={(e) => handleUpdateActive({ sellThroughPct: Number(e.target.value) })}
+            style={{ width: '100%', accentColor: '#d97706', marginBottom: '10px' }}
+          />
+
+          {(() => {
+            const nominalUnitCost = m.effectiveUnitCost || 0.15
+            const sellThrough = (activeSubRecipe.sellThroughPct || 80) / 100
+            const wasteAmortizedUnitCost = nominalUnitCost / Math.max(0.4, sellThrough)
+            const inflationDeltaPct = ((wasteAmortizedUnitCost - nominalUnitCost) / nominalUnitCost) * 100
+
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
+                <div style={{ background: '#ffffff', padding: '8px 6px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 600 }}>Nominal Batch Cost</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+                    ₱{nominalUnitCost.toFixed(2)}/{activeSubRecipe.yieldUom}
+                  </div>
+                </div>
+
+                <div style={{ background: '#fffbeb', padding: '8px 6px', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                  <div style={{ fontSize: '0.64rem', color: '#92400e', fontWeight: 600 }}>Amortized True Cost</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#b45309', marginTop: '2px' }}>
+                    ₱{wasteAmortizedUnitCost.toFixed(2)}/{activeSubRecipe.yieldUom}
+                  </div>
+                </div>
+
+                <div style={{ background: '#fef2f2', padding: '8px 6px', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                  <div style={{ fontSize: '0.64rem', color: '#991b1b', fontWeight: 600 }}>Spoilage Overhead</div>
+                  <div style={{ fontSize: '0.86rem', fontWeight: 800, color: '#dc2626', marginTop: '2px' }}>
+                    +{inflationDeltaPct.toFixed(0)}% COGS
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+        </div>
       </div>
 
       {/* 4. Raw Materials Included (Elevated White Cards) */}
